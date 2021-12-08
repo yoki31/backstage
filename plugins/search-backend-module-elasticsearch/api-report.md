@@ -26,6 +26,8 @@ export class ElasticSearchSearchEngine implements SearchEngine {
   static fromConfig(
     options: ElasticSearchOptions,
   ): Promise<ElasticSearchSearchEngine>;
+  // Warning: (ae-forgotten-export) The symbol "ElasticSearchEngineIndexer" needs to be exported by the entry point index.d.ts
+  //
   // (undocumented)
   getIndexer(type: string): Promise<ElasticSearchEngineIndexer>;
   // (undocumented)

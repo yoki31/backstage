@@ -53,7 +53,7 @@
   },
   "devDependencies": {
     "@backstage/cli": "^0.10.0",
-    "@backstage/plugin-search-backend-node": "0.4.2",
+    "@backstage/plugin-search-backend-node": "^0.4.3",
     "@backstage/test-utils": "^0.1.23",
     "@types/dockerode": "^3.3.0",
     "msw": "^0.35.0",
