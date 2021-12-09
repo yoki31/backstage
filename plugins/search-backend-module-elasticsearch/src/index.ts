@@ -21,3 +21,7 @@
  */
 
 export { ElasticSearchSearchEngine } from './engines';
+export type {
+  ElasticSearchEngineIndexer,
+  ElasticSearchEngineIndexerOptions,
+} from './engines';

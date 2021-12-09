@@ -12,6 +12,33 @@ import { SearchEngine } from '@backstage/search-common';
 import { SearchQuery } from '@backstage/search-common';
 import { SearchResultSet } from '@backstage/search-common';
 
+// Warning: (ae-missing-release-tag) "ElasticSearchEngineIndexer" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public (undocumented)
+export class ElasticSearchEngineIndexer extends BatchSearchEngineIndexer {
+  constructor(options: ElasticSearchEngineIndexerOptions);
+  // (undocumented)
+  finalize(): Promise<void>;
+  // (undocumented)
+  index(documents: IndexableDocument[]): Promise<void>;
+  // (undocumented)
+  readonly indexName: string;
+  // (undocumented)
+  initialize(): Promise<void>;
+}
+
+// Warning: (ae-missing-release-tag) "ElasticSearchEngineIndexerOptions" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public (undocumented)
+export type ElasticSearchEngineIndexerOptions = {
+  type: string;
+  indexPrefix: string;
+  indexSeparator: string;
+  alias: string;
+  logger: Logger_2;
+  elasticSearchClient: Client;
+};
+
 // @public (undocumented)
 export class ElasticSearchSearchEngine implements SearchEngine {
   constructor(
@@ -26,8 +53,6 @@ export class ElasticSearchSearchEngine implements SearchEngine {
   static fromConfig(
     options: ElasticSearchOptions,
   ): Promise<ElasticSearchSearchEngine>;
-  // Warning: (ae-forgotten-export) The symbol "ElasticSearchEngineIndexer" needs to be exported by the entry point index.d.ts
-  //
   // (undocumented)
   getIndexer(type: string): Promise<ElasticSearchEngineIndexer>;
   // (undocumented)
