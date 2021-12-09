@@ -194,6 +194,8 @@ orgs
 pagerduty
 pageview
 parallelization
+performant
+Performant
 plantuml
 Platformize
 Podman
