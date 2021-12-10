@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import React, { useCallback, useEffect } from 'react';
+import React, { useCallback, useEffect, useMemo } from 'react';
 import { FieldProps } from '@rjsf/core';
 import { scaffolderApiRef } from '../../../api';
 import {
@@ -90,42 +90,68 @@ function serializeFormData(data: {
   return `${data.host}?${params.toString()}`;
 }
 
+interface CustomFieldExtension<ReturnValue, UiOptions extends {} = {}>
+  extends FieldProps<ReturnValue> {
+  uiSchema: {
+    'ui:options'?: UiOptions;
+  };
+}
+
+export interface RepoPickerUiOptions {
+  allowedHosts?: string[];
+  requestUserCredentials?: {
+    resultKey: string;
+    additionalScopes?: {
+      github?: string[];
+      gitlab?: string[];
+      bitbucket?: string[];
+      azure?: string[];
+    };
+  };
+}
+
 export const RepoUrlPicker = ({
   onChange,
   uiSchema,
   rawErrors,
   formData,
-}: FieldProps<string>) => {
+}: CustomFieldExtension<string, RepoPickerUiOptions>) => {
   const scaffolderApi = useApi(scaffolderApiRef);
   const integrationApi = useApi(scmIntegrationsApiRef);
-  const allowedHosts = uiSchema['ui:options']?.allowedHosts as string[];
   const { setSecret } = useSecretsContext();
   const scmAuthApi = useApi(scmAuthApiRef);
+  const options = useMemo(() => uiSchema['ui:options'] ?? {}, [uiSchema]);
+
+  const { allowedHosts } = options;
+
   const { value: integrations, loading } = useAsync(async () => {
-    return await scaffolderApi.getIntegrationsList({ allowedHosts });
+    return await scaffolderApi.getIntegrationsList({
+      allowedHosts: allowedHosts ?? [],
+    });
   });
 
   const { host, owner, repo, organization, workspace, project } =
     splitFormData(formData);
 
   const onBlur = useCallback(() => {
-    const withCredentials = uiSchema['ui:options']?.withCredentials as {
-      key: string;
-    };
-
+    const { requestUserCredentials } = options;
     const check = async () => {
-      if (withCredentials) {
+      if (requestUserCredentials) {
         if (host && owner && repo) {
           const token = await scmAuthApi.getCredentials({
             url: `https://${host}/${owner}/${repo}`,
+            additionalScope: {
+              repoWrite: true,
+              customScopes: requestUserCredentials.additionalScopes,
+            },
           });
 
-          setSecret({ [withCredentials.key]: token.token });
+          setSecret({ [requestUserCredentials.resultKey]: token.token });
         }
       }
     };
     check();
-  }, [host, owner, repo, scmAuthApi, setSecret, uiSchema]);
+  }, [host, owner, repo, scmAuthApi, setSecret, options]);
 
   const updateHost = useCallback(
     (evt: React.ChangeEvent<{ name?: string; value: unknown }>) => {
