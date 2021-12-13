@@ -1,5 +1,13 @@
 # @backstage/core-components
 
+## 0.8.1
+
+### Patch Changes
+
+- 9d6503e86c: Switched out usage of deprecated `OAuthRequestApi` types from `@backstage/core-plugin-api`.
+- Updated dependencies
+  - @backstage/core-plugin-api@0.3.1
+
 ## 0.8.0
 
 ### Minor Changes

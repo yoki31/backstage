@@ -1,5 +1,13 @@
 # @backstage/plugin-auth-backend
 
+## 0.5.1
+
+### Patch Changes
+
+- 699c2e9ddc: export minimal typescript types for OIDC provider
+- Updated dependencies
+  - @backstage/backend-common@0.9.14
+
 ## 0.5.0
 
 ### Minor Changes
