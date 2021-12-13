@@ -16,6 +16,7 @@
 
 import {
   AuthorizeRequest,
+  AuthorizeRequestOptions,
   AuthorizeResponse,
   AuthorizeResult,
   PermissionClient,
@@ -29,6 +30,49 @@ import {
   SearchResultSet,
   SearchResult,
 } from '@backstage/search-common';
+
+const isDefined = <T>(input: T | undefined): input is T => {
+  return typeof input !== 'undefined';
+};
+
+export const filterUnauthorized = async <TIn, TOut = TIn>(options: {
+  entries: TIn[];
+  toAuthorizeRequest: (entry: TIn) => AuthorizeRequest | undefined;
+  toResult: (entry: TIn) => TOut;
+  requestOptions?: AuthorizeRequestOptions;
+  permissions: PermissionClient;
+}): Promise<TOut[]> => {
+  const { entries, toAuthorizeRequest, toResult, permissions, requestOptions } =
+    options;
+
+  if (!entries.some(toAuthorizeRequest)) {
+    // no entries require authorization, we can return
+    // the results without any extra work.
+    return entries.map(toResult);
+  }
+
+  const authorizeRequests = entries.map(toAuthorizeRequest).filter(isDefined);
+
+  const authorizeResponses = await permissions.authorize(
+    authorizeRequests,
+    requestOptions,
+  );
+
+  const authorizationMap = new Map<AuthorizeRequest, AuthorizeResponse>(
+    authorizeRequests.map((request, i) => [request, authorizeResponses[i]]),
+  );
+
+  return entries
+    .filter(entry => {
+      const authorizeRequest = toAuthorizeRequest(entry);
+
+      return (
+        !authorizeRequest ||
+        authorizationMap.get(authorizeRequest)?.result === AuthorizeResult.ALLOW
+      );
+    })
+    .map(toResult);
+};
 
 export class PermissionFilteringEngine implements SearchEngine {
   constructor(

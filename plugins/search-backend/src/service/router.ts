@@ -17,11 +17,16 @@
 import express from 'express';
 import Router from 'express-promise-router';
 import { Logger } from 'winston';
+import { NotAllowedError } from '@backstage/errors';
 import { IdentityClient } from '@backstage/plugin-auth-backend';
 import { PermissionClient } from '@backstage/plugin-permission-common';
-import { SearchQuery, SearchResultSet } from '@backstage/search-common';
+import {
+  QueryOptions,
+  SearchQuery,
+  SearchResultSet,
+} from '@backstage/search-common';
 import { SearchEngine } from '@backstage/plugin-search-backend-node';
-import { PermissionFilteringEngine } from '../PermissionFilteringEngine';
+import { filterUnauthorized } from '../PermissionFilteringEngine';
 
 export type RouterOptions = {
   engine: SearchEngine;
@@ -32,9 +37,35 @@ export type RouterOptions = {
 export async function createRouter(
   options: RouterOptions,
 ): Promise<express.Router> {
-  const { engine: inputEngine, permissions, logger } = options;
+  const { engine, permissions, logger } = options;
   const router = Router();
-  const engine = new PermissionFilteringEngine(inputEngine, permissions);
+
+  const permissionedQuery = async (
+    query: SearchQuery,
+    queryOptions?: QueryOptions,
+  ) => {
+    if (query.pageCursor) {
+      throw new NotAllowedError('Pagination not supported');
+    }
+
+    const resultSet = await engine.query(query, queryOptions);
+
+    resultSet.results = await filterUnauthorized({
+      entries: resultSet.results,
+      toAuthorizeRequest: result => result.document.authorization,
+      toResult: result => ({
+        ...result,
+        document: {
+          ...result.document,
+          authorization: undefined,
+        },
+      }),
+      requestOptions: queryOptions,
+      permissions,
+    });
+
+    return resultSet;
+  };
 
   router.get(
     '/query',
@@ -54,7 +85,10 @@ export async function createRouter(
       const token = IdentityClient.getBearerToken(req.header('authorization'));
 
       try {
-        const results = await engine?.query(req.query, { token });
+        const results = permissions.isEnabled()
+          ? await permissionedQuery(req.query, { token })
+          : await engine.query(req.query);
+
         res.send(results);
       } catch (err) {
         throw new Error(

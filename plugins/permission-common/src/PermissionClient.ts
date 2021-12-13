@@ -81,6 +81,10 @@ export class PermissionClient {
       options.configApi.getOptionalBoolean('permission.enabled') ?? false;
   }
 
+  isEnabled(): boolean {
+    return this.enabled;
+  }
+
   /**
    * Request authorization from the permission-backend for the given set of permissions.
    *
