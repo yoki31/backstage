@@ -30,7 +30,7 @@
     "@backstage/config": "^0.1.11",
     "@backstage/core-plugin-api": "^0.3.0",
     "@backstage/plugin-permission-common": "^0.2.0",
-    "cross-fetch": "^3.0.6",
+    "cross-fetch": "^4.0.0",
     "react-router": "6.0.0-beta.0",
     "react-use": "^17.2.4"
   },
