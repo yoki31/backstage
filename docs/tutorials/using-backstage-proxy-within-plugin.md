@@ -52,7 +52,7 @@ calling `${backend-url}/api/proxy/<your-proxy-uri>`. The reason why
 `backend-url` is referenced is because the backstage backend creates and runs
 the proxy. Backstage is structured in such a way that you could run the
 backstage frontend independently of the backend. So when calling your API you
-need to prepend the backend url to your http call.
+need to prepend the backend URL to your http call.
 
 The recommended pattern for calling out to services is to wrap your calls in a
 [Utility API](../api/utility-apis.md). This section describes the steps to wrap
@@ -99,7 +99,6 @@ export interface MyAwesomeApi {
 
 export const myAwesomeApiRef = createApiRef<MyAwesomeApi>({
   id: 'plugin.my-awesome-api.service',
-  description: 'Example API definition',
 });
 ```
 
@@ -126,7 +125,7 @@ export class MyAwesomeApiClient implements MyAwesomeApi {
 
   private async fetch<T = any>(input: string, init?: RequestInit): Promise<T> {
     // As configured previously for the backend proxy
-    const proxyUri = '${await this.discoveryApi.getBaseUrl('proxy')}/<your-proxy-uri>';
+    const proxyUri = `${await this.discoveryApi.getBaseUrl('proxy')}/<your-proxy-uri>`;
 
     const resp = await fetch(`${proxyUri}${input}`, init);
     if (!resp.ok) throw new Error(resp);

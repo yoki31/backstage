@@ -13,65 +13,94 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 import {
-  PluginEndpointDiscovery,
+  createLegacyAuthAdapters,
   PluginCacheManager,
 } from '@backstage/backend-common';
-import { CatalogClient } from '@backstage/catalog-client';
-import { Entity, stringifyEntityRef } from '@backstage/catalog-model';
+import { CatalogApi, CatalogClient } from '@backstage/catalog-client';
+import { stringifyEntityRef } from '@backstage/catalog-model';
 import { Config } from '@backstage/config';
-import { NotFoundError, NotModifiedError } from '@backstage/errors';
+import { NotFoundError } from '@backstage/errors';
 import {
+  DocsBuildStrategy,
   GeneratorBuilder,
   getLocationForEntity,
   PreparerBuilder,
   PublisherBase,
-} from '@backstage/techdocs-common';
-import fetch from 'node-fetch';
+} from '@backstage/plugin-techdocs-node';
 import express, { Response } from 'express';
 import Router from 'express-promise-router';
 import { Knex } from 'knex';
-import { Logger } from 'winston';
 import { ScmIntegrations } from '@backstage/integration';
 import { DocsSynchronizer, DocsSynchronizerSyncOpts } from './DocsSynchronizer';
 import { createCacheMiddleware, TechDocsCache } from '../cache';
+import { CachedEntityLoader } from './CachedEntityLoader';
+import { DefaultDocsBuildStrategy } from './DefaultDocsBuildStrategy';
+import * as winston from 'winston';
+import {
+  AuthService,
+  DiscoveryService,
+  HttpAuthService,
+} from '@backstage/backend-plugin-api';
 
 /**
- * All of the required dependencies for running TechDocs in the "out-of-the-box"
+ * Required dependencies for running TechDocs in the "out-of-the-box"
  * deployment configuration (prepare/generate/publish all in the Backend).
+ *
+ * @public
  */
-type OutOfTheBoxDeploymentOptions = {
+export type OutOfTheBoxDeploymentOptions = {
   preparers: PreparerBuilder;
   generators: GeneratorBuilder;
   publisher: PublisherBase;
-  logger: Logger;
-  discovery: PluginEndpointDiscovery;
+  logger: winston.Logger;
+  discovery: DiscoveryService;
   database?: Knex; // TODO: Make database required when we're implementing database stuff.
   config: Config;
-  cache?: PluginCacheManager;
+  cache: PluginCacheManager;
+  docsBuildStrategy?: DocsBuildStrategy;
+  buildLogTransport?: winston.transport;
+  catalogClient?: CatalogApi;
+  httpAuth?: HttpAuthService;
+  auth?: AuthService;
 };
 
 /**
  * Required dependencies for running TechDocs in the "recommended" deployment
  * configuration (prepare/generate handled externally in CI/CD).
+ *
+ * @public
+ * @deprecated This type is only exported for legacy reasons and will be removed in the future.
  */
-type RecommendedDeploymentOptions = {
+export type RecommendedDeploymentOptions = {
   publisher: PublisherBase;
-  logger: Logger;
-  discovery: PluginEndpointDiscovery;
+  logger: winston.Logger;
+  discovery: DiscoveryService;
   config: Config;
+  cache: PluginCacheManager;
+  docsBuildStrategy?: DocsBuildStrategy;
+  buildLogTransport?: winston.transport;
+  catalogClient?: CatalogApi;
+  httpAuth?: HttpAuthService;
+  auth?: AuthService;
 };
 
 /**
  * One of the two deployment configurations must be provided.
+ *
+ * @public
+ * @deprecated This type is only exported for legacy reasons and will be removed in the future.
  */
-type RouterOptions =
+export type RouterOptions =
   | RecommendedDeploymentOptions
   | OutOfTheBoxDeploymentOptions;
 
 /**
  * Typeguard to help createRouter() understand when we are in a "recommended"
  * deployment vs. when we are in an out-of-the-box deployment configuration.
+ *
+ * @public
  */
 function isOutOfTheBoxOption(
   opt: RouterOptions,
@@ -79,17 +108,38 @@ function isOutOfTheBoxOption(
   return (opt as OutOfTheBoxDeploymentOptions).preparers !== undefined;
 }
 
+/**
+ * Creates a techdocs router.
+ *
+ * @public
+ * @deprecated This function is only exported for legacy reasons and will be removed in the future.
+ * Please {@link https://backstage.io/docs/backend-system/building-backends/migrating | migrate } to use the new backend system and follow these {@link https://backstage.io/docs/features/techdocs/getting-started#new-backend-system | instructions } to install the user settings backend plugin.
+ */
 export async function createRouter(
   options: RouterOptions,
 ): Promise<express.Router> {
   const router = Router();
   const { publisher, config, logger, discovery } = options;
-  const catalogClient = new CatalogClient({ discoveryApi: discovery });
+
+  const { auth, httpAuth } = createLegacyAuthAdapters(options);
+
+  const catalogClient =
+    options.catalogClient ?? new CatalogClient({ discoveryApi: discovery });
+  const docsBuildStrategy =
+    options.docsBuildStrategy ?? DefaultDocsBuildStrategy.fromConfig(config);
+  const buildLogTransport = options.buildLogTransport;
+
+  // Entities are cached to optimize the /static/docs request path, which can be called many times
+  // when loading a single techdocs page.
+  const entityLoader = new CachedEntityLoader({
+    catalog: catalogClient,
+    cache: options.cache.getClient(),
+  });
 
   // Set up a cache client if configured.
   let cache: TechDocsCache | undefined;
   const defaultTtl = config.getOptionalNumber('techdocs.cache.ttl');
-  if (isOutOfTheBoxOption(options) && options.cache && defaultTtl) {
+  if (defaultTtl) {
     const cacheClient = options.cache.getClient({ defaultTtl });
     cache = TechDocsCache.fromConfig(config, { cache: cacheClient, logger });
   }
@@ -98,6 +148,7 @@ export async function createRouter(
   const docsSynchronizer = new DocsSynchronizer({
     publisher,
     logger,
+    buildLogTransport,
     config,
     scmIntegrations,
     cache,
@@ -106,6 +157,22 @@ export async function createRouter(
   router.get('/metadata/techdocs/:namespace/:kind/:name', async (req, res) => {
     const { kind, namespace, name } = req.params;
     const entityName = { kind, namespace, name };
+
+    const credentials = await httpAuth.credentials(req);
+
+    const { token } = await auth.getPluginRequestToken({
+      onBehalfOf: credentials,
+      targetPluginId: 'catalog',
+    });
+
+    // Verify that the related entity exists and the current user has permission to view it.
+    const entity = await entityLoader.load(entityName, token);
+
+    if (!entity) {
+      throw new NotFoundError(
+        `Unable to get metadata for '${stringifyEntityRef(entityName)}'`,
+      );
+    }
 
     try {
       const techdocsMetadata = await publisher.fetchTechDocsMetadata(
@@ -127,23 +194,25 @@ export async function createRouter(
   });
 
   router.get('/metadata/entity/:namespace/:kind/:name', async (req, res) => {
-    const catalogUrl = await discovery.getBaseUrl('catalog');
-
     const { kind, namespace, name } = req.params;
     const entityName = { kind, namespace, name };
 
-    try {
-      const token = getBearerToken(req.headers.authorization);
-      // TODO: Consider using the catalog client here
-      const entity = (await (
-        await fetch(
-          `${catalogUrl}/entities/by-name/${kind}/${namespace}/${name}`,
-          {
-            headers: token ? { Authorization: `Bearer ${token}` } : {},
-          },
-        )
-      ).json()) as Entity;
+    const credentials = await httpAuth.credentials(req);
 
+    const { token } = await auth.getPluginRequestToken({
+      onBehalfOf: credentials,
+      targetPluginId: 'catalog',
+    });
+
+    const entity = await entityLoader.load(entityName, token);
+
+    if (!entity) {
+      throw new NotFoundError(
+        `Unable to get metadata for '${stringifyEntityRef(entityName)}'`,
+      );
+    }
+
+    try {
       const locationMetadata = getLocationForEntity(entity, scmIntegrations);
       res.json({ ...entity, locationMetadata });
     } catch (err) {
@@ -165,38 +234,40 @@ export async function createRouter(
   // If a build is required, responds with a success when finished
   router.get('/sync/:namespace/:kind/:name', async (req, res) => {
     const { kind, namespace, name } = req.params;
-    const token = getBearerToken(req.headers.authorization);
 
-    const entity = await catalogClient.getEntityByName(
-      { kind, namespace, name },
-      { token },
-    );
+    const credentials = await httpAuth.credentials(req);
+
+    const { token } = await auth.getPluginRequestToken({
+      onBehalfOf: credentials,
+      targetPluginId: 'catalog',
+    });
+
+    const entity = await entityLoader.load({ kind, namespace, name }, token);
 
     if (!entity?.metadata?.uid) {
       throw new NotFoundError('Entity metadata UID missing');
     }
 
-    let responseHandler: DocsSynchronizerSyncOpts;
-    if (req.header('accept') !== 'text/event-stream') {
-      console.warn(
-        "The call to /sync/:namespace/:kind/:name wasn't done by an EventSource. This behavior is deprecated and will be removed soon. Make sure to update the @backstage/plugin-techdocs package in the frontend to the latest version.",
-      );
-      responseHandler = createHttpResponse(res);
-    } else {
-      responseHandler = createEventStream(res);
-    }
+    const responseHandler: DocsSynchronizerSyncOpts = createEventStream(res);
 
-    // techdocs-backend will only try to build documentation for an entity if techdocs.builder is set to 'local'
-    // If set to 'external', it will assume that an external process (e.g. CI/CD pipeline
-    // of the repository) is responsible for building and publishing documentation to the storage provider
-    if (config.getString('techdocs.builder') !== 'local') {
+    // By default, techdocs-backend will only try to build documentation for an entity if techdocs.builder is set to
+    // 'local'. If set to 'external', it will assume that an external process (e.g. CI/CD pipeline
+    // of the repository) is responsible for building and publishing documentation to the storage provider.
+    // Altering the implementation of the injected docsBuildStrategy allows for more complex behaviours, based on
+    // either config or the properties of the entity (e.g. annotations, labels, spec fields etc.).
+    const shouldBuild = await docsBuildStrategy.shouldBuild({ entity });
+    if (!shouldBuild) {
       // However, if caching is enabled, take the opportunity to check and
       // invalidate stale cache entries.
       if (cache) {
+        const { token: techDocsToken } = await auth.getPluginRequestToken({
+          onBehalfOf: await auth.getOwnServiceCredentials(),
+          targetPluginId: 'techdocs',
+        });
         await docsSynchronizer.doCacheSync({
           responseHandler,
           discovery,
-          token,
+          token: techDocsToken,
           entity,
         });
         return;
@@ -220,10 +291,40 @@ export async function createRouter(
 
     responseHandler.error(
       new Error(
-        "Invalid configuration. 'techdocs.builder' was set to 'local' but no 'preparer' was provided to the router initialization.",
+        "Invalid configuration. docsBuildStrategy.shouldBuild returned 'true', but no 'preparer' was provided to the router initialization.",
       ),
     );
   });
+
+  // Ensures that the related entity exists and the current user has permission to view it.
+  if (config.getOptionalBoolean('permission.enabled')) {
+    router.use(
+      '/static/docs/:namespace/:kind/:name',
+      async (req, _res, next) => {
+        const { kind, namespace, name } = req.params;
+        const entityName = { kind, namespace, name };
+
+        const credentials = await httpAuth.credentials(req, {
+          allowLimitedAccess: true,
+        });
+
+        const { token } = await auth.getPluginRequestToken({
+          onBehalfOf: credentials,
+          targetPluginId: 'catalog',
+        });
+
+        const entity = await entityLoader.load(entityName, token);
+
+        if (!entity) {
+          throw new NotFoundError(
+            `Entity not found for ${stringifyEntityRef(entityName)}`,
+          );
+        }
+
+        next();
+      },
+    );
+  }
 
   // If a cache manager was provided, attach the cache middleware.
   if (cache) {
@@ -236,14 +337,10 @@ export async function createRouter(
   return router;
 }
 
-function getBearerToken(header?: string): string | undefined {
-  return header?.match(/(?:Bearer)\s+(\S+)/i)?.[1];
-}
-
 /**
  * Create an event-stream response that emits the events 'log', 'error', and 'finish'.
  *
- * @param res the response to write the event-stream to
+ * @param res - the response to write the event-stream to
  * @returns A tuple of <log, error, finish> callbacks to emit messages. A call to 'error' or 'finish'
  *          will close the event-stream.
  */
@@ -285,33 +382,6 @@ export function createEventStream(
     finish: result => {
       send('finish', result);
       res.end();
-    },
-  };
-}
-
-/**
- * Create a HTTP response. This is used for the legacy non-event-stream implementation of the sync endpoint.
- *
- * @param res the response to write the event-stream to
- * @returns A tuple of <log, error, finish> callbacks to emit messages. A call to 'error' or 'finish'
- *          will close the event-stream.
- */
-export function createHttpResponse(
-  res: Response<any, any>,
-): DocsSynchronizerSyncOpts {
-  return {
-    log: () => {},
-    error: e => {
-      throw e;
-    },
-    finish: ({ updated }) => {
-      if (!updated) {
-        throw new NotModifiedError();
-      }
-
-      res
-        .status(201)
-        .json({ message: 'Docs updated or did not need updating' });
     },
   };
 }

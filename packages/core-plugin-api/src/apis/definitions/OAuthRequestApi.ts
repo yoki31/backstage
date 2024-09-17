@@ -19,12 +19,6 @@ import { ApiRef, createApiRef } from '../system';
 import { AuthProviderInfo } from './auth';
 
 /**
- * @public
- * @deprecated Use AuthProviderInfo instead
- */
-export type AuthProvider = Omit<AuthProviderInfo, 'id'>;
-
-/**
  * Describes how to handle auth requests. Both how to show them to the user, and what to do when
  * the user accesses the auth request.
  *
@@ -33,10 +27,8 @@ export type AuthProvider = Omit<AuthProviderInfo, 'id'>;
 export type OAuthRequesterOptions<TOAuthResponse> = {
   /**
    * Information about the auth provider, which will be forwarded to auth requests.
-   *
-   * Not passing in an `id` is deprecated, and it will be required in the future.
    */
-  provider: Omit<AuthProviderInfo, 'id'> & { id?: string };
+  provider: AuthProviderInfo;
 
   /**
    * Implementation of the auth flow, which will be called synchronously when
@@ -44,12 +36,6 @@ export type OAuthRequesterOptions<TOAuthResponse> = {
    */
   onAuthRequest(scopes: Set<string>): Promise<TOAuthResponse>;
 };
-
-/**
- * @public
- * @deprecated Use OAuthRequesterOptions instead
- */
-export type AuthRequesterOptions<T> = OAuthRequesterOptions<T>;
 
 /**
  * Function used to trigger new auth requests for a set of scopes.
@@ -70,12 +56,6 @@ export type OAuthRequester<TAuthResponse> = (
 ) => Promise<TAuthResponse>;
 
 /**
- * @public
- * @deprecated Use OAuthRequester instead
- */
-export type AuthRequester<T> = OAuthRequester<T>;
-
-/**
  * An pending auth request for a single auth provider. The request will remain in this pending
  * state until either reject() or trigger() is called.
  *
@@ -89,10 +69,8 @@ export type AuthRequester<T> = OAuthRequester<T>;
 export type PendingOAuthRequest = {
   /**
    * Information about the auth provider, as given in the AuthRequesterOptions
-   *
-   * Not passing in an `id` is deprecated, and it will be required in the future.
    */
-  provider: Omit<AuthProviderInfo, 'id'> & { id?: string };
+  provider: AuthProviderInfo;
 
   /**
    * Rejects the request, causing all pending AuthRequester calls to fail with "RejectedError".
@@ -106,12 +84,6 @@ export type PendingOAuthRequest = {
    */
   trigger(): Promise<void>;
 };
-
-/**
- * @public
- * @deprecated Use PendingOAuthRequest instead
- */
-export type PendingAuthRequest = PendingOAuthRequest;
 
 /**
  * Provides helpers for implemented OAuth login flows within Backstage.

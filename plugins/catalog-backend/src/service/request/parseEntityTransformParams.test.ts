@@ -18,17 +18,26 @@ import { Entity } from '@backstage/catalog-model';
 import { parseEntityTransformParams } from './parseEntityTransformParams';
 
 describe('parseEntityTransformParams', () => {
-  const entity: Entity = {
-    apiVersion: 'av',
-    kind: 'k',
-    metadata: {
-      name: 'n',
-      tags: ['t1', 't2'],
-    },
-    spec: {
-      type: 't',
-    },
-  };
+  let entity: Entity;
+
+  beforeEach(() => {
+    entity = {
+      apiVersion: 'av',
+      kind: 'k',
+      metadata: {
+        name: 'n',
+        tags: ['t1', 't2'],
+        annotations: {
+          'example.test/url-like-key': 'ul1',
+          'example.com/other-url-like-key': 'ul2',
+          'other-example.test/next-url-like-key': 'ul3',
+        },
+      },
+      spec: {
+        type: 't',
+      },
+    };
+  });
 
   it('returns undefined when no fields given', () => {
     expect(parseEntityTransformParams({})).toBeUndefined();
@@ -41,7 +50,9 @@ describe('parseEntityTransformParams', () => {
   it('rejects attempts at array filtering', () => {
     expect(() =>
       parseEntityTransformParams({ fields: 'metadata.tags[0]' })!(entity),
-    ).toThrow(/invalid fields, array type fields are not supported/i);
+    ).toThrow(
+      'Invalid field "metadata.tags[0]", array type fields are not supported',
+    );
   });
 
   it('accepts both strings and arrays of strings as input', () => {
@@ -61,7 +72,129 @@ describe('parseEntityTransformParams', () => {
       parseEntityTransformParams({ fields: 'kind,metadata.name' })!(entity),
     ).toEqual({ kind: 'k', metadata: { name: 'n' } });
     expect(parseEntityTransformParams({ fields: 'metadata' })!(entity)).toEqual(
-      { metadata: { name: 'n', tags: ['t1', 't2'] } },
+      {
+        metadata: {
+          name: 'n',
+          tags: ['t1', 't2'],
+          annotations: {
+            'example.test/url-like-key': 'ul1',
+            'example.com/other-url-like-key': 'ul2',
+            'other-example.test/next-url-like-key': 'ul3',
+          },
+        },
+      },
     );
+  });
+
+  it('supports dot notated fields properly', () => {
+    expect(
+      parseEntityTransformParams({
+        fields: 'kind,metadata.annotations.example.com/other-url-like-key',
+      })!(entity),
+    ).toEqual({
+      kind: 'k',
+      metadata: { annotations: { 'example.com/other-url-like-key': 'ul2' } },
+    });
+  });
+
+  it('supports nested dot notated fields properly', () => {
+    entity.spec = {
+      ...entity.spec,
+      'field-with.dot': 'fd1',
+      'other-field-with.dot-also': {
+        subItem: 'fd2.sub',
+        'subite.with/dot': 'fd2.sub.dot',
+      },
+      'third-field-with.dot-again': 'fd3',
+    };
+
+    expect(
+      parseEntityTransformParams({
+        fields: 'kind,spec.other-field-with.dot-also',
+      })!(entity),
+    ).toEqual({
+      kind: 'k',
+      spec: {
+        'other-field-with.dot-also': {
+          subItem: 'fd2.sub',
+          'subite.with/dot': 'fd2.sub.dot',
+        },
+      },
+    });
+    expect(
+      parseEntityTransformParams({
+        fields: 'kind,spec.other-field-with.dot-also.subite.with/dot',
+      })!(entity),
+    ).toEqual({
+      kind: 'k',
+      spec: {
+        'other-field-with.dot-also': {
+          'subite.with/dot': 'fd2.sub.dot',
+        },
+      },
+    });
+  });
+
+  it('does not return a sub key if an incorrect longer key is requested', () => {
+    entity.spec = {
+      ...entity.spec,
+      strValue: 'st1',
+      boolValue: true,
+      numValue: 4,
+      arrValue: [4, 5],
+      nullValue: null,
+      undefValue: undefined,
+      'field-with.dot': 'fd1',
+    };
+
+    expect(
+      parseEntityTransformParams({ fields: 'kind,spec.strValue.other' })!(
+        entity,
+      ),
+    ).toEqual({ kind: 'k' });
+    expect(
+      parseEntityTransformParams({ fields: 'kind,spec.boolValue.other' })!(
+        entity,
+      ),
+    ).toEqual({ kind: 'k' });
+    expect(
+      parseEntityTransformParams({ fields: 'kind,spec.numValue.other' })!(
+        entity,
+      ),
+    ).toEqual({ kind: 'k' });
+    expect(
+      parseEntityTransformParams({ fields: 'kind,spec.arrValue.other' })!(
+        entity,
+      ),
+    ).toEqual({ kind: 'k' });
+    expect(
+      parseEntityTransformParams({ fields: 'kind,spec.nullValue.other' })!(
+        entity,
+      ),
+    ).toEqual({ kind: 'k' });
+    expect(
+      parseEntityTransformParams({ fields: 'kind,spec.undefValue.other' })!(
+        entity,
+      ),
+    ).toEqual({ kind: 'k' });
+    expect(
+      parseEntityTransformParams({ fields: 'kind,spec.field-with.dot.other' })!(
+        entity,
+      ),
+    ).toEqual({ kind: 'k' });
+  });
+
+  it('handles both query params and extras, dealing with overlaps', () => {
+    expect(
+      parseEntityTransformParams({ fields: 'kind' }, [
+        'kind',
+        'metadata.name',
+      ])!(entity),
+    ).toEqual({
+      kind: 'k',
+      metadata: {
+        name: 'n',
+      },
+    });
   });
 });

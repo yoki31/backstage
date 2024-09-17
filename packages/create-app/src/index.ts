@@ -20,9 +20,10 @@
  * @packageDocumentation
  */
 
-import program from 'commander';
+import { program } from 'commander';
 import { exitWithError } from './lib/errors';
-import { version } from '../package.json';
+// eslint-disable-next-line @backstage/no-relative-monorepo-imports
+import { version } from '../../../package.json';
 import createApp from './createApp';
 
 const main = (argv: string[]) => {
@@ -38,7 +39,11 @@ const main = (argv: string[]) => {
       '--skip-install',
       'Skip the install and builds steps after creating the app',
     )
-    .action(cmd => createApp(cmd, version));
+    .option(
+      '--template-path [directory]',
+      'Use an external application template instead of the default template',
+    )
+    .action(cmd => createApp(cmd));
 
   program.parse(argv);
 };

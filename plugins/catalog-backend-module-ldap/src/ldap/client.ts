@@ -14,35 +14,55 @@
  * limitations under the License.
  */
 
-import { ForwardedError } from '@backstage/errors';
+import { ForwardedError, stringifyError } from '@backstage/errors';
+import { readFile } from 'fs/promises';
 import ldap, { Client, SearchEntry, SearchOptions } from 'ldapjs';
-import { Logger } from 'winston';
-import { BindConfig } from './config';
-import { errorString } from './util';
+import { cloneDeep } from 'lodash';
+import tlsLib from 'tls';
+import { BindConfig, TLSConfig } from './config';
+import { createOptions, errorString } from './util';
 import {
+  AEDirVendor,
   ActiveDirectoryVendor,
   DefaultLdapVendor,
+  FreeIpaVendor,
   LdapVendor,
 } from './vendors';
-
-export interface SearchCallback {
-  (entry: SearchEntry): void;
-}
+import { LoggerService } from '@backstage/backend-plugin-api';
 
 /**
- * Basic wrapper for the ldapjs library.
+ * Basic wrapper for the `ldapjs` library.
  *
  * Helps out with promisifying calls, paging, binding etc.
+ *
+ * @public
  */
 export class LdapClient {
   private vendor: Promise<LdapVendor> | undefined;
 
   static async create(
-    logger: Logger,
+    logger: LoggerService,
     target: string,
     bind?: BindConfig,
+    tls?: TLSConfig,
   ): Promise<LdapClient> {
-    const client = ldap.createClient({ url: target });
+    let secureContext;
+    if (tls && tls.certs && tls.keys) {
+      const cert = await readFile(tls.certs, 'utf-8');
+      const key = await readFile(tls.keys, 'utf-8');
+      secureContext = tlsLib.createSecureContext({
+        cert: cert,
+        key: key,
+      });
+    }
+
+    const client = ldap.createClient({
+      url: target,
+      tlsOptions: {
+        secureContext,
+        rejectUnauthorized: tls?.rejectUnauthorized,
+      },
+    });
 
     // We want to have a catch-all error handler at the top, since the default
     // behavior of the client is to blow up the entire process when it fails,
@@ -69,14 +89,14 @@ export class LdapClient {
 
   constructor(
     private readonly client: Client,
-    private readonly logger: Logger,
+    private readonly logger: LoggerService,
   ) {}
 
   /**
    * Performs an LDAP search operation.
    *
-   * @param dn The fully qualified base DN to search within
-   * @param options The search options
+   * @param dn - The fully qualified base DN to search within
+   * @param options - The search options
    */
   async search(dn: string, options: SearchOptions): Promise<SearchEntry[]> {
     try {
@@ -87,14 +107,16 @@ export class LdapClient {
       }, 5000);
 
       const search = new Promise<SearchEntry[]>((resolve, reject) => {
-        this.client.search(dn, options, (err, res) => {
+        // Note that we clone the (frozen) options, since ldapjs rudely tries to
+        // overwrite parts of them
+        this.client.search(dn, cloneDeep(options), (err, res) => {
           if (err) {
             reject(new Error(errorString(err)));
             return;
           }
 
           res.on('searchReference', () => {
-            reject(new Error('Unable to handle referral'));
+            this.logger.warn('Received unsupported search referral');
           });
 
           res.on('searchEntry', entry => {
@@ -103,6 +125,12 @@ export class LdapClient {
 
           res.on('error', e => {
             reject(new Error(errorString(e)));
+          });
+
+          res.on('page', (_result, cb) => {
+            if (cb) {
+              cb();
+            }
           });
 
           res.on('end', r => {
@@ -128,28 +156,52 @@ export class LdapClient {
   /**
    * Performs an LDAP search operation, calls a function on each entry to limit memory usage
    *
-   * @param dn The fully qualified base DN to search within
-   * @param options The search options
-   * @param f The callback to call on each search entry
+   * @param dn - The fully qualified base DN to search within
+   * @param options - The search options
+   * @param f - The callback to call on each search entry
    */
   async searchStreaming(
     dn: string,
     options: SearchOptions,
-    f: SearchCallback,
+    f: (entry: SearchEntry) => Promise<void> | void,
   ): Promise<void> {
     try {
       return await new Promise<void>((resolve, reject) => {
-        this.client.search(dn, options, (err, res) => {
+        // Note that we clone the (frozen) options, since ldapjs rudely tries to
+        // overwrite parts of them
+        this.client.search(dn, createOptions(options), (err, res) => {
           if (err) {
             reject(new Error(errorString(err)));
           }
+          let awaitList: Array<Promise<void> | void> = [];
+          let transformError = false;
+
+          const transformReject = (e: Error) => {
+            transformError = true;
+            reject(
+              new Error(
+                `Transform function threw an exception, ${stringifyError(e)}`,
+              ),
+            );
+          };
 
           res.on('searchReference', () => {
-            reject(new Error('Unable to handle referral'));
+            this.logger.warn('Received unsupported search referral');
           });
 
           res.on('searchEntry', entry => {
-            f(entry);
+            if (!transformError) awaitList.push(f(entry));
+          });
+
+          res.on('page', (_, cb) => {
+            // awaits completion before fetching next page
+            Promise.all(awaitList)
+              .then(() => {
+                // flush list
+                awaitList = [];
+                if (cb) cb();
+              })
+              .catch(transformReject);
           });
 
           res.on('error', e => {
@@ -162,7 +214,9 @@ export class LdapClient {
             } else if (r.status !== 0) {
               throw new Error(`Got status ${r.status}: ${r.errorMessage}`);
             } else {
-              resolve();
+              Promise.all(awaitList)
+                .then(() => resolve())
+                .catch(transformReject);
             }
           });
         });
@@ -186,6 +240,10 @@ export class LdapClient {
       .then(root => {
         if (root && root.raw?.forestFunctionality) {
           return ActiveDirectoryVendor;
+        } else if (root && root.raw?.ipaDomainLevel) {
+          return FreeIpaVendor;
+        } else if (root && 'aeRoot' in root.raw) {
+          return AEDirVendor;
         }
         return DefaultLdapVendor;
       })

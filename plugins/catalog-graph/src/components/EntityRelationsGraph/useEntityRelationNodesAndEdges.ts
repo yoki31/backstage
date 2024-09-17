@@ -13,15 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import {
-  ENTITY_DEFAULT_NAMESPACE,
-  stringifyEntityRef,
-} from '@backstage/catalog-model';
 import { MouseEvent, useState } from 'react';
-import { useDebounce } from 'react-use';
+import useDebounce from 'react-use/esm/useDebounce';
 import { RelationPairs, ALL_RELATION_PAIRS } from './relations';
 import { EntityEdge, EntityNode } from './types';
 import { useEntityRelationGraph } from './useEntityRelationGraph';
+import { Entity, DEFAULT_NAMESPACE } from '@backstage/catalog-model';
 
 /**
  * Generate nodes and edges to render the entity graph.
@@ -33,6 +30,7 @@ export function useEntityRelationNodesAndEdges({
   mergeRelations = true,
   kinds,
   relations,
+  entityFilter,
   onNodeClick,
   relationPairs = ALL_RELATION_PAIRS,
 }: {
@@ -42,6 +40,7 @@ export function useEntityRelationNodesAndEdges({
   mergeRelations?: boolean;
   kinds?: string[];
   relations?: string[];
+  entityFilter?: (entity: Entity) => boolean;
   onNodeClick?: (value: EntityNode, event: MouseEvent<unknown>) => void;
   relationPairs?: RelationPairs;
 }): {
@@ -60,6 +59,7 @@ export function useEntityRelationNodesAndEdges({
       maxDepth,
       kinds,
       relations,
+      entityFilter,
     },
   });
 
@@ -74,12 +74,15 @@ export function useEntityRelationNodesAndEdges({
         const focused = rootEntityRefs.includes(entityRef);
         const node: EntityNode = {
           id: entityRef,
-          title: entity.metadata?.title ?? undefined,
-          kind: entity.kind,
-          name: entity.metadata.name,
-          namespace: entity.metadata.namespace ?? ENTITY_DEFAULT_NAMESPACE,
+          entity,
           focused,
           color: focused ? 'secondary' : 'primary',
+          // @deprecated
+          kind: entity.kind,
+          name: entity.metadata.name,
+          namespace: entity.metadata.namespace || DEFAULT_NAMESPACE,
+          title: entity.metadata.title,
+          spec: entity.spec,
         };
 
         if (onNodeClick) {
@@ -100,11 +103,9 @@ export function useEntityRelationNodesAndEdges({
 
         if (entity) {
           entity?.relations?.forEach(rel => {
-            const targetRef = stringifyEntityRef(rel.target);
-
             // Check if the related entity should be displayed, if not, ignore
             // the relation too
-            if (!entities[targetRef]) {
+            if (!entities[rel.targetRef]) {
               return;
             }
 
@@ -114,12 +115,14 @@ export function useEntityRelationNodesAndEdges({
 
             if (
               kinds &&
-              !kinds.includes(rel.target.kind.toLocaleLowerCase('en-US'))
+              !kinds.some(kind =>
+                rel.targetRef.startsWith(`${kind.toLocaleLowerCase('en-US')}:`),
+              )
             ) {
               return;
             }
 
-            if (!unidirectional || !visitedNodes.has(targetRef)) {
+            if (!unidirectional || !visitedNodes.has(rel.targetRef)) {
               if (mergeRelations) {
                 const pair = relationPairs.find(
                   ([l, r]) => l === rel.type || r === rel.type,
@@ -127,30 +130,79 @@ export function useEntityRelationNodesAndEdges({
                 const [left] = pair;
 
                 edges.push({
-                  from: left === rel.type ? entityRef : targetRef,
-                  to: left === rel.type ? targetRef : entityRef,
+                  from: left === rel.type ? entityRef : rel.targetRef,
+                  to: left === rel.type ? rel.targetRef : entityRef,
                   relations: pair,
                   label: 'visible',
                 });
               } else {
                 edges.push({
                   from: entityRef,
-                  to: targetRef,
+                  to: rel.targetRef,
                   relations: [rel.type],
                   label: 'visible',
                 });
               }
             }
 
-            if (!visitedNodes.has(targetRef)) {
-              nodeQueue.push(targetRef);
-              visitedNodes.add(targetRef);
+            if (!visitedNodes.has(rel.targetRef)) {
+              nodeQueue.push(rel.targetRef);
+              visitedNodes.add(rel.targetRef);
+            }
+
+            // if unidirectional add missing relations as entities are only visited once
+            if (unidirectional) {
+              const findIndex = edges.findIndex(
+                edge =>
+                  entityRef === edge.from &&
+                  rel.targetRef === edge.to &&
+                  !edge.relations.includes(rel.type),
+              );
+              if (findIndex >= 0) {
+                if (mergeRelations) {
+                  const pair = relationPairs.find(
+                    ([l, r]) => l === rel.type || r === rel.type,
+                  ) ?? [rel.type];
+                  edges[findIndex].relations = [
+                    ...edges[findIndex].relations,
+                    ...pair,
+                  ];
+                } else {
+                  edges[findIndex].relations = [
+                    ...edges[findIndex].relations,
+                    rel.type,
+                  ];
+                }
+              }
             }
           });
         }
       }
 
-      setNodesAndEdges({ nodes, edges });
+      // Reduce edges as the dependency graph anyway ignores duplicated edges regarding from / to
+      // Additionally, this will improve rendering speed for the dependency graph
+      const finalEdges = edges.reduce((previousEdges, currentEdge) => {
+        const indexFound = previousEdges.findIndex(
+          previousEdge =>
+            previousEdge.from === currentEdge.from &&
+            previousEdge.to === currentEdge.to,
+        );
+        if (indexFound >= 0) {
+          previousEdges[indexFound] = {
+            ...previousEdges[indexFound],
+            relations: Array.from(
+              new Set([
+                ...previousEdges[indexFound].relations,
+                ...currentEdge.relations,
+              ]),
+            ),
+          };
+          return previousEdges;
+        }
+        return [...previousEdges, currentEdge];
+      }, [] as EntityEdge[]);
+
+      setNodesAndEdges({ nodes, edges: finalEdges });
     },
     100,
     [

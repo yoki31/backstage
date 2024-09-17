@@ -1,5 +1,239 @@
 # @backstage/errors
 
+## 1.2.4
+
+### Patch Changes
+
+- 2636075: Fixed an issue that was causing ResponseError not to report the HTTP status from the provided response.
+- Updated dependencies
+  - @backstage/types@1.1.1
+
+## 1.2.4-next.0
+
+### Patch Changes
+
+- 2636075: Fixed an issue that was causing ResponseError not to report the HTTP status from the provided response.
+- Updated dependencies
+  - @backstage/types@1.1.1
+
+## 1.2.3
+
+### Patch Changes
+
+- 0b55f773a7: Removed some unused dependencies
+- Updated dependencies
+  - @backstage/types@1.1.1
+
+## 1.2.3-next.0
+
+### Patch Changes
+
+- 0b55f773a7: Removed some unused dependencies
+- Updated dependencies
+  - @backstage/types@1.1.1
+
+## 1.2.2
+
+### Patch Changes
+
+- 406b786a2a2c: Mark package as being free of side effects, allowing more optimized Webpack builds.
+- Updated dependencies
+  - @backstage/types@1.1.1
+
+## 1.2.2-next.0
+
+### Patch Changes
+
+- 406b786a2a2c: Mark package as being free of side effects, allowing more optimized Webpack builds.
+- Updated dependencies
+  - @backstage/types@1.1.1-next.0
+
+## 1.2.1
+
+### Patch Changes
+
+- e205b3e6ede8: Set `this.name` in all error classes that extend `CustomErrorBase` class to their actual name
+- Updated dependencies
+  - @backstage/types@1.1.0
+
+## 1.2.1-next.0
+
+### Patch Changes
+
+- e205b3e6ede8: Set `this.name` in all error classes that extend `CustomErrorBase` class to their actual name
+- Updated dependencies
+  - @backstage/types@1.1.0
+
+## 1.2.0
+
+### Minor Changes
+
+- c4e8fefd9f13: Added `ServiceUnavailableError`
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/types@1.1.0
+
+## 1.2.0-next.0
+
+### Minor Changes
+
+- c4e8fefd9f13: Added `ServiceUnavailableError`
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/types@1.0.2
+
+## 1.1.5
+
+### Patch Changes
+
+- 3bf83a2aabf: Added `NotImplementedError`, which can be used when the server does not recognize the request method and is incapable of supporting it for any resource.
+- Updated dependencies
+  - @backstage/types@1.0.2
+
+## 1.1.5-next.0
+
+### Patch Changes
+
+- 3bf83a2aabf: Added `NotImplementedError`, which can be used when the server does not recognize the request method and is incapable of supporting it for any resource.
+- Updated dependencies
+  - @backstage/types@1.0.2
+
+## 1.1.4
+
+### Patch Changes
+
+- ac6cc9f7bd: Removed a circular import
+- Updated dependencies
+  - @backstage/types@1.0.2
+
+## 1.1.4-next.1
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/types@1.0.2-next.1
+
+## 1.1.4-next.0
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/types@1.0.2-next.0
+
+## 1.1.3
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/types@1.0.1
+
+## 1.1.3-next.0
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/types@1.0.1-next.0
+
+## 1.1.2
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/types@1.0.0
+
+## 1.1.2-next.2
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/types@1.0.0
+
+## 1.1.2-next.1
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/types@1.0.0
+
+## 1.1.2-next.0
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/types@1.0.0
+
+## 1.1.1
+
+### Patch Changes
+
+- 7d47def9c4: Removed dependency on `@types/jest`.
+
+## 1.1.1-next.0
+
+### Patch Changes
+
+- 7d47def9c4: Removed dependency on `@types/jest`.
+
+## 1.1.0
+
+### Minor Changes
+
+- 6d61b44466: The `ResponseError.fromResponse` now accepts a more narrow response type, in order to avoid incompatibilities between different fetch implementations.
+
+  The `response` property of `ResponseError` has also been narrowed to a new `ConsumedResponse` type that omits all the properties for consuming the body of the response. This is not considered a breaking change as it was always an error to try to consume the body of the response.
+
+### Patch Changes
+
+- c1a8bbf5e5: Inline the type of `ConsumedResponse.headers` and tweaked it to be the intersection of the built-in type and `node-fetch` type.
+
+## 1.1.0-next.0
+
+### Minor Changes
+
+- 6d61b44466: The `ResponseError.fromResponse` now accepts a more narrow response type, in order to avoid incompatibilities between different fetch implementations.
+
+  The `response` property of `ResponseError` has also been narrowed to a new `ConsumedResponse` type that omits all the properties for consuming the body of the response. This is not considered a breaking change as it was always an error to try to consume the body of the response.
+
+## 1.0.0
+
+### Major Changes
+
+- b58c70c223: This package has been promoted to v1.0! To understand how this change affects the package, please check out our [versioning policy](https://backstage.io/docs/overview/versioning-policy).
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/types@1.0.0
+
+## 0.2.2
+
+### Patch Changes
+
+- Fix for the previous release with missing type declarations.
+- Updated dependencies
+  - @backstage/types@0.1.3
+
+## 0.2.1
+
+### Patch Changes
+
+- 1ed305728b: Bump `node-fetch` to version 2.6.7 and `cross-fetch` to version 3.1.5
+- c77c5c7eb6: Added `backstage.role` to `package.json`
+- Updated dependencies
+  - @backstage/types@0.1.2
+
+## 0.2.0
+
+### Minor Changes
+
+- e2eb92c109: Removed the deprecated exports `ErrorResponse` and `parseErrorResponse`.
+
+  Removed the deprecated `constructor` and the deprecated `data` property of `ResponseError`.
+
 ## 0.1.5
 
 ### Patch Changes

@@ -16,7 +16,7 @@
 
 import { makeStyles } from '@material-ui/core/styles';
 import React, { useEffect, useState } from 'react';
-import SwaggerUI from 'swagger-ui-react';
+import SwaggerUI, { SwaggerUIProps } from 'swagger-ui-react';
 import 'swagger-ui-react/swagger-ui.css';
 
 const useStyles = makeStyles(theme => ({
@@ -25,13 +25,18 @@ const useStyles = makeStyles(theme => ({
       fontFamily: theme.typography.fontFamily,
       color: theme.palette.text.primary,
 
+      ['& .btn-clear']: {
+        color: theme.palette.text.primary,
+      },
       [`& .scheme-container`]: {
         backgroundColor: theme.palette.background.default,
       },
       [`& .opblock-tag,
           .opblock-tag small,
           table thead tr td,
-          table thead tr th`]: {
+          table thead tr th,
+          table tbody tr td,
+          table tbody tr th`]: {
         fontFamily: theme.typography.fontFamily,
         color: theme.palette.text.primary,
         borderColor: theme.palette.divider,
@@ -53,6 +58,7 @@ const useStyles = makeStyles(theme => ({
           .opblock-summary-operation-id,
           .opblock-summary-path,
           .opblock-summary-path__deprecated,
+          .opblock-description-wrapper,
           .opblock-external-docs-wrapper,
           .opblock-section-header .btn,
           .opblock-section-header>label,
@@ -66,7 +72,7 @@ const useStyles = makeStyles(theme => ({
         fontFamily: theme.typography.fontFamily,
         color: theme.palette.text.primary,
       },
-      [`& .opblock .opblock-section-header, 
+      [`& .opblock .opblock-section-header,
           .model-box,
           section.models .model-container`]: {
         background: theme.palette.background.default,
@@ -75,7 +81,7 @@ const useStyles = makeStyles(theme => ({
           .parameter__in`]: {
         color: theme.palette.text.disabled,
       },
-      [`& table.model, 
+      [`& table.model,
           .parameter__type,
           .model.model-title,
           .model-title,
@@ -91,7 +97,7 @@ const useStyles = makeStyles(theme => ({
       [`& .parameter__name.required:after`]: {
         color: theme.palette.warning.dark,
       },
-      [`& table.model, 
+      [`& table.model,
           table.model .model,
           .opblock-external-docs-wrapper`]: {
         fontSize: theme.typography.fontSize,
@@ -101,10 +107,10 @@ const useStyles = makeStyles(theme => ({
         fontWeight: theme.typography.fontWeightRegular,
       },
       [`& .model-hint`]: {
-        color: theme.palette.text.hint,
+        color: theme.palette.text.secondary,
         backgroundColor: theme.palette.background.paper,
       },
-      [`& .opblock-summary-method, 
+      [`& .opblock-summary-method,
           .info a`]: {
         fontFamily: theme.typography.fontFamily,
       },
@@ -132,9 +138,12 @@ const useStyles = makeStyles(theme => ({
 
 export type OpenApiDefinitionProps = {
   definition: string;
-};
+} & Omit<SwaggerUIProps, 'spec'>;
 
-export const OpenApiDefinition = ({ definition }: OpenApiDefinitionProps) => {
+export const OpenApiDefinition = ({
+  definition,
+  ...swaggerUiProps
+}: OpenApiDefinitionProps) => {
   const classes = useStyles();
 
   // Due to a bug in the swagger-ui-react component, the component needs
@@ -148,7 +157,13 @@ export const OpenApiDefinition = ({ definition }: OpenApiDefinitionProps) => {
 
   return (
     <div className={classes.root}>
-      <SwaggerUI spec={def} deepLinking />
+      <SwaggerUI
+        spec={def}
+        url=""
+        deepLinking
+        oauth2RedirectUrl={`${window.location.protocol}//${window.location.host}/oauth2-redirect.html`}
+        {...swaggerUiProps}
+      />
     </div>
   );
 };

@@ -24,7 +24,7 @@ export interface Config {
      * Documentation building process depends on the builder attr
      * @visibility frontend
      */
-    builder: 'local' | 'external';
+    builder?: 'local' | 'external';
 
     /**
      * Allows fallback to case-sensitive triplets in case of migration issues.
@@ -33,11 +33,15 @@ export interface Config {
      */
     legacyUseCaseSensitiveTripletPaths?: boolean;
 
-    /**
-     * @example http://localhost:7007/api/techdocs
-     * @visibility frontend
-     * @deprecated
-     */
-    requestUrl?: string;
+    sanitizer?: {
+      /**
+       * Allows iframe tag only for listed hosts
+       * Example:
+       *  allowedIframeHosts: ["example.com"]
+       *  this will allow all iframes with the host `example.com` in the src attribute
+       * @visibility frontend
+       */
+      allowedIframeHosts?: string[];
+    };
   };
 }

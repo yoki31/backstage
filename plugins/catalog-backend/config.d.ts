@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { JsonValue } from '@backstage/config';
+import { HumanDuration } from '@backstage/types';
 
 export interface Config {
   /**
@@ -27,7 +27,7 @@ export interface Config {
      * An undefined list of matchers means match all, an empty list of
      * matchers means match none.
      *
-     * This is commonly used to put in what amounts to a whitelist of kinds
+     * This is commonly used to put in what amounts to an allowlist of kinds
      * that regular users of Backstage are permitted to register locations
      * for. This can be used to stop them from registering yaml files
      * describing for example a Group entity called "admin" that they make
@@ -40,6 +40,37 @@ export interface Config {
        * E.g. ["Component", "API", "Template", "Location"]
        */
       allow: Array<string>;
+      /**
+       * Limit this rule to a specific location
+       *
+       * Example with a fixed location
+       *  { "type": "url", "exact": "https://github.com/a/b/blob/file.yaml"}
+       *
+       * Example using a Regex
+       *  { "type": "url", "pattern": "https://github.com/org/*\/blob/master/*.yaml"}
+       *
+       * Using both exact and pattern will result in an error starting the application
+       */
+      locations?: Array<{
+        /**
+         * The type of location, e.g. "url".
+         */
+        type: string;
+        /**
+         * The exact location, e.g.
+         * "https://github.com/org/repo/blob/master/users.yaml".
+         *
+         * The exact location can also be used to match on locations
+         * that contain glob characters themselves, e.g.
+         * "https://github.com/org/*\/blob/master/*.yaml".
+         */
+        exact?: string;
+        /**
+         * The pattern allowed for the location, e.g.
+         * "https://github.com/org/*\/blob/master/*.yaml".
+         */
+        pattern?: string;
+      }>;
     }>;
 
     /**
@@ -52,7 +83,6 @@ export interface Config {
      * be used in combination with static locations to only serve operator
      * provided locations. Effectively this removes the ability to register new
      * components to a running backstage instance.
-     *
      */
     readonly?: boolean;
 
@@ -109,82 +139,48 @@ export interface Config {
     }>;
 
     /**
-     * List of processor-specific options and attributes
+     * The strategy to use for entities that are orphaned, i.e. no longer have
+     * any other entities or providers referencing them. The default value is
+     * "keep".
      */
-    processors?: {
-      /**
-       * GithubOrgReaderProcessor configuration
-       *
-       * @deprecated Configure a GitHub integration instead.
-       */
-      githubOrg?: {
-        /**
-         * The configuration parameters for each single GitHub org provider.
-         */
-        providers: Array<{
-          /**
-           * The prefix of the target that this matches on, e.g.
-           * "https://github.com", with no trailing slash.
-           */
-          target: string;
-          /**
-           * The base URL of the API of this provider, e.g.
-           * "https://api.github.com", with no trailing slash.
-           *
-           * May be omitted specifically for GitHub; then it will be deduced.
-           */
-          apiBaseUrl?: string;
-          /**
-           * The authorization token to use for requests to this provider.
-           *
-           * If no token is specified, anonymous access is used.
-           *
-           * @visibility secret
-           */
-          token?: string;
-        }>;
-      };
+    orphanStrategy?: 'keep' | 'delete';
 
-      /**
-       * GithubMultiOrgReaderProcessor configuration
-       */
-      githubMultiOrg?: {
-        /**
-         * The configuration parameters for each GitHub org to process.
-         */
-        orgs: Array<{
-          /**
-           * The name of the GitHub org to process.
-           */
-          name: string;
-          /**
-           * The namespace of the group created for this org.
-           *
-           * Defaults to org name if omitted.
-           */
-          groupNamespace?: string;
-
-          /**
-           * The namespace of the users created from this org.
-           *
-           * Defaults to empty string if omitted.
-           */
-          userNamespace?: string;
-        }>;
-      };
-
-      /**
-       * AwsOrganizationCloudAccountProcessor configuration
-       */
-      awsOrganization?: {
-        provider: {
-          /**
-           * The role to be assumed by this processor
-           *
-           */
-          roleArn?: string;
+    /**
+     * The strategy to use when stitching together the final entities.
+     */
+    stitchingStrategy?:
+      | {
+          /** Perform stitching in-band immediately when needed */
+          mode: 'immediate';
+        }
+      | {
+          /** Defer stitching to be performed asynchronously */
+          mode: 'deferred';
         };
-      };
-    };
+
+    /**
+     * The interval at which the catalog should process its entities.
+     *
+     * @remarks
+     *
+     * Example:
+     *
+     * ```yaml
+     * catalog:
+     *   processingInterval: { minutes: 30 }
+     * ```
+     *
+     * Note that this is only a suggested minimum, and the actual interval may
+     * be longer. Internally, the catalog will scale up this number by a small
+     * factor and choose random numbers in that range to spread out the load. If
+     * the catalog is overloaded and cannot process all entities during the
+     * interval, the time taken between processing runs of any given entity may
+     * also be longer than specified here.
+     *
+     * Setting this value too low risks exhausting rate limits on external
+     * systems that are queried by processors, such as version control systems
+     * housing catalog-info files.
+     */
+    processingInterval?: HumanDuration;
   };
 }

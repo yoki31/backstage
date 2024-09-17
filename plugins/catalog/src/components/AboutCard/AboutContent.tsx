@@ -16,6 +16,7 @@
 
 import {
   Entity,
+  getEntitySourceLocation,
   RELATION_OWNED_BY,
   RELATION_PART_OF,
 } from '@backstage/catalog-model';
@@ -23,9 +24,16 @@ import {
   EntityRefLinks,
   getEntityRelations,
 } from '@backstage/plugin-catalog-react';
-import { Chip, Grid, makeStyles, Typography } from '@material-ui/core';
+import { JsonArray } from '@backstage/types';
+import Chip from '@material-ui/core/Chip';
+import Grid from '@material-ui/core/Grid';
+import { makeStyles } from '@material-ui/core/styles';
+import { MarkdownContent } from '@backstage/core-components';
 import React from 'react';
 import { AboutField } from './AboutField';
+import { LinksGridList } from '../EntityLinksCard/LinksGridList';
+import { useTranslationRef } from '@backstage/core-plugin-api/alpha';
+import { catalogTranslationRef } from '../../alpha/translation';
 
 const useStyles = makeStyles({
   description: {
@@ -33,12 +41,45 @@ const useStyles = makeStyles({
   },
 });
 
-type Props = {
+/**
+ * Props for {@link AboutContent}.
+ *
+ * @public
+ */
+export interface AboutContentProps {
   entity: Entity;
-};
+}
 
-export const AboutContent = ({ entity }: Props) => {
+function getLocationTargetHref(
+  target: string,
+  type: string,
+  entitySourceLocation: {
+    type: string;
+    target: string;
+  },
+): string {
+  if (type === 'url' || target.includes('://')) {
+    return target;
+  }
+
+  const srcLocationUrl =
+    entitySourceLocation.type === 'file'
+      ? `file://${entitySourceLocation.target}`
+      : entitySourceLocation.target;
+
+  if (type === 'file' || entitySourceLocation.type === 'file') {
+    return new URL(target, srcLocationUrl).href;
+  }
+
+  return srcLocationUrl;
+}
+
+/** @public */
+export function AboutContent(props: AboutContentProps) {
+  const { entity } = props;
   const classes = useStyles();
+  const { t } = useTranslationRef(catalogTranslationRef);
+
   const isSystem = entity.kind.toLocaleLowerCase('en-US') === 'system';
   const isResource = entity.kind.toLocaleLowerCase('en-US') === 'resource';
   const isComponent = entity.kind.toLocaleLowerCase('en-US') === 'component';
@@ -62,16 +103,35 @@ export const AboutContent = ({ entity }: Props) => {
   });
   const ownedByRelations = getEntityRelations(entity, RELATION_OWNED_BY);
 
+  let entitySourceLocation:
+    | {
+        type: string;
+        target: string;
+      }
+    | undefined;
+  try {
+    entitySourceLocation = getEntitySourceLocation(entity);
+  } catch (e) {
+    entitySourceLocation = undefined;
+  }
+
   return (
     <Grid container>
-      <AboutField label="Description" gridSizes={{ xs: 12 }}>
-        <Typography variant="body2" paragraph className={classes.description}>
-          {entity?.metadata?.description || 'No description'}
-        </Typography>
+      <AboutField
+        label={t('aboutCard.descriptionField.label')}
+        gridSizes={{ xs: 12 }}
+      >
+        <MarkdownContent
+          className={classes.description}
+          content={
+            entity?.metadata?.description ||
+            t('aboutCard.descriptionField.value')
+          }
+        />
       </AboutField>
       <AboutField
-        label="Owner"
-        value="No Owner"
+        label={t('aboutCard.ownerField.label')}
+        value={t('aboutCard.ownerField.value')}
         gridSizes={{ xs: 12, sm: 6, lg: 4 }}
       >
         {ownedByRelations.length > 0 && (
@@ -80,8 +140,8 @@ export const AboutContent = ({ entity }: Props) => {
       </AboutField>
       {(isSystem || partOfDomainRelations.length > 0) && (
         <AboutField
-          label="Domain"
-          value="No Domain"
+          label={t('aboutCard.domainField.label')}
+          value={t('aboutCard.domainField.value')}
           gridSizes={{ xs: 12, sm: 6, lg: 4 }}
         >
           {partOfDomainRelations.length > 0 && (
@@ -97,8 +157,8 @@ export const AboutContent = ({ entity }: Props) => {
         isResource ||
         partOfSystemRelations.length > 0) && (
         <AboutField
-          label="System"
-          value="No System"
+          label={t('aboutCard.systemField.label')}
+          value={t('aboutCard.systemField.value')}
           gridSizes={{ xs: 12, sm: 6, lg: 4 }}
         >
           {partOfSystemRelations.length > 0 && (
@@ -111,8 +171,8 @@ export const AboutContent = ({ entity }: Props) => {
       )}
       {isComponent && partOfComponentRelations.length > 0 && (
         <AboutField
-          label="Parent Component"
-          value="No Parent Component"
+          label={t('aboutCard.parentComponentField.label')}
+          value={t('aboutCard.parentComponentField.value')}
           gridSizes={{ xs: 12, sm: 6, lg: 4 }}
         >
           <EntityRefLinks
@@ -129,7 +189,7 @@ export const AboutContent = ({ entity }: Props) => {
         isLocation ||
         typeof entity?.spec?.type === 'string') && (
         <AboutField
-          label="Type"
+          label={t('aboutCard.typeField.label')}
           value={entity?.spec?.type as string}
           gridSizes={{ xs: 12, sm: 6, lg: 4 }}
         />
@@ -138,20 +198,40 @@ export const AboutContent = ({ entity }: Props) => {
         isComponent ||
         typeof entity?.spec?.lifecycle === 'string') && (
         <AboutField
-          label="Lifecycle"
+          label={t('aboutCard.lifecycleField.label')}
           value={entity?.spec?.lifecycle as string}
           gridSizes={{ xs: 12, sm: 6, lg: 4 }}
         />
       )}
       <AboutField
-        label="Tags"
-        value="No Tags"
+        label={t('aboutCard.tagsField.label')}
+        value={t('aboutCard.tagsField.value')}
         gridSizes={{ xs: 12, sm: 6, lg: 4 }}
       >
-        {(entity?.metadata?.tags || []).map(t => (
-          <Chip key={t} size="small" label={t} />
+        {(entity?.metadata?.tags || []).map(tag => (
+          <Chip key={tag} size="small" label={tag} />
         ))}
       </AboutField>
+      {isLocation && (entity?.spec?.targets || entity?.spec?.target) && (
+        <AboutField
+          label={t('aboutCard.targetsField.label')}
+          gridSizes={{ xs: 12 }}
+        >
+          <LinksGridList
+            cols={1}
+            items={((entity.spec.targets as JsonArray) || [entity.spec.target])
+              .map(target => target as string)
+              .map(target => ({
+                text: target,
+                href: getLocationTargetHref(
+                  target,
+                  (entity?.spec?.type || 'unknown') as string,
+                  entitySourceLocation!,
+                ),
+              }))}
+          />
+        </AboutField>
+      )}
     </Grid>
   );
-};
+}

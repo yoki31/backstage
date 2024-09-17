@@ -36,6 +36,13 @@ Then make sure the environment variables `GCS_CLIENT_EMAIL` and
 Since this integration uses the Google Storage SDK, you can also choose to not
 provide any explicit credentials and let the SDK discover them automatically.
 
+Please note that for this method to work you must add an empty `googleGcs` object to the `integrations` section in `app-config.yaml`.
+
+```yaml
+integrations:
+  googleGcs: {}
+```
+
 One of these discovery methods is to provide an environment variable called
 `GOOGLE_APPLICATION_CREDENTIALS` and set it to the file path of your JSON
 service account key.
@@ -48,8 +55,7 @@ you can check [this documentation page][google gcs docs].
 To use this integration to import entities from a GCS bucket go to the Google
 console and browse the file you would like to import. Then copy the
 `Authenticated URL` and paste it into the text box in the `register component`
-form. This url should look like
+form. This URL should look like
 `https://storage.cloud.google.com/<bucket>/<path>/catalog-info.yaml`.
 
-[google gcs docs]:
-  https://cloud.google.com/docs/authentication/production#auth-cloud-implicit-nodejs
+[google gcs docs]: https://cloud.google.com/docs/authentication/production#auth-cloud-implicit-nodejs

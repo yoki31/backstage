@@ -14,33 +14,37 @@
  * limitations under the License.
  */
 
-import { Command } from 'commander';
+import { OptionValues } from 'commander';
 import { JSONSchema7 as JSONSchema } from 'json-schema';
 import { stringify as stringifyYaml } from 'yaml';
 import { loadCliConfig } from '../../lib/config';
 import { JsonObject } from '@backstage/types';
 import { mergeConfigSchemas } from '@backstage/config-loader';
 
-export default async (cmd: Command) => {
+export default async (opts: OptionValues) => {
   const { schema } = await loadCliConfig({
     args: [],
-    fromPackage: cmd.package,
+    fromPackage: opts.package,
     mockEnv: true,
   });
 
-  const merged = mergeConfigSchemas(
-    (schema.serialize().schemas as JsonObject[]).map(
-      _ => _.value as JSONSchema,
-    ),
-  );
-
-  merged.title = 'Application Configuration Schema';
-  merged.description =
-    'This is the schema describing the structure of the app-config.yaml configuration file.';
-
-  if (cmd.format === 'json') {
-    process.stdout.write(`${JSON.stringify(merged, null, 2)}\n`);
+  let configSchema: JsonObject | JSONSchema;
+  if (opts.merge) {
+    configSchema = mergeConfigSchemas(
+      (schema.serialize().schemas as JsonObject[]).map(
+        _ => _.value as JSONSchema,
+      ),
+    );
+    configSchema.title = 'Application Configuration Schema';
+    configSchema.description =
+      'This is the schema describing the structure of the app-config.yaml configuration file.';
   } else {
-    process.stdout.write(`${stringifyYaml(merged)}\n`);
+    configSchema = schema.serialize();
+  }
+
+  if (opts.format === 'json') {
+    process.stdout.write(`${JSON.stringify(configSchema, null, 2)}\n`);
+  } else {
+    process.stdout.write(`${stringifyYaml(configSchema)}\n`);
   }
 };

@@ -14,105 +14,15 @@
  * limitations under the License.
  */
 
-import { isValidElement, ReactElement, ReactNode } from 'react';
 import {
   RouteRef,
   getComponentData,
   BackstagePlugin,
 } from '@backstage/core-plugin-api';
+import { isValidElement, ReactNode, Children } from 'react';
 import { BackstageRouteObject } from './types';
 import { createCollector } from '../extensions/traversal';
 import { FeatureFlagged, FeatureFlaggedProps } from './FeatureFlagged';
-
-function getMountPoint(node: ReactElement): RouteRef | undefined {
-  const element: ReactNode = node.props?.element;
-
-  let routeRef = getComponentData<RouteRef>(node, 'core.mountPoint');
-  if (!routeRef && isValidElement(element)) {
-    routeRef = getComponentData<RouteRef>(element, 'core.mountPoint');
-  }
-
-  return routeRef;
-}
-
-export const routePathCollector = createCollector(
-  () => new Map<RouteRef, string>(),
-  (acc, node, parent, ctxPath: string | undefined) => {
-    // The context path is used during mount point gathering to assign the same path
-    // to all discovered mount points
-    let currentCtxPath = ctxPath;
-
-    if (parent?.props.element === node) {
-      return currentCtxPath;
-    }
-
-    // Start gathering mount points when we encounter a mount point gathering flag
-    if (getComponentData<boolean>(node, 'core.gatherMountPoints')) {
-      const path: string | undefined = node.props?.path;
-      if (!path) {
-        throw new Error('Mount point gatherer must have a path');
-      }
-      currentCtxPath = path;
-    }
-
-    const routeRef = getMountPoint(node);
-    if (routeRef) {
-      let path: string | undefined = node.props?.path;
-      // If we're gathering mount points we use the context path as out path, unless
-      // the element has its own path, in which case we use that instead and stop gathering
-      if (currentCtxPath) {
-        if (path) {
-          currentCtxPath = undefined;
-        } else {
-          path = currentCtxPath;
-        }
-      }
-      if (!path) {
-        throw new Error('Mounted routable extension must have a path');
-      }
-      acc.set(routeRef, path);
-    }
-    return currentCtxPath;
-  },
-);
-
-export const routeParentCollector = createCollector(
-  () => new Map<RouteRef, RouteRef | undefined>(),
-  (acc, node, parent, parentRouteRef?: RouteRef | { sticky: RouteRef }) => {
-    if (parent?.props.element === node) {
-      return parentRouteRef;
-    }
-
-    let nextParent = parentRouteRef;
-
-    const routeRef = getMountPoint(node);
-    if (routeRef) {
-      // "sticky" route ref is when we've encountered a mount point gatherer, and we want a
-      // mount points beneath it to have the same parent, regardless of internal structure
-      if (parentRouteRef && 'sticky' in parentRouteRef) {
-        acc.set(routeRef, parentRouteRef.sticky);
-
-        // When we encounter a mount point with an explicit path, we stop gathering
-        // mount points withing the children and remove the sticky state
-        if (node.props?.path) {
-          nextParent = routeRef;
-        } else {
-          nextParent = parentRouteRef;
-        }
-      } else {
-        acc.set(routeRef, parentRouteRef);
-        nextParent = routeRef;
-      }
-    }
-
-    // Mount point gatherers are marked as "sticky"
-    if (getComponentData<boolean>(node, 'core.gatherMountPoints')) {
-      return { sticky: nextParent };
-    }
-
-    return nextParent;
-  },
-);
 
 // We always add a child that matches all subroutes but without any route refs. This makes
 // sure that we're always able to match each route no matter how deep the navigation goes.
@@ -120,41 +30,317 @@ export const routeParentCollector = createCollector(
 // mount points that are as deep in the routing tree as possible.
 export const MATCH_ALL_ROUTE: BackstageRouteObject = {
   caseSensitive: false,
-  path: '/*',
+  path: '*',
   element: 'match-all', // These elements aren't used, so we add in a bit of debug information
   routeRefs: new Set(),
+  plugins: new Set(),
 };
 
-export const routeObjectCollector = createCollector(
-  () => Array<BackstageRouteObject>(),
-  (acc, node, parent, parentObj: BackstageRouteObject | undefined) => {
-    const parentChildren = parentObj?.children ?? acc;
-    if (parent?.props.element === node) {
-      return parentObj;
+function stringifyNode(node: ReactNode): string {
+  const anyNode = node as { type?: { displayName?: string; name?: string } };
+  if (anyNode?.type) {
+    return (
+      anyNode.type.displayName ?? anyNode.type.name ?? String(anyNode.type)
+    );
+  }
+  return String(anyNode);
+}
+
+const pluginSet = (
+  plugin: BackstagePlugin | undefined,
+): Set<BackstagePlugin> => {
+  const set = new Set<BackstagePlugin>();
+  if (plugin) {
+    set.add(plugin);
+  }
+  return set;
+};
+
+interface RoutingV2CollectorContext {
+  routeRef?: RouteRef;
+  gatherPath?: string;
+  gatherRouteRef?: RouteRef;
+  obj?: BackstageRouteObject;
+  isElementAncestor?: boolean;
+}
+
+// This collects all the mount points and their plugins within an element tree.
+// Unlike regular traversal this ignores all other things, like path props and mount point gatherers.
+function collectSubTree(
+  node: ReactNode,
+  entries = new Array<{ routeRef: RouteRef; plugin?: BackstagePlugin }>(),
+) {
+  Children.forEach(node, element => {
+    if (!isValidElement(element)) {
+      return;
     }
 
+    const routeRef = getComponentData<RouteRef>(element, 'core.mountPoint');
+    if (routeRef) {
+      const plugin = getComponentData<BackstagePlugin>(element, 'core.plugin');
+      entries.push({ routeRef, plugin });
+    }
+
+    collectSubTree(element.props.children, entries);
+  });
+
+  return entries;
+}
+
+export const routingV2Collector = createCollector(
+  () => ({
+    paths: new Map<RouteRef, string>(),
+    parents: new Map<RouteRef, RouteRef | undefined>(),
+    objects: new Array<BackstageRouteObject>(),
+  }),
+  (acc, node, parent, ctx?: RoutingV2CollectorContext) => {
+    // If we're in an element prop, ignore everything
+    if (ctx?.isElementAncestor) {
+      return ctx;
+    }
+
+    // Start ignoring everything if we enter an element prop
+    if (parent?.props.element === node) {
+      return { ...ctx, isElementAncestor: true };
+    }
+
+    const pathProp: unknown = node.props?.path;
+
+    const mountPoint = getComponentData<RouteRef>(node, 'core.mountPoint');
+    if (mountPoint && pathProp) {
+      throw new Error(
+        `Path property may not be set directly on a routable extension "${stringifyNode(
+          node,
+        )}"`,
+      );
+    }
+
+    const parentChildren = ctx?.obj?.children ?? acc.objects;
+
+    if (pathProp !== undefined) {
+      if (typeof pathProp !== 'string') {
+        throw new Error(
+          `Element path must be a string at "${stringifyNode(node)}"`,
+        );
+      }
+
+      const path = pathProp.startsWith('/') ? pathProp.slice(1) : pathProp;
+
+      const elementProp = node.props.element;
+
+      if (getComponentData<boolean>(node, 'core.gatherMountPoints')) {
+        if (elementProp) {
+          throw new Error(
+            `Mount point gatherers may not have an element prop "${stringifyNode(
+              node,
+            )}"`,
+          );
+        }
+
+        const newObj = {
+          path,
+          element: 'gathered',
+          routeRefs: new Set<RouteRef>(),
+          caseSensitive: Boolean(node.props?.caseSensitive),
+          children: [MATCH_ALL_ROUTE],
+          plugins: new Set<BackstagePlugin>(),
+        };
+        parentChildren.push(newObj);
+
+        return {
+          obj: newObj,
+          gatherPath: path,
+          routeRef: ctx?.routeRef,
+          gatherRouteRef: ctx?.routeRef,
+        };
+      }
+
+      if (elementProp) {
+        const [extension, ...others] = collectSubTree(elementProp);
+        if (others.length > 0) {
+          throw new Error(
+            `Route element with path "${pathProp}" may not contain multiple routable extensions`,
+          );
+        }
+        if (!extension) {
+          return ctx;
+        }
+        const { routeRef, plugin } = extension;
+
+        const newObj = {
+          path,
+          element: 'mounted',
+          routeRefs: new Set([routeRef]),
+          caseSensitive: Boolean(node.props?.caseSensitive),
+          children: [MATCH_ALL_ROUTE],
+          plugins: pluginSet(plugin),
+        };
+        parentChildren.push(newObj);
+        acc.paths.set(routeRef, path);
+        acc.parents.set(routeRef, ctx?.routeRef);
+
+        return {
+          obj: newObj,
+          routeRef: routeRef ?? ctx?.routeRef,
+          gatherPath: path,
+          gatherRouteRef: ctx?.gatherRouteRef,
+        };
+      }
+    }
+
+    if (mountPoint) {
+      if (ctx?.gatherPath === undefined) {
+        throw new Error(
+          `Routable extension "${stringifyNode(
+            node,
+          )}" with mount point "${mountPoint}" must be assigned a path`,
+        );
+      }
+
+      ctx?.obj?.routeRefs.add(mountPoint);
+
+      const mountPointPlugin = getComponentData<BackstagePlugin>(
+        node,
+        'core.plugin',
+      );
+      if (mountPointPlugin) {
+        ctx?.obj?.plugins.add(mountPointPlugin);
+      }
+
+      acc.paths.set(mountPoint, ctx.gatherPath);
+      acc.parents.set(mountPoint, ctx?.gatherRouteRef);
+
+      return {
+        ...ctx,
+        routeRef: mountPoint,
+      };
+    }
+
+    return ctx;
+  },
+);
+
+interface RoutingV1CollectorContext {
+  path?: string;
+  routeRef?: RouteRef;
+  obj?: BackstageRouteObject;
+  sticky?: boolean;
+}
+
+/**
+ * This is the old V1 logic for collecting the routing model.
+ * It is being replaced by a new collector because this collection
+ * logic does not work well beyond react-router v6 beta.
+ *
+ * The breaking change is that react-router now requires route
+ * elements to be `Route` components, and directly renders the
+ * element prop rather than the `Route` itself. This means it is
+ * no longer possible to create utility route components. In order
+ * to fill this gap and in general simplify the route collection
+ * logic, a new route collection logic is created.
+ *
+ * @internal
+ */
+export const routingV1Collector = createCollector(
+  () => ({
+    paths: new Map<RouteRef, string>(),
+    parents: new Map<RouteRef, RouteRef | undefined>(),
+    objects: new Array<BackstageRouteObject>(),
+  }),
+  (acc, node, parent, ctx?: RoutingV1CollectorContext) => {
+    // Ignore the top-level element within element props, since it's already been collected.
+    if (parent?.props.element === node) {
+      return ctx;
+    }
+
+    let currentObj = ctx?.obj;
+    let currentParentRouteRef = ctx?.routeRef;
+    let sticky = ctx?.sticky;
+
     const path: string | undefined = node.props?.path;
+    const parentChildren = currentObj?.children ?? acc.objects;
     const caseSensitive: boolean = Boolean(node.props?.caseSensitive);
 
-    const routeRef = getMountPoint(node);
+    // The context path is used during mount point gathering to assign the same path
+    // to all discovered mount points
+    let currentCtxPath = ctx?.path;
+
+    // Start gathering mount points when we encounter a mount point gathering flag
+    if (getComponentData<boolean>(node, 'core.gatherMountPoints')) {
+      if (!path) {
+        throw new Error('Mount point gatherer must have a path');
+      }
+      currentCtxPath = path;
+    }
+
+    // Route refs are discovered on the element itself, and on the top-level
+    // element within the element prop if it exists.
+    const element = node.props?.element;
+    let routeRef = getComponentData<RouteRef>(node, 'core.mountPoint');
+    if (!routeRef && isValidElement(element)) {
+      routeRef = getComponentData<RouteRef>(element, 'core.mountPoint');
+    }
+
     if (routeRef) {
+      // First the path gathering
+
+      let routePath: string | undefined = path;
+      // If we're gathering mount points we use the context path as out path, unless
+      // the element has its own path, in which case we use that instead and stop gathering
+      if (currentCtxPath) {
+        if (routePath) {
+          currentCtxPath = undefined;
+        } else {
+          routePath = currentCtxPath;
+        }
+      }
+      if (!routePath) {
+        throw new Error('Mounted routable extension must have a path');
+      }
+      acc.paths.set(routeRef, routePath);
+
+      // Then the parent gathering
+
+      // "sticky" route ref is when we've encountered a mount point gatherer, and we want a
+      // mount points beneath it to have the same parent, regardless of internal structure
+      if (currentParentRouteRef && sticky) {
+        acc.parents.set(routeRef, currentParentRouteRef);
+
+        // When we encounter a mount point with an explicit path, we stop gathering
+        // mount points within the children and remove the sticky state
+        if (path) {
+          currentParentRouteRef = routeRef;
+          sticky = false;
+        }
+      } else {
+        acc.parents.set(routeRef, currentParentRouteRef);
+        currentParentRouteRef = routeRef;
+      }
+
+      // Then construct the objects
+
       if (path) {
-        const newObject: BackstageRouteObject = {
+        currentObj = {
           caseSensitive,
           path,
           element: 'mounted',
           routeRefs: new Set([routeRef]),
           children: [MATCH_ALL_ROUTE],
-          plugin: getComponentData<BackstagePlugin>(
-            node.props.element,
-            'core.plugin',
+          plugins: pluginSet(
+            getComponentData<BackstagePlugin>(
+              node.props.element,
+              'core.plugin',
+            ),
           ),
         };
-        parentChildren.push(newObject);
-        return newObject;
+        parentChildren.push(currentObj);
+      } else {
+        currentObj?.routeRefs.add(routeRef);
       }
+    }
 
-      parentObj?.routeRefs.add(routeRef);
+    if (getComponentData<boolean>(node, 'core.gatherMountPoints')) {
+      sticky = true;
     }
 
     const isGatherer = getComponentData<boolean>(
@@ -165,19 +351,25 @@ export const routeObjectCollector = createCollector(
       if (!path) {
         throw new Error('Mount point gatherer must have a path');
       }
-      const newObject: BackstageRouteObject = {
-        caseSensitive,
-        path,
-        element: 'gathered',
-        routeRefs: new Set(),
-        children: [MATCH_ALL_ROUTE],
-        plugin: parentObj?.plugin,
-      };
-      parentChildren.push(newObject);
-      return newObject;
+      if (!routeRef) {
+        currentObj = {
+          caseSensitive,
+          path,
+          element: 'gathered',
+          routeRefs: new Set(),
+          children: [MATCH_ALL_ROUTE],
+          plugins: ctx?.obj?.plugins || new Set(),
+        };
+        parentChildren.push(currentObj);
+      }
     }
 
-    return parentObj;
+    return {
+      obj: currentObj,
+      path: currentCtxPath,
+      routeRef: currentParentRouteRef,
+      sticky,
+    };
   },
 );
 

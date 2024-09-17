@@ -15,7 +15,9 @@
  */
 
 import { useElementFilter } from '@backstage/core-plugin-api';
-import { Grid, makeStyles, Typography } from '@material-ui/core';
+import Grid from '@material-ui/core/Grid';
+import Typography from '@material-ui/core/Typography';
+import { makeStyles } from '@material-ui/core/styles';
 import React from 'react';
 
 const useStyles = makeStyles(theme => ({
@@ -36,14 +38,21 @@ const useStyles = makeStyles(theme => ({
   },
 }));
 
-type Props = {
+/**
+ * Props for {@link AboutField}.
+ *
+ * @public
+ */
+export interface AboutFieldProps {
   label: string;
   value?: string;
   gridSizes?: Record<string, number>;
   children?: React.ReactNode;
-};
+}
 
-export const AboutField = ({ label, value, gridSizes, children }: Props) => {
+/** @public */
+export function AboutField(props: AboutFieldProps) {
+  const { label, value, gridSizes, children } = props;
   const classes = useStyles();
 
   const childElements = useElementFilter(children, c => c.getElements());
@@ -59,10 +68,10 @@ export const AboutField = ({ label, value, gridSizes, children }: Props) => {
     );
   return (
     <Grid item {...gridSizes}>
-      <Typography variant="subtitle2" className={classes.label}>
+      <Typography variant="h2" className={classes.label}>
         {label}
       </Typography>
       {content}
     </Grid>
   );
-};
+}

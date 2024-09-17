@@ -14,10 +14,13 @@
  * limitations under the License.
  */
 
-import { BackstageTheme } from '@backstage/theme';
-import { Button, makeStyles, Typography } from '@material-ui/core';
+import Button from '@material-ui/core/Button';
+import Typography from '@material-ui/core/Typography';
+import { makeStyles } from '@material-ui/core/styles';
 import React from 'react';
 import { CodeSnippet } from '@backstage/core-components';
+import { useTranslationRef } from '@backstage/core-plugin-api/alpha';
+import { catalogTranslationRef } from '../../alpha/translation';
 
 const ENTITY_YAML = `metadata:
   name: example
@@ -29,25 +32,26 @@ const ENTITY_YAML = `metadata:
 /** @public */
 export type EntityLinksEmptyStateClassKey = 'code';
 
-const useStyles = makeStyles<BackstageTheme>(
+const useStyles = makeStyles(
   theme => ({
     code: {
       borderRadius: 6,
-      margin: `${theme.spacing(2)}px 0px`,
-      background: theme.palette.type === 'dark' ? '#444' : '#fff',
+      margin: theme.spacing(2, 0),
+      background:
+        theme.palette.type === 'dark' ? '#444' : theme.palette.common.white,
     },
   }),
   { name: 'PluginCatalogEntityLinksEmptyState' },
 );
 
-export const EntityLinksEmptyState = () => {
+export function EntityLinksEmptyState() {
   const classes = useStyles();
+  const { t } = useTranslationRef(catalogTranslationRef);
 
   return (
     <>
       <Typography variant="body1">
-        No links defined for this entity. You can add links to your entity YAML
-        as shown in the highlighted example below:
+        {t('entityLinksCard.emptyDescription')}
       </Typography>
       <div className={classes.code}>
         <CodeSnippet
@@ -64,8 +68,8 @@ export const EntityLinksEmptyState = () => {
         target="_blank"
         href="https://backstage.io/docs/features/software-catalog/descriptor-format#links-optional"
       >
-        Read more
+        {t('entityLinksCard.readMoreButtonTitle')}
       </Button>
     </>
   );
-};
+}

@@ -14,16 +14,16 @@
  * limitations under the License.
  */
 
-import { Command } from 'commander';
+import { OptionValues } from 'commander';
 import { PublisherConfig } from './PublisherConfig';
 
 describe('getValidPublisherConfig', () => {
   it('should not allow unknown publisher types', () => {
     const invalidConfig = {
       publisherType: 'unknown publisher',
-    } as unknown as Command;
+    } as unknown as OptionValues;
 
-    expect(() => PublisherConfig.getValidConfig(invalidConfig)).toThrowError(
+    expect(() => PublisherConfig.getValidConfig(invalidConfig)).toThrow(
       `Unknown publisher type ${invalidConfig.publisherType}`,
     );
   });
@@ -32,9 +32,9 @@ describe('getValidPublisherConfig', () => {
     it('should require --azureAccountName', () => {
       const config = {
         publisherType: 'azureBlobStorage',
-      } as unknown as Command;
+      } as unknown as OptionValues;
 
-      expect(() => PublisherConfig.getValidConfig(config)).toThrowError(
+      expect(() => PublisherConfig.getValidConfig(config)).toThrow(
         'azureBlobStorage requires --azureAccountName to be specified',
       );
     });
@@ -44,7 +44,7 @@ describe('getValidPublisherConfig', () => {
         publisherType: 'azureBlobStorage',
         azureAccountName: 'someAccountName',
         storageName: 'someContainer',
-      } as unknown as Command;
+      } as unknown as OptionValues;
 
       const actualConfig = PublisherConfig.getValidConfig(config);
       expect(actualConfig.getString('techdocs.publisher.type')).toBe(
@@ -69,7 +69,7 @@ describe('getValidPublisherConfig', () => {
         publisherType: 'awsS3',
         storageName: 'someStorageName',
         awsBucketRootPath: 'backstage-data/techdocs',
-      } as unknown as Command;
+      } as unknown as OptionValues;
 
       const actualConfig = PublisherConfig.getValidConfig(config);
       expect(actualConfig.getString('techdocs.publisher.type')).toBe('awsS3');
@@ -86,7 +86,7 @@ describe('getValidPublisherConfig', () => {
         publisherType: 'awsS3',
         storageName: 'someStorageName',
         awsS3sse: 'aws:kms',
-      } as unknown as Command;
+      } as unknown as OptionValues;
 
       const actualConfig = PublisherConfig.getValidConfig(config);
       expect(actualConfig.getString('techdocs.publisher.type')).toBe('awsS3');
@@ -102,9 +102,9 @@ describe('getValidPublisherConfig', () => {
         publisherType: 'openStackSwift',
         osCredentialId: 'someCredentialId',
         osSecret: 'someSecret',
-      } as unknown as Command;
+      } as unknown as OptionValues;
 
-      expect(() => PublisherConfig.getValidConfig(config)).toThrowError(
+      expect(() => PublisherConfig.getValidConfig(config)).toThrow(
         `openStackSwift requires the following params to be specified: ${[
           'osAuthUrl',
           'osSwiftUrl',
@@ -120,7 +120,7 @@ describe('getValidPublisherConfig', () => {
         osSecret: 'someSecret',
         osAuthUrl: 'someAuthUrl',
         osSwiftUrl: 'someSwiftUrl',
-      } as unknown as Command;
+      } as unknown as OptionValues;
 
       const actualConfig = PublisherConfig.getValidConfig(config);
       expect(actualConfig.getString('techdocs.publisher.type')).toBe(
@@ -146,7 +146,7 @@ describe('getValidPublisherConfig', () => {
         publisherType: 'googleGcs',
         storageName: 'someStorageName',
         gcsBucketRootPath: 'backstage-data/techdocs',
-      } as unknown as Command;
+      } as unknown as OptionValues;
 
       const actualConfig = PublisherConfig.getValidConfig(config);
       expect(actualConfig.getString('techdocs.publisher.type')).toBe(

@@ -6,36 +6,39 @@
 /// <reference types="react" />
 
 import { BackstagePlugin } from '@backstage/core-plugin-api';
+import { CompoundEntityRef } from '@backstage/catalog-model';
 import { DependencyGraphTypes } from '@backstage/core-components';
-import { EntityName } from '@backstage/catalog-model';
+import { Entity } from '@backstage/catalog-model';
 import { ExternalRouteRef } from '@backstage/core-plugin-api';
 import { InfoCardVariants } from '@backstage/core-components';
+import { JsonObject } from '@backstage/types';
+import { JSX as JSX_2 } from 'react';
 import { MouseEvent as MouseEvent_2 } from 'react';
 import { MouseEventHandler } from 'react';
+import { default as React_2 } from 'react';
 import { RouteRef } from '@backstage/core-plugin-api';
 
 // @public
 export const ALL_RELATION_PAIRS: RelationPairs;
 
 // @public
-export const CatalogGraphPage: ({
-  relationPairs,
-  initialState,
-}: {
-  relationPairs?: RelationPairs | undefined;
-  initialState?:
-    | {
-        selectedRelations?: string[] | undefined;
-        selectedKinds?: string[] | undefined;
-        rootEntityRefs?: string[] | undefined;
-        maxDepth?: number | undefined;
-        unidirectional?: boolean | undefined;
-        mergeRelations?: boolean | undefined;
-        direction?: Direction | undefined;
-        showFilters?: boolean | undefined;
-      }
-    | undefined;
-}) => JSX.Element;
+export const CatalogGraphPage: (
+  props: {
+    initialState?:
+      | {
+          selectedRelations?: string[] | undefined;
+          selectedKinds?: string[] | undefined;
+          rootEntityRefs?: string[] | undefined;
+          maxDepth?: number | undefined;
+          unidirectional?: boolean | undefined;
+          mergeRelations?: boolean | undefined;
+          direction?: Direction | undefined;
+          showFilters?: boolean | undefined;
+          curve?: 'curveStepBefore' | 'curveMonotoneX' | undefined;
+        }
+      | undefined;
+  } & Partial<EntityRelationsGraphProps>,
+) => JSX_2.Element;
 
 // @public
 export const catalogGraphPlugin: BackstagePlugin<
@@ -49,13 +52,19 @@ export const catalogGraphPlugin: BackstagePlugin<
         kind: string;
         namespace: string;
       },
-      false
+      true
     >;
   }
 >;
 
 // @public
 export const catalogGraphRouteRef: RouteRef<undefined>;
+
+// @public (undocumented)
+export type CustomLabelClassKey = 'text' | 'secondary';
+
+// @public (undocumented)
+export type CustomNodeClassKey = 'node' | 'text' | 'clickable';
 
 // @public
 export enum Direction {
@@ -66,37 +75,17 @@ export enum Direction {
 }
 
 // @public
-export const EntityCatalogGraphCard: ({
-  variant,
-  relationPairs,
-  maxDepth,
-  unidirectional,
-  mergeRelations,
-  kinds,
-  relations,
-  direction,
-  height,
-  title,
-  zoom,
-}: {
-  variant?: InfoCardVariants | undefined;
-  relationPairs?: RelationPairs | undefined;
-  maxDepth?: number | undefined;
-  unidirectional?: boolean | undefined;
-  mergeRelations?: boolean | undefined;
-  kinds?: string[] | undefined;
-  relations?: string[] | undefined;
-  direction?: Direction | undefined;
-  height?: number | undefined;
-  title?: string | undefined;
-  zoom?: 'disabled' | 'enabled' | 'enable-on-click' | undefined;
-}) => JSX.Element;
+export const EntityCatalogGraphCard: (
+  props: Partial<EntityRelationsGraphProps> & {
+    variant?: InfoCardVariants | undefined;
+    height?: number | undefined;
+    title?: string | undefined;
+  },
+) => JSX_2.Element;
 
 // @public
 export type EntityEdge = DependencyGraphTypes.DependencyEdge<EntityEdgeData>;
 
-// Warning: (ae-missing-release-tag) "EntityEdgeData" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public
 export type EntityEdgeData = {
   relations: string[];
@@ -106,47 +95,46 @@ export type EntityEdgeData = {
 // @public
 export type EntityNode = DependencyGraphTypes.DependencyNode<EntityNodeData>;
 
-// Warning: (ae-missing-release-tag) "EntityNodeData" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public
 export type EntityNodeData = {
+  entity: Entity;
+  focused?: boolean;
+  color?: 'primary' | 'secondary' | 'default';
+  onClick?: MouseEventHandler<unknown>;
   name: string;
   kind?: string;
   title?: string;
   namespace: string;
-  focused?: boolean;
-  color?: 'primary' | 'secondary' | 'default';
-  onClick?: MouseEventHandler<unknown>;
+  spec?: JsonObject;
 };
 
 // @public
-export const EntityRelationsGraph: ({
-  rootEntityNames,
-  maxDepth,
-  unidirectional,
-  mergeRelations,
-  kinds,
-  relations,
-  direction,
-  onNodeClick,
-  relationPairs,
-  className,
-  zoom,
-}: {
-  rootEntityNames: EntityName | EntityName[];
-  maxDepth?: number | undefined;
-  unidirectional?: boolean | undefined;
-  mergeRelations?: boolean | undefined;
-  kinds?: string[] | undefined;
-  relations?: string[] | undefined;
-  direction?: Direction | undefined;
-  onNodeClick?:
-    | ((value: EntityNode, event: MouseEvent_2<unknown>) => void)
-    | undefined;
-  relationPairs?: RelationPairs | undefined;
-  className?: string | undefined;
-  zoom?: 'disabled' | 'enabled' | 'enable-on-click' | undefined;
-}) => JSX.Element;
+export const EntityRelationsGraph: (
+  props: EntityRelationsGraphProps,
+) => React_2.JSX.Element;
+
+// @public (undocumented)
+export type EntityRelationsGraphClassKey = 'progress' | 'container' | 'graph';
+
+// @public (undocumented)
+export type EntityRelationsGraphProps = {
+  rootEntityNames: CompoundEntityRef | CompoundEntityRef[];
+  maxDepth?: number;
+  unidirectional?: boolean;
+  mergeRelations?: boolean;
+  kinds?: string[];
+  relations?: string[];
+  entityFilter?: (entity: Entity) => boolean;
+  direction?: Direction;
+  onNodeClick?: (value: EntityNode, event: MouseEvent_2<unknown>) => void;
+  relationPairs?: RelationPairs;
+  className?: string;
+  zoom?: 'enabled' | 'disabled' | 'enable-on-click';
+  renderNode?: DependencyGraphTypes.RenderNodeFunction<EntityNode>;
+  renderLabel?: DependencyGraphTypes.RenderLabelFunction<EntityEdge>;
+  curve?: 'curveStepBefore' | 'curveMonotoneX';
+  showArrowHeads?: boolean;
+};
 
 // @public
 export type RelationPairs = [string, string][];

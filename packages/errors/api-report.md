@@ -9,10 +9,38 @@ import { JsonObject } from '@backstage/types';
 export function assertError(value: unknown): asserts value is ErrorLike;
 
 // @public
-export class AuthenticationError extends CustomErrorBase {}
+export class AuthenticationError extends CustomErrorBase {
+  // (undocumented)
+  name: 'AuthenticationError';
+}
 
 // @public
-export class ConflictError extends CustomErrorBase {}
+export class ConflictError extends CustomErrorBase {
+  // (undocumented)
+  name: 'ConflictError';
+}
+
+// @public
+export type ConsumedResponse = {
+  readonly headers: {
+    append(name: string, value: string): void;
+    delete(name: string): void;
+    get(name: string): string | null;
+    has(name: string): boolean;
+    set(name: string, value: string): void;
+    forEach(callback: (value: string, name: string) => void): void;
+    entries(): IterableIterator<[string, string]>;
+    keys(): IterableIterator<string>;
+    values(): IterableIterator<string>;
+    [Symbol.iterator](): Iterator<[string, string]>;
+  };
+  readonly ok: boolean;
+  readonly redirected: boolean;
+  readonly status: number;
+  readonly statusText: string;
+  readonly type: ResponseType;
+  readonly url: string;
+};
 
 // @public
 export class CustomErrorBase extends Error {
@@ -33,9 +61,6 @@ export type ErrorLike = {
   [unknownKeys: string]: unknown;
 };
 
-// @public @deprecated
-export type ErrorResponse = ErrorResponseBody;
-
 // @public
 export type ErrorResponseBody = {
   error: SerializedError;
@@ -54,43 +79,59 @@ export class ForwardedError extends CustomErrorBase {
 }
 
 // @public
-export class InputError extends CustomErrorBase {}
+export class InputError extends CustomErrorBase {
+  // (undocumented)
+  name: 'InputError';
+}
 
 // @public
 export function isError(value: unknown): value is ErrorLike;
 
 // @public
-export class NotAllowedError extends CustomErrorBase {}
+export class NotAllowedError extends CustomErrorBase {
+  // (undocumented)
+  name: 'NotAllowedError';
+}
 
 // @public
-export class NotFoundError extends CustomErrorBase {}
+export class NotFoundError extends CustomErrorBase {
+  // (undocumented)
+  name: 'NotFoundError';
+}
 
 // @public
-export class NotModifiedError extends CustomErrorBase {}
+export class NotImplementedError extends CustomErrorBase {
+  // (undocumented)
+  name: 'NotImplementedError';
+}
 
-// @public @deprecated
-export function parseErrorResponse(response: Response): Promise<ErrorResponse>;
+// @public
+export class NotModifiedError extends CustomErrorBase {
+  // (undocumented)
+  name: 'NotModifiedError';
+}
 
 // @public
 export function parseErrorResponseBody(
-  response: Response,
+  response: ConsumedResponse & {
+    text(): Promise<string>;
+  },
 ): Promise<ErrorResponseBody>;
 
 // @public
 export class ResponseError extends Error {
-  // @deprecated
-  constructor(props: {
-    message: string;
-    response: Response;
-    data: ErrorResponseBody;
-    cause: Error;
-  });
   readonly body: ErrorResponseBody;
   readonly cause: Error;
-  // @deprecated
-  get data(): ErrorResponseBody;
-  static fromResponse(response: Response): Promise<ResponseError>;
-  readonly response: Response;
+  static fromResponse(
+    response: ConsumedResponse & {
+      text(): Promise<string>;
+    },
+  ): Promise<ResponseError>;
+  readonly response: ConsumedResponse;
+  // (undocumented)
+  readonly statusCode: number;
+  // (undocumented)
+  readonly statusText: string;
 }
 
 // @public
@@ -108,6 +149,9 @@ export function serializeError(
     includeStack?: boolean;
   },
 ): SerializedError;
+
+// @public
+export class ServiceUnavailableError extends CustomErrorBase {}
 
 // @public
 export function stringifyError(error: unknown): string;

@@ -14,23 +14,37 @@
  * limitations under the License.
  */
 
-import { IconComponent, useElementFilter } from '@backstage/core-plugin-api';
-import { BackstageTheme } from '@backstage/theme';
-import { makeStyles, styled, Theme } from '@material-ui/core/styles';
+import {
+  IconComponent,
+  useAnalytics,
+  useElementFilter,
+} from '@backstage/core-plugin-api';
 import Badge from '@material-ui/core/Badge';
+import Box from '@material-ui/core/Box';
+import { makeStyles, styled, Theme } from '@material-ui/core/styles';
+import {
+  CreateCSSProperties,
+  StyledComponentProps,
+} from '@material-ui/core/styles/withStyles';
 import TextField from '@material-ui/core/TextField';
 import Typography from '@material-ui/core/Typography';
-import { CreateCSSProperties } from '@material-ui/core/styles/withStyles';
+import useMediaQuery from '@material-ui/core/useMediaQuery';
+import ArrowDropDown from '@material-ui/icons/ArrowDropDown';
+import ArrowDropUp from '@material-ui/icons/ArrowDropUp';
 import ArrowRightIcon from '@material-ui/icons/ArrowRight';
 import SearchIcon from '@material-ui/icons/Search';
 import classnames from 'classnames';
+import type { Location } from 'history';
 import React, {
-  Children,
+  ComponentProps,
+  ComponentType,
+  CSSProperties,
   forwardRef,
   KeyboardEventHandler,
-  PropsWithChildren,
   ReactNode,
+  useCallback,
   useContext,
+  useMemo,
   useState,
 } from 'react';
 import {
@@ -40,18 +54,28 @@ import {
   useLocation,
   useResolvedPath,
 } from 'react-router-dom';
+
 import {
-  sidebarConfig,
-  SidebarContext,
+  SidebarConfig,
+  SidebarConfigContext,
   SidebarItemWithSubmenuContext,
 } from './config';
-import { SidebarSubmenu } from './SidebarSubmenu';
+import DoubleArrowLeft from './icons/DoubleArrowLeft';
+import DoubleArrowRight from './icons/DoubleArrowRight';
+import { useSidebarOpenState } from './SidebarOpenStateContext';
+import { SidebarSubmenu, SidebarSubmenuProps } from './SidebarSubmenu';
+import { SidebarSubmenuItemProps } from './SidebarSubmenuItem';
+import { isLocationMatch } from './utils';
+import Button from '@material-ui/core/Button';
 
+/** @public */
 export type SidebarItemClassKey =
   | 'root'
   | 'buttonItem'
   | 'closed'
   | 'open'
+  | 'highlightable'
+  | 'highlighted'
   | 'label'
   | 'iconContainer'
   | 'searchRoot'
@@ -59,17 +83,15 @@ export type SidebarItemClassKey =
   | 'searchFieldHTMLInput'
   | 'searchContainer'
   | 'secondaryAction'
+  | 'closedItemIcon'
+  | 'submenuArrow'
+  | 'expandButton'
+  | 'arrows'
   | 'selected';
 
-const useStyles = makeStyles<BackstageTheme>(
-  theme => {
-    const {
-      selectedIndicatorWidth,
-      drawerWidthClosed,
-      drawerWidthOpen,
-      iconContainerWidth,
-    } = sidebarConfig;
-    return {
+const makeSidebarStyles = (sidebarConfig: SidebarConfig) =>
+  makeStyles(
+    theme => ({
       root: {
         color: theme.palette.navigation.color,
         display: 'flex',
@@ -81,18 +103,21 @@ const useStyles = makeStyles<BackstageTheme>(
       buttonItem: {
         background: 'none',
         border: 'none',
-        width: 'auto',
+        width: '100%',
         margin: 0,
         padding: 0,
         textAlign: 'inherit',
         font: 'inherit',
+        textTransform: 'none',
       },
       closed: {
-        width: drawerWidthClosed,
+        width: sidebarConfig.drawerWidthClosed,
         justifyContent: 'center',
       },
       open: {
-        width: drawerWidthOpen,
+        [theme.breakpoints.up('sm')]: {
+          width: sidebarConfig.drawerWidthOpen,
+        },
       },
       highlightable: {
         '&:hover': {
@@ -117,25 +142,26 @@ const useStyles = makeStyles<BackstageTheme>(
       iconContainer: {
         boxSizing: 'border-box',
         height: '100%',
-        width: iconContainerWidth,
+        width: sidebarConfig.iconContainerWidth,
         marginRight: -theme.spacing(2),
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
+        lineHeight: '0',
       },
       searchRoot: {
         marginBottom: 12,
       },
       searchField: {
         color: '#b5b5b5',
-        fontWeight: 'bold',
+        fontWeight: theme.typography.fontWeightBold,
         fontSize: theme.typography.fontSize,
       },
       searchFieldHTMLInput: {
-        padding: `${theme.spacing(2)} 0 ${theme.spacing(2)}`,
+        padding: theme.spacing(2, 0, 2),
       },
       searchContainer: {
-        width: drawerWidthOpen - iconContainerWidth,
+        width: sidebarConfig.drawerWidthOpen - sidebarConfig.iconContainerWidth,
       },
       secondaryAction: {
         width: theme.spacing(6),
@@ -147,142 +173,104 @@ const useStyles = makeStyles<BackstageTheme>(
         justifyContent: 'center',
       },
       submenuArrow: {
+        display: 'flex',
+      },
+      expandButton: {
+        background: 'none',
+        border: 'none',
+        color: theme.palette.navigation.color,
+        width: '100%',
+        cursor: 'pointer',
+        position: 'relative',
+        height: 48,
+      },
+      arrows: {
         position: 'absolute',
-        right: 0,
+        right: 10,
       },
       selected: {
         '&$root': {
-          borderLeft: `solid ${selectedIndicatorWidth}px ${theme.palette.navigation.indicator}`,
+          borderLeft: `solid ${sidebarConfig.selectedIndicatorWidth}px ${theme.palette.navigation.indicator}`,
           color: theme.palette.navigation.selectedColor,
         },
         '&$closed': {
-          width: drawerWidthClosed,
+          width: sidebarConfig.drawerWidthClosed,
         },
         '& $closedItemIcon': {
-          paddingRight: selectedIndicatorWidth,
+          paddingRight: sidebarConfig.selectedIndicatorWidth,
         },
         '& $iconContainer': {
-          marginLeft: -selectedIndicatorWidth,
+          marginLeft: -sidebarConfig.selectedIndicatorWidth,
         },
       },
-    };
-  },
-  { name: 'BackstageSidebarItem' },
-);
+    }),
+    { name: 'BackstageSidebarItem' },
+  );
 
-function isSidebarItemWithSubmenuActive(
-  submenu: ReactNode,
-  locationPathname: string,
-) {
-  // Item is active if any of submenu items have active paths
-  const toPathnames: string[] = [];
-  let isActive = false;
-  let submenuItems: ReactNode;
-  Children.forEach(submenu, element => {
-    if (!React.isValidElement(element)) return;
-    submenuItems = element.props.children;
-  });
-  Children.forEach(submenuItems, element => {
-    if (!React.isValidElement(element)) return;
-    if (element.props.dropdownItems) {
-      element.props.dropdownItems.map((item: { to: string }) =>
-        toPathnames.push(item.to),
-      );
-    } else if (element.props.to) {
-      toPathnames.push(element.props.to);
-    }
-  });
-  isActive = toPathnames.some(to => {
-    const toPathname = resolvePath(to);
-    return locationPathname === toPathname.pathname;
-  });
-  return isActive;
+// This is a workaround for this issue https://github.com/mui/material-ui/issues/15511
+// The styling of the `selected` elements doesn't work as expected when using a prop callback.
+// Don't use this pattern unless needed
+function useMemoStyles(sidebarConfig: SidebarConfig) {
+  const useStyles = useMemo(
+    () => makeSidebarStyles(sidebarConfig),
+    [sidebarConfig],
+  );
+  return useStyles();
 }
 
-const SidebarItemWithSubmenu = ({
-  text,
-  hasNotifications = false,
-  icon: Icon,
-  children,
-}: PropsWithChildren<SidebarItemWithSubmenuProps>) => {
-  const classes = useStyles();
-  const [isHoveredOn, setIsHoveredOn] = useState(false);
-  const { pathname: locationPathname } = useLocation();
-  const isActive = isSidebarItemWithSubmenuActive(children, locationPathname);
-
-  const handleMouseEnter = () => {
-    setIsHoveredOn(true);
-  };
-  const handleMouseLeave = () => {
-    setIsHoveredOn(false);
-  };
-
-  const { isOpen } = useContext(SidebarContext);
-  const itemIcon = (
-    <Badge
-      color="secondary"
-      variant="dot"
-      overlap="circular"
-      className={isOpen ? '' : classes.closedItemIcon}
-      invisible={!hasNotifications}
-    >
-      <Icon fontSize="small" />
-    </Badge>
+/**
+ * Evaluates the routes of the SubmenuItems & nested DropdownItems.
+ * The reevaluation is only triggered, if the `locationPathname` changes, as `useElementFilter` uses memorization.
+ *
+ * @param submenu SidebarSubmenu component
+ * @param location Location
+ * @returns boolean
+ */
+const useLocationMatch = (
+  submenu: React.ReactElement<SidebarSubmenuProps>,
+  location: Location,
+): boolean =>
+  useElementFilter(
+    submenu.props.children,
+    elements => {
+      let active = false;
+      elements
+        .getElements()
+        .forEach(
+          ({
+            props: { to, dropdownItems },
+          }: {
+            props: Partial<SidebarSubmenuItemProps>;
+          }) => {
+            if (!active) {
+              if (dropdownItems?.length) {
+                dropdownItems.forEach(
+                  ({ to: _to }) =>
+                    (active =
+                      active || isLocationMatch(location, resolvePath(_to))),
+                );
+                return;
+              }
+              if (to) {
+                active = isLocationMatch(location, resolvePath(to));
+              }
+            }
+          },
+        );
+      return active;
+    },
+    [location.pathname],
   );
-  const openContent = (
-    <>
-      <div data-testid="login-button" className={classes.iconContainer}>
-        {itemIcon}
-      </div>
-      {text && (
-        <Typography variant="subtitle2" className={classes.label}>
-          {text}
-        </Typography>
-      )}
-      <div className={classes.secondaryAction}>{}</div>
-    </>
-  );
-  const closedContent = itemIcon;
-
-  return (
-    <SidebarItemWithSubmenuContext.Provider
-      value={{
-        isHoveredOn,
-        setIsHoveredOn,
-      }}
-    >
-      <div
-        onMouseLeave={handleMouseLeave}
-        className={classnames(isHoveredOn && classes.highlighted)}
-      >
-        <div
-          onMouseEnter={handleMouseEnter}
-          data-testid="item-with-submenu"
-          className={classnames(
-            classes.root,
-            isOpen ? classes.open : classes.closed,
-            isActive && classes.selected,
-            classes.highlightable,
-            isHoveredOn && classes.highlighted,
-          )}
-        >
-          {isOpen ? openContent : closedContent}
-          {!isHoveredOn && (
-            <ArrowRightIcon fontSize="small" className={classes.submenuArrow} />
-          )}
-        </div>
-        {isHoveredOn && children}
-      </div>
-    </SidebarItemWithSubmenuContext.Provider>
-  );
-};
 
 type SidebarItemBaseProps = {
   icon: IconComponent;
   text?: string;
   hasNotifications?: boolean;
+  hasSubmenu?: boolean;
   disableHighlight?: boolean;
   className?: string;
+  noTrack?: boolean;
+  onClick?: (ev: React.MouseEvent) => void;
 };
 
 type SidebarItemButtonProps = SidebarItemBaseProps & {
@@ -317,12 +305,18 @@ function isButtonItem(
   return (props as SidebarItemLinkProps).to === undefined;
 }
 
+const sidebarSubmenuType = React.createElement(SidebarSubmenu).type;
+
 // TODO(Rugvip): Remove this once NavLink is updated in react-router-dom.
 //               This is needed because react-router doesn't handle the path comparison
 //               properly yet, matching for example /foobar with /foo.
 export const WorkaroundNavLink = React.forwardRef<
   HTMLAnchorElement,
-  NavLinkProps
+  NavLinkProps & {
+    children?: ReactNode;
+    activeStyle?: CSSProperties;
+    activeClassName?: string;
+  }
 >(function WorkaroundNavLinkWithRef(
   {
     to,
@@ -361,29 +355,50 @@ export const WorkaroundNavLink = React.forwardRef<
       aria-current={ariaCurrent}
       style={{ ...style, ...(isActive ? activeStyle : undefined) }}
       className={classnames([
-        className,
+        typeof className !== 'function' ? className : undefined,
         isActive ? activeClassName : undefined,
       ])}
     />
   );
 });
 
-export const SidebarItem = forwardRef<any, SidebarItemProps>((props, ref) => {
+/**
+ * Common component used by SidebarItem & SidebarItemWithSubmenu
+ */
+const SidebarItemBase = forwardRef<
+  any,
+  SidebarItemProps & { children: ReactNode }
+>((props, ref) => {
   const {
     icon: Icon,
     text,
     hasNotifications = false,
+    hasSubmenu = false,
     disableHighlight = false,
     onClick,
+    noTrack,
     children,
     className,
     ...navLinkProps
   } = props;
-  const classes = useStyles();
+  const { sidebarConfig } = useContext(SidebarConfigContext);
+  const classes = useMemoStyles(sidebarConfig);
   // XXX (@koroeskohr): unsure this is optimal. But I just really didn't want to have the item component
   // depend on the current location, and at least have it being optionally forced to selected.
   // Still waiting on a Q answered to fine tune the implementation
-  const { isOpen } = useContext(SidebarContext);
+  const { isOpen } = useSidebarOpenState();
+
+  const divStyle =
+    !isOpen && hasSubmenu
+      ? { display: 'flex', marginLeft: '20px' }
+      : { lineHeight: '0' };
+
+  const displayItemIcon = (
+    <Box style={divStyle}>
+      <Icon fontSize="small" />
+      {!isOpen && hasSubmenu ? <ArrowRightIcon fontSize="small" /> : <></>}
+    </Box>
+  );
 
   const itemIcon = (
     <Badge
@@ -393,19 +408,21 @@ export const SidebarItem = forwardRef<any, SidebarItemProps>((props, ref) => {
       invisible={!hasNotifications}
       className={classnames({ [classes.closedItemIcon]: !isOpen })}
     >
-      <Icon fontSize="small" />
+      {displayItemIcon}
     </Badge>
   );
 
-  const closedContent = itemIcon;
-
   const openContent = (
     <>
-      <div data-testid="login-button" className={classes.iconContainer}>
+      <Box data-testid="login-button" className={classes.iconContainer}>
         {itemIcon}
-      </div>
+      </Box>
       {text && (
-        <Typography variant="subtitle2" className={classes.label}>
+        <Typography
+          variant="subtitle2"
+          component="span"
+          className={classes.label}
+        >
           {text}
         </Typography>
       )}
@@ -413,7 +430,7 @@ export const SidebarItem = forwardRef<any, SidebarItemProps>((props, ref) => {
     </>
   );
 
-  const content = isOpen ? openContent : closedContent;
+  const content = isOpen ? openContent : itemIcon;
 
   const childProps = {
     onClick,
@@ -426,44 +443,35 @@ export const SidebarItem = forwardRef<any, SidebarItemProps>((props, ref) => {
     ),
   };
 
-  let hasSubmenu = false;
-  let submenu: ReactNode;
-  const componentType = (
-    <SidebarSubmenu>
-      <></>
-    </SidebarSubmenu>
-  ).type;
-  // Filter children for SidebarSubmenu components
-  const submenus = useElementFilter(children, elements =>
-    elements.getElements().filter(child => child.type === componentType),
+  const analyticsApi = useAnalytics();
+  const { pathname: to } = useResolvedPath(
+    !isButtonItem(props) && props.to ? props.to : '',
   );
-  // Error thrown if more than one SidebarSubmenu in a SidebarItem
-  if (submenus.length > 1) {
-    throw new Error(
-      'Cannot render more than one SidebarSubmenu inside a SidebarItem',
-    );
-  } else if (submenus.length === 1) {
-    hasSubmenu = true;
-    submenu = submenus[0];
-  }
 
-  if (hasSubmenu) {
-    return (
-      <SidebarItemWithSubmenu
-        text={text}
-        icon={Icon}
-        hasNotifications={hasNotifications}
-      >
-        {submenu}
-      </SidebarItemWithSubmenu>
-    );
-  }
+  const handleClick = useCallback(
+    (event: React.MouseEvent<HTMLAnchorElement | HTMLButtonElement>) => {
+      if (!noTrack) {
+        const action = 'click';
+        const subject = text ?? 'Sidebar Item';
+        const options = to ? { attributes: { to } } : undefined;
+        analyticsApi.captureEvent(action, subject, options);
+      }
+      onClick?.(event);
+    },
+    [analyticsApi, text, to, noTrack, onClick],
+  );
 
   if (isButtonItem(props)) {
     return (
-      <button aria-label={text} {...childProps} ref={ref}>
+      <Button
+        role="button"
+        aria-label={text}
+        {...childProps}
+        ref={ref}
+        onClick={handleClick}
+      >
         {content}
-      </button>
+      </Button>
     );
   }
 
@@ -475,11 +483,106 @@ export const SidebarItem = forwardRef<any, SidebarItemProps>((props, ref) => {
       ref={ref}
       aria-label={text ? text : props.to}
       {...navLinkProps}
+      onClick={handleClick}
     >
       {content}
     </WorkaroundNavLink>
   );
 });
+
+const SidebarItemWithSubmenu = ({
+  children,
+  ...props
+}: SidebarItemBaseProps & {
+  children: React.ReactElement<SidebarSubmenuProps>;
+}) => {
+  const { sidebarConfig } = useContext(SidebarConfigContext);
+  const classes = useMemoStyles(sidebarConfig);
+  const [isHoveredOn, setIsHoveredOn] = useState(false);
+  const location = useLocation();
+  const isActive = useLocationMatch(children, location);
+  const isSmallScreen = useMediaQuery((theme: Theme) =>
+    theme.breakpoints.down('sm'),
+  );
+
+  const handleMouseEnter = () => {
+    setIsHoveredOn(true);
+  };
+  const handleMouseLeave = () => {
+    setIsHoveredOn(false);
+  };
+
+  const arrowIcon = () => {
+    if (isSmallScreen) {
+      return isHoveredOn ? (
+        <ArrowDropUp fontSize="small" className={classes.submenuArrow} />
+      ) : (
+        <ArrowDropDown fontSize="small" className={classes.submenuArrow} />
+      );
+    }
+    return (
+      !isHoveredOn && (
+        <ArrowRightIcon fontSize="small" className={classes.submenuArrow} />
+      )
+    );
+  };
+
+  return (
+    <SidebarItemWithSubmenuContext.Provider
+      value={{
+        isHoveredOn,
+        setIsHoveredOn,
+      }}
+    >
+      <div
+        data-testid="item-with-submenu"
+        onMouseLeave={handleMouseLeave}
+        onTouchStart={isHoveredOn ? handleMouseLeave : handleMouseEnter}
+        onMouseEnter={handleMouseEnter}
+        className={classnames(isHoveredOn && classes.highlighted)}
+      >
+        <SidebarItemBase
+          hasSubmenu
+          className={isActive ? classes.selected : ''}
+          {...props}
+        >
+          {arrowIcon()}
+        </SidebarItemBase>
+        {isHoveredOn && children}
+      </div>
+    </SidebarItemWithSubmenuContext.Provider>
+  );
+};
+
+/**
+ * Creates a `SidebarItem`
+ *
+ * @remarks
+ * If children contain a `SidebarSubmenu` component the `SidebarItem` will have a expandable submenu
+ */
+export const SidebarItem = forwardRef<
+  any,
+  SidebarItemProps & { children: ReactNode }
+>((props, ref) => {
+  // Filter children for SidebarSubmenu components
+  const [submenu] = useElementFilter(props.children, elements =>
+    // Directly comparing child.type with SidebarSubmenu will not work with in
+    // combination with react-hot-loader
+    //
+    // https://github.com/gaearon/react-hot-loader/issues/304#issuecomment-456569720
+    elements.getElements().filter(child => child.type === sidebarSubmenuType),
+  );
+
+  if (submenu) {
+    return (
+      <SidebarItemWithSubmenu {...props}>
+        {submenu as React.ReactElement<SidebarSubmenuProps>}
+      </SidebarItemWithSubmenu>
+    );
+  }
+
+  return <SidebarItemBase {...props} ref={ref} />;
+}) as (props: SidebarItemProps) => JSX.Element;
 
 type SidebarSearchFieldProps = {
   onSearch: (input: string) => void;
@@ -488,8 +591,9 @@ type SidebarSearchFieldProps = {
 };
 
 export function SidebarSearchField(props: SidebarSearchFieldProps) {
+  const { sidebarConfig } = useContext(SidebarConfigContext);
   const [input, setInput] = useState('');
-  const classes = useStyles();
+  const classes = useMemoStyles(sidebarConfig);
   const Icon = props.icon ? props.icon : SearchIcon;
 
   const search = () => {
@@ -521,7 +625,7 @@ export function SidebarSearchField(props: SidebarSearchFieldProps) {
   };
 
   return (
-    <div className={classes.searchRoot}>
+    <Box className={classes.searchRoot}>
       <SidebarItem
         icon={Icon}
         to={props.to}
@@ -544,34 +648,40 @@ export function SidebarSearchField(props: SidebarSearchFieldProps) {
           }}
         />
       </SidebarItem>
-    </div>
+    </Box>
   );
 }
+
+export type SidebarSpaceClassKey = 'root';
 
 export const SidebarSpace = styled('div')(
   {
     flex: 1,
   },
   { name: 'BackstageSidebarSpace' },
-);
+) as ComponentType<ComponentProps<'div'> & StyledComponentProps<'root'>>;
+
+export type SidebarSpacerClassKey = 'root';
 
 export const SidebarSpacer = styled('div')(
   {
     height: 8,
   },
   { name: 'BackstageSidebarSpacer' },
-);
+) as ComponentType<ComponentProps<'div'> & StyledComponentProps<'root'>>;
+
+export type SidebarDividerClassKey = 'root';
 
 export const SidebarDivider = styled('hr')(
-  {
+  ({ theme }) => ({
     height: 1,
     width: '100%',
     background: '#383838',
     border: 'none',
-    margin: '12px 0px',
-  },
+    margin: theme.spacing(1.2, 0),
+  }),
   { name: 'BackstageSidebarDivider' },
-);
+) as ComponentType<ComponentProps<'hr'> & StyledComponentProps<'root'>>;
 
 const styledScrollbar = (theme: Theme): CreateCSSProperties => ({
   overflowY: 'auto',
@@ -581,7 +691,7 @@ const styledScrollbar = (theme: Theme): CreateCSSProperties => ({
     borderRadius: '5px',
   },
   '&::-webkit-scrollbar-thumb': {
-    backgroundColor: theme.palette.text.hint,
+    backgroundColor: theme.palette.text.secondary,
     borderRadius: '5px',
   },
 });
@@ -591,8 +701,7 @@ export const SidebarScrollWrapper = styled('div')(({ theme }) => {
   return {
     flex: '0 1 auto',
     overflowX: 'hidden',
-    // 5px space to the right of the scrollbar
-    width: 'calc(100% - 5px)',
+    width: '100%',
     // Display at least one item in the container
     // Question: Can this be a config/theme variable - if so, which? :/
     minHeight: '48px',
@@ -600,4 +709,46 @@ export const SidebarScrollWrapper = styled('div')(({ theme }) => {
     '@media (hover: none)': scrollbarStyles,
     '&:hover': scrollbarStyles,
   };
-});
+}) as ComponentType<ComponentProps<'div'> & StyledComponentProps<'root'>>;
+
+/**
+ * A button which allows you to expand the sidebar when clicked.
+ *
+ * @remarks
+ * Use optionally to replace sidebar's expand-on-hover feature with expand-on-click.
+ *
+ * If you are using this you might want to set the `disableExpandOnHover` of the `Sidebar` to `true`.
+ *
+ * @public
+ */
+export const SidebarExpandButton = () => {
+  const { sidebarConfig } = useContext(SidebarConfigContext);
+  const classes = useMemoStyles(sidebarConfig);
+  const { isOpen, setOpen } = useSidebarOpenState();
+  const isSmallScreen = useMediaQuery<Theme>(
+    theme => theme.breakpoints.down('md'),
+    { noSsr: true },
+  );
+
+  if (isSmallScreen) {
+    return null;
+  }
+
+  const handleClick = () => {
+    setOpen(!isOpen);
+  };
+
+  return (
+    <Button
+      role="button"
+      onClick={handleClick}
+      className={classes.expandButton}
+      aria-label="Expand Sidebar"
+      data-testid="sidebar-expand-button"
+    >
+      <Box className={classes.arrows}>
+        {isOpen ? <DoubleArrowLeft /> : <DoubleArrowRight />}
+      </Box>
+    </Button>
+  );
+};

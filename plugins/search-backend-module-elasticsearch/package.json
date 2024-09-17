@@ -1,45 +1,72 @@
 {
   "name": "@backstage/plugin-search-backend-module-elasticsearch",
+  "version": "1.5.6-next.2",
   "description": "A module for the search backend that implements search using ElasticSearch",
-  "version": "0.0.6",
+  "backstage": {
+    "role": "backend-plugin-module",
+    "pluginId": "search",
+    "pluginPackage": "@backstage/plugin-search-backend"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "homepage": "https://backstage.io",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/backstage/backstage",
+    "directory": "plugins/search-backend-module-elasticsearch"
+  },
+  "license": "Apache-2.0",
+  "exports": {
+    ".": "./src/index.ts",
+    "./alpha": "./src/alpha.ts",
+    "./package.json": "./package.json"
+  },
   "main": "src/index.ts",
   "types": "src/index.ts",
-  "license": "Apache-2.0",
-  "publishConfig": {
-    "access": "public",
-    "main": "dist/index.cjs.js",
-    "types": "dist/index.d.ts"
-  },
-  "scripts": {
-    "start": "backstage-cli backend:dev",
-    "build": "backstage-cli backend:build",
-    "lint": "backstage-cli lint",
-    "test": "backstage-cli test",
-    "prepack": "backstage-cli prepack",
-    "postpack": "backstage-cli postpack",
-    "clean": "backstage-cli clean"
-  },
-  "dependencies": {
-    "@backstage/config": "^0.1.8",
-    "@backstage/search-common": "^0.2.0",
-    "@elastic/elasticsearch": "7.13.0",
-    "@acuris/aws-es-connection": "^2.2.0",
-    "aws-sdk": "^2.948.0",
-    "elastic-builder": "^2.16.0",
-    "lodash": "^4.17.21",
-    "winston": "^3.2.1"
-  },
-  "devDependencies": {
-    "@backstage/backend-common": "^0.9.13",
-    "@backstage/cli": "^0.10.1",
-    "@elastic/elasticsearch-mock": "^0.3.0"
+  "typesVersions": {
+    "*": {
+      "alpha": [
+        "src/alpha.ts"
+      ],
+      "package.json": [
+        "package.json"
+      ]
+    }
   },
   "files": [
     "dist",
     "config.d.ts"
   ],
-  "jest": {
-    "testEnvironment": "node"
+  "scripts": {
+    "build": "backstage-cli package build",
+    "clean": "backstage-cli package clean",
+    "lint": "backstage-cli package lint",
+    "prepack": "backstage-cli package prepack",
+    "postpack": "backstage-cli package postpack",
+    "start": "backstage-cli package start",
+    "test": "backstage-cli package test"
+  },
+  "dependencies": {
+    "@backstage/backend-common": "workspace:^",
+    "@backstage/backend-plugin-api": "workspace:^",
+    "@backstage/config": "workspace:^",
+    "@backstage/integration-aws-node": "workspace:^",
+    "@backstage/plugin-search-backend-node": "workspace:^",
+    "@backstage/plugin-search-common": "workspace:^",
+    "@elastic/elasticsearch": "^7.13.0",
+    "@opensearch-project/opensearch": "^2.2.1",
+    "aws4": "^1.12.0",
+    "elastic-builder": "^2.16.0",
+    "lodash": "^4.17.21",
+    "uuid": "^9.0.0"
+  },
+  "devDependencies": {
+    "@backstage/backend-common": "workspace:^",
+    "@backstage/backend-test-utils": "workspace:^",
+    "@backstage/cli": "workspace:^",
+    "@elastic/elasticsearch-mock": "^1.0.0",
+    "@short.io/opensearch-mock": "^0.3.1"
   },
   "configSchema": "config.d.ts"
 }

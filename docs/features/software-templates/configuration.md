@@ -12,13 +12,16 @@ This is done in your `app-config.yaml` by adding
 [Backstage integrations](https://backstage.io/docs/integrations/) for the
 appropriate source code repository for your organization.
 
-> Note: Integrations may already be set up as part of your `app-config.yaml`.
+:::note Note
 
-The next step is to add
-[add templates](http://backstage.io/docs/features/software-templates/adding-templates)
+Integrations may already be set up as part of your `app-config.yaml`.
+
+:::
+
+The next step is to [add templates](http://backstage.io/docs/features/software-templates/adding-templates)
 to your Backstage app.
 
-### Publishing defaults
+## Publishing defaults
 
 Software templates can define _publish_ actions, such as `publish:github`, to
 create new repositories or submit pull / merge requests to existing
@@ -45,7 +48,7 @@ add the `repoVisibility` key within a software template:
     repoVisibility: public # or 'internal' or 'private'
 ```
 
-### Disabling Docker in Docker situation (Optional)
+## Disabling Docker in Docker situation (Optional)
 
 Software templates use the `fetch:template` action by default, which requires no
 external dependencies and offers a
@@ -68,7 +71,7 @@ RUN apt-get update && apt-get install -y python3 python3-pip
 RUN pip3 install cookiecutter
 ```
 
-### Customizing the ScaffolderPage with Grouping and Filtering
+## Customizing the ScaffolderPage with Grouping and Filtering
 
 Once you have more than a few software templates you may want to customize your
 `ScaffolderPage` by grouping and surfacing certain templates together. You can
@@ -94,3 +97,18 @@ You can also further customize groups by passing in a `titleComponent` instead
 of a `title` which will be a component to use as the header instead of just the
 default `ContentHeader` with the `title` set as it's value.
 ![Grouped Templates](../../assets/software-templates/grouped-templates.png)
+
+There is also an option to hide some templates.
+You can have several use cases for that:
+
+- it's still in an experimental phase, so you can combine it with feature flagging for example
+- you don't want to make them accessible from template list, but only open it on some action with pre-filled data.
+- show different set of templates depends on target environment
+
+```typescript jsx
+<ScaffolderPage
+  templateFilter={entity =>
+    entity?.metadata?.tags?.includes('experimental') ?? false
+  }
+/>
+```

@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-import { ErrorResponse } from '../serialization';
+import { ErrorResponseBody } from '../serialization';
 import { ResponseError } from './ResponseError';
 
 describe('ResponseError', () => {
   it('constructs itself from a response', async () => {
-    const body: ErrorResponse = {
+    const body: ErrorResponseBody = {
       error: { name: 'Fours', message: 'Expected fives', stack: 'lines' },
       request: { method: 'GET', url: '/' },
       response: { statusCode: 444 },
@@ -35,6 +35,8 @@ describe('ResponseError', () => {
     const e = await ResponseError.fromResponse(response as Response);
     expect(e.name).toEqual('ResponseError');
     expect(e.message).toEqual('Request failed with 444 Fours');
+    expect(e.statusCode).toEqual(444);
+    expect(e.statusText).toEqual('Fours');
     expect(e.cause.name).toEqual('Fours');
     expect(e.cause.message).toEqual('Expected fives');
     expect(e.cause.stack).toEqual('lines');

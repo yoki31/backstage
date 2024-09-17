@@ -15,11 +15,29 @@
  */
 
 import React from 'react';
-import { useOutlet } from 'react-router';
-import { LegacyTechDocsHome } from './LegacyTechDocsHome';
+import { useOutlet } from 'react-router-dom';
+import { TableColumn, TableProps } from '@backstage/core-components';
+import {
+  EntityOwnerPickerProps,
+  UserListFilterKind,
+} from '@backstage/plugin-catalog-react';
+import { DefaultTechDocsHome } from './DefaultTechDocsHome';
+import { DocsTableRow } from './Tables';
 
-export const TechDocsIndexPage = () => {
+/**
+ * Props for {@link TechDocsIndexPage}
+ *
+ * @public
+ */
+export type TechDocsIndexPageProps = {
+  initialFilter?: UserListFilterKind;
+  columns?: TableColumn<DocsTableRow>[];
+  actions?: TableProps<DocsTableRow>['actions'];
+  ownerPickerMode?: EntityOwnerPickerProps['mode'];
+};
+
+export const TechDocsIndexPage = (props: TechDocsIndexPageProps) => {
   const outlet = useOutlet();
 
-  return outlet || <LegacyTechDocsHome />;
+  return outlet || <DefaultTechDocsHome {...props} />;
 };

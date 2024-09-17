@@ -20,11 +20,9 @@
  * @packageDocumentation
  */
 
-export * from './catalog';
-export * from './ingestion';
-export * from './legacy';
-export * from './search';
-export * from './util';
+export * from './modules';
 export * from './processing';
-export * from './providers';
+export * from './search';
 export * from './service';
+export * from './deprecated';
+export * from './constants';

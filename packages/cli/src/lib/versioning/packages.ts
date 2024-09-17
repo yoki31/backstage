@@ -14,22 +14,23 @@
  * limitations under the License.
  */
 
-import { runPlain } from '../../lib/run';
+import { minimatch } from 'minimatch';
+import { getPackages } from '@manypkg/get-packages';
 import { NotFoundError } from '../errors';
-
-const PREFIX = '@backstage';
+import { detectYarnVersion } from '../yarn';
+import { execFile } from '../run';
 
 const DEP_TYPES = [
   'dependencies',
   'devDependencies',
   'peerDependencies',
   'optionalDependencies',
-];
+] as const;
 
 // Package data as returned by `yarn info`
 export type YarnInfoInspectData = {
   name: string;
-  'dist-tags': { latest: string };
+  'dist-tags': Record<string, string>;
   versions: string[];
   time: { [version: string]: string };
 };
@@ -49,42 +50,71 @@ type PkgVersionInfo = {
 export async function fetchPackageInfo(
   name: string,
 ): Promise<YarnInfoInspectData> {
-  const output = await runPlain('yarn', 'info', '--json', name);
+  const yarnVersion = await detectYarnVersion();
 
-  if (!output) {
-    throw new NotFoundError(`No package information found for package ${name}`);
+  const cmd = yarnVersion === 'classic' ? ['info'] : ['npm', 'info'];
+  try {
+    const { stdout: output } = await execFile(
+      'yarn',
+      [...cmd, '--json', name],
+      { shell: true },
+    );
+
+    if (!output) {
+      throw new NotFoundError(
+        `No package information found for package ${name}`,
+      );
+    }
+
+    if (yarnVersion === 'berry') {
+      return JSON.parse(output) as YarnInfoInspectData;
+    }
+
+    const info = JSON.parse(output) as YarnInfo;
+    if (info.type !== 'inspect') {
+      throw new Error(`Received unknown yarn info for ${name}, ${output}`);
+    }
+
+    return info.data as YarnInfoInspectData;
+  } catch (error) {
+    if (yarnVersion === 'classic') {
+      throw error;
+    }
+
+    if (error?.stdout.includes('Response Code: 404')) {
+      throw new NotFoundError(
+        `No package information found for package ${name}`,
+      );
+    }
+
+    throw error;
   }
-
-  const info = JSON.parse(output) as YarnInfo;
-  if (info.type !== 'inspect') {
-    throw new Error(`Received unknown yarn info for ${name}, ${output}`);
-  }
-
-  return info.data as YarnInfoInspectData;
 }
 
 /** Map all dependencies in the repo as dependency => dependents */
 export async function mapDependencies(
   targetDir: string,
+  pattern: string,
 ): Promise<Map<string, PkgVersionInfo[]>> {
-  const { Project } = require('@lerna/project');
-  const project = new Project(targetDir);
-  const packages = await project.getPackages();
+  const { packages, root } = await getPackages(targetDir);
+
+  // Include root package.json too
+  packages.push(root);
 
   const dependencyMap = new Map<string, PkgVersionInfo[]>();
   for (const pkg of packages) {
     const deps = DEP_TYPES.flatMap(
-      t => Object.entries(pkg.get(t) ?? {}) as [string, string][],
+      t => Object.entries(pkg.packageJson[t] ?? {}) as [string, string][],
     );
 
     for (const [name, range] of deps) {
-      if (name.startsWith(PREFIX)) {
+      if (minimatch(name, pattern)) {
         dependencyMap.set(
           name,
           (dependencyMap.get(name) ?? []).concat({
             range,
-            name: pkg.name,
-            location: pkg.location,
+            name: pkg.packageJson.name,
+            location: pkg.dir,
           }),
         );
       }

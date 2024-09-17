@@ -14,25 +14,41 @@
  * limitations under the License.
  */
 
-import { Command } from 'commander';
+import { OptionValues } from 'commander';
 import openBrowser from 'react-dev-utils/openBrowser';
 import { createLogger } from '../../lib/utility';
 import { runMkdocsServer } from '../../lib/mkdocsServer';
 import { LogFunc, waitForSignal } from '../../lib/run';
+import { getMkdocsYml } from '@backstage/plugin-techdocs-node';
+import fs from 'fs-extra';
+import { checkIfDockerIsOperational } from './utils';
 
-export default async function serveMkdocs(cmd: Command) {
-  const logger = createLogger({ verbose: cmd.verbose });
+export default async function serveMkdocs(opts: OptionValues) {
+  const logger = createLogger({ verbose: opts.verbose });
 
-  const dockerAddr = `http://0.0.0.0:${cmd.port}`;
-  const localAddr = `http://127.0.0.1:${cmd.port}`;
-  const expectedDevAddr = cmd.docker ? dockerAddr : localAddr;
+  const dockerAddr = `http://0.0.0.0:${opts.port}`;
+  const localAddr = `http://127.0.0.1:${opts.port}`;
+  const expectedDevAddr = opts.docker ? dockerAddr : localAddr;
+
+  if (opts.docker) {
+    const isDockerOperational = await checkIfDockerIsOperational(logger);
+    if (!isDockerOperational) {
+      return;
+    }
+  }
+
+  const { path: mkdocsYmlPath, configIsTemporary } = await getMkdocsYml(
+    './',
+    opts.siteName,
+  );
+
   // We want to open browser only once based on a log.
   let boolOpenBrowserTriggered = false;
 
   const logFunc: LogFunc = data => {
     // Sometimes the lines contain an unnecessary extra new line in between
     const logLines = data.toString().split('\n');
-    const logPrefix = cmd.docker ? '[docker/mkdocs]' : '[mkdocs]';
+    const logPrefix = opts.docker ? '[docker/mkdocs]' : '[mkdocs]';
     logLines.forEach(line => {
       if (line === '') {
         return;
@@ -59,13 +75,21 @@ export default async function serveMkdocs(cmd: Command) {
 
   // Commander stores --no-docker in cmd.docker variable
   const childProcess = await runMkdocsServer({
-    port: cmd.port,
-    dockerImage: cmd.dockerImage,
-    useDocker: cmd.docker,
+    port: opts.port,
+    dockerImage: opts.dockerImage,
+    dockerEntrypoint: opts.dockerEntrypoint,
+    dockerOptions: opts.dockerOption,
+    useDocker: opts.docker,
     stdoutLogFunc: logFunc,
     stderrLogFunc: logFunc,
   });
 
   // Keep waiting for user to cancel the process
   await waitForSignal([childProcess]);
+
+  if (configIsTemporary) {
+    process.on('exit', async () => {
+      fs.rmSync(mkdocsYmlPath, {});
+    });
+  }
 }

@@ -1,85 +1,110 @@
 {
   "name": "@backstage/plugin-techdocs",
+  "version": "1.10.9-next.2",
   "description": "The Backstage plugin that renders technical documentation for your components",
-  "version": "0.12.9",
-  "main": "src/index.ts",
-  "types": "src/index.ts",
-  "license": "Apache-2.0",
-  "private": false,
-  "publishConfig": {
-    "access": "public",
-    "main": "dist/index.esm.js",
-    "types": "dist/index.d.ts"
+  "backstage": {
+    "role": "frontend-plugin",
+    "pluginId": "techdocs",
+    "pluginPackages": [
+      "@backstage/plugin-techdocs",
+      "@backstage/plugin-techdocs-backend",
+      "@backstage/plugin-techdocs-common",
+      "@backstage/plugin-techdocs-node",
+      "@backstage/plugin-techdocs-react"
+    ]
   },
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": [
+    "backstage",
+    "techdocs"
+  ],
   "homepage": "https://backstage.io",
   "repository": {
     "type": "git",
     "url": "https://github.com/backstage/backstage",
     "directory": "plugins/techdocs"
   },
-  "keywords": [
-    "backstage",
-    "techdocs"
-  ],
-  "scripts": {
-    "build": "backstage-cli plugin:build",
-    "start": "backstage-cli plugin:serve",
-    "lint": "backstage-cli lint",
-    "test": "backstage-cli test",
-    "diff": "backstage-cli plugin:diff",
-    "prepack": "backstage-cli prepack",
-    "postpack": "backstage-cli postpack",
-    "clean": "backstage-cli clean"
+  "license": "Apache-2.0",
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/index.ts",
+    "./alpha": "./src/alpha.tsx",
+    "./package.json": "./package.json"
   },
-  "dependencies": {
-    "@backstage/catalog-model": "^0.9.7",
-    "@backstage/config": "^0.1.11",
-    "@backstage/core-components": "^0.8.0",
-    "@backstage/core-plugin-api": "^0.3.0",
-    "@backstage/errors": "^0.1.5",
-    "@backstage/integration": "^0.6.10",
-    "@backstage/integration-react": "^0.1.15",
-    "@backstage/plugin-catalog": "^0.7.4",
-    "@backstage/plugin-catalog-react": "^0.6.5",
-    "@backstage/plugin-search": "^0.5.1",
-    "@backstage/theme": "^0.2.14",
-    "@material-ui/core": "^4.12.2",
-    "@material-ui/icons": "^4.9.1",
-    "@material-ui/lab": "4.0.0-alpha.57",
-    "@material-ui/styles": "^4.10.0",
-    "dompurify": "^2.2.9",
-    "event-source-polyfill": "^1.0.25",
-    "git-url-parse": "^11.6.0",
-    "lodash": "^4.17.21",
-    "react-router": "6.0.0-beta.0",
-    "react-router-dom": "6.0.0-beta.0",
-    "react-text-truncate": "^0.16.0",
-    "react-use": "^17.2.4"
-  },
-  "peerDependencies": {
-    "@types/react": "^16.13.1 || ^17.0.0",
-    "react": "^16.13.1 || ^17.0.0",
-    "react-dom": "^16.13.1 || ^17.0.0"
-  },
-  "devDependencies": {
-    "@backstage/cli": "^0.10.1",
-    "@backstage/core-app-api": "^0.2.0",
-    "@backstage/dev-utils": "^0.2.14",
-    "@backstage/test-utils": "^0.1.24",
-    "@testing-library/jest-dom": "^5.10.1",
-    "@testing-library/react": "^11.2.5",
-    "@testing-library/react-hooks": "^7.0.2",
-    "@testing-library/user-event": "^13.1.8",
-    "@types/dompurify": "^2.2.2",
-    "@types/jest": "^26.0.7",
-    "@types/node": "^14.14.32",
-    "canvas": "^2.6.1",
-    "cross-fetch": "^3.0.6",
-    "msw": "^0.35.0"
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "typesVersions": {
+    "*": {
+      "alpha": [
+        "src/alpha.tsx"
+      ],
+      "package.json": [
+        "package.json"
+      ]
+    }
   },
   "files": [
     "dist",
     "config.d.ts"
   ],
+  "scripts": {
+    "build": "backstage-cli package build",
+    "clean": "backstage-cli package clean",
+    "lint": "backstage-cli package lint",
+    "prepack": "backstage-cli package prepack",
+    "postpack": "backstage-cli package postpack",
+    "start": "backstage-cli package start",
+    "test": "backstage-cli package test"
+  },
+  "dependencies": {
+    "@backstage/catalog-model": "workspace:^",
+    "@backstage/config": "workspace:^",
+    "@backstage/core-compat-api": "workspace:^",
+    "@backstage/core-components": "workspace:^",
+    "@backstage/core-plugin-api": "workspace:^",
+    "@backstage/errors": "workspace:^",
+    "@backstage/frontend-plugin-api": "workspace:^",
+    "@backstage/integration": "workspace:^",
+    "@backstage/integration-react": "workspace:^",
+    "@backstage/plugin-auth-react": "workspace:^",
+    "@backstage/plugin-catalog-react": "workspace:^",
+    "@backstage/plugin-search-common": "workspace:^",
+    "@backstage/plugin-search-react": "workspace:^",
+    "@backstage/plugin-techdocs-common": "workspace:^",
+    "@backstage/plugin-techdocs-react": "workspace:^",
+    "@backstage/theme": "workspace:^",
+    "@material-ui/core": "^4.12.2",
+    "@material-ui/icons": "^4.9.1",
+    "@material-ui/lab": "4.0.0-alpha.61",
+    "@material-ui/styles": "^4.10.0",
+    "@microsoft/fetch-event-source": "^2.0.1",
+    "@types/react": "^16.13.1 || ^17.0.0 || ^18.0.0",
+    "dompurify": "^3.0.0",
+    "git-url-parse": "^14.0.0",
+    "jss": "~10.10.0",
+    "lodash": "^4.17.21",
+    "react-helmet": "6.1.0",
+    "react-use": "^17.2.4"
+  },
+  "devDependencies": {
+    "@backstage/cli": "workspace:^",
+    "@backstage/core-app-api": "workspace:^",
+    "@backstage/dev-utils": "workspace:^",
+    "@backstage/plugin-techdocs-module-addons-contrib": "workspace:^",
+    "@backstage/test-utils": "workspace:^",
+    "@testing-library/dom": "^10.0.0",
+    "@testing-library/jest-dom": "^6.0.0",
+    "@testing-library/react": "^16.0.0",
+    "@testing-library/user-event": "^14.0.0",
+    "@types/dompurify": "^3.0.0",
+    "canvas": "^2.10.2"
+  },
+  "peerDependencies": {
+    "react": "^16.13.1 || ^17.0.0 || ^18.0.0",
+    "react-dom": "^16.13.1 || ^17.0.0 || ^18.0.0",
+    "react-router-dom": "6.0.0-beta.0 || ^6.3.0"
+  },
   "configSchema": "config.d.ts"
 }

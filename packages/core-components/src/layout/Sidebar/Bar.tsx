@@ -14,26 +14,33 @@
  * limitations under the License.
  */
 
-import { makeStyles } from '@material-ui/core/styles';
+import Box from '@material-ui/core/Box';
+import Button from '@material-ui/core/Button';
+import { makeStyles, Theme } from '@material-ui/core/styles';
 import useMediaQuery from '@material-ui/core/useMediaQuery';
 import classnames from 'classnames';
-import React, { useState, useContext, PropsWithChildren, useRef } from 'react';
-import { sidebarConfig, SidebarContext } from './config';
-import { BackstageTheme } from '@backstage/theme';
-import { SidebarPinStateContext } from './Page';
-import DoubleArrowRight from './icons/DoubleArrowRight';
-import DoubleArrowLeft from './icons/DoubleArrowLeft';
+import React, { useContext, useRef, useState } from 'react';
 
-export type SidebarClassKey = 'root' | 'drawer' | 'drawerOpen';
+import {
+  makeSidebarConfig,
+  makeSidebarSubmenuConfig,
+  SidebarConfig,
+  SidebarConfigContext,
+  SidebarOptions,
+  SubmenuConfig,
+  SubmenuOptions,
+} from './config';
+import { MobileSidebar } from './MobileSidebar';
+import { useContent } from './Page';
+import { SidebarOpenStateProvider } from './SidebarOpenStateContext';
+import { useSidebarPinState } from './SidebarPinStateContext';
+import { useTranslationRef } from '@backstage/core-plugin-api/alpha';
+import { coreComponentsTranslationRef } from '../../translation';
 
-const useStyles = makeStyles<BackstageTheme>(
+/** @public */
+export type SidebarClassKey = 'drawer' | 'drawerOpen';
+const useStyles = makeStyles<Theme, { sidebarConfig: SidebarConfig }>(
   theme => ({
-    root: {
-      zIndex: 1000,
-      position: 'relative',
-      overflow: 'visible',
-      width: theme.spacing(7) + 1,
-    },
     drawer: {
       display: 'flex',
       flexFlow: 'column nowrap',
@@ -42,12 +49,11 @@ const useStyles = makeStyles<BackstageTheme>(
       left: 0,
       top: 0,
       bottom: 0,
-      padding: 0,
+      zIndex: theme.zIndex.appBar,
       background: theme.palette.navigation.background,
       overflowX: 'hidden',
       msOverflowStyle: 'none',
       scrollbarWidth: 'none',
-      width: sidebarConfig.drawerWidthClosed,
       transition: theme.transitions.create('width', {
         easing: theme.transitions.easing.sharp,
         duration: theme.transitions.duration.shortest,
@@ -58,26 +64,28 @@ const useStyles = makeStyles<BackstageTheme>(
       '&::-webkit-scrollbar': {
         display: 'none',
       },
+      '@media print': {
+        display: 'none',
+      },
     },
-    expandButton: {
-      background: 'none',
-      border: 'none',
-      color: theme.palette.navigation.color,
-      width: '100%',
-      cursor: 'pointer',
-      position: 'relative',
-      height: 48,
-    },
-    arrows: {
-      position: 'absolute',
-      right: 10,
-    },
-    drawerOpen: {
-      width: sidebarConfig.drawerWidthOpen,
+    drawerWidth: props => ({
+      width: props.sidebarConfig.drawerWidthClosed,
+    }),
+    drawerOpen: props => ({
+      width: props.sidebarConfig.drawerWidthOpen,
       transition: theme.transitions.create('width', {
         easing: theme.transitions.easing.sharp,
         duration: theme.transitions.duration.shorter,
       }),
+    }),
+    visuallyHidden: {
+      top: 0,
+      position: 'absolute',
+      zIndex: 1000,
+      transform: 'translateY(-200%)',
+      '&:focus': {
+        transform: 'translateY(5px)',
+      },
     },
   }),
   { name: 'BackstageSidebar' },
@@ -89,29 +97,53 @@ enum State {
   Open,
 }
 
-type Props = {
+/** @public */
+export type SidebarProps = {
+  openDelayMs?: number;
+  closeDelayMs?: number;
+  sidebarOptions?: SidebarOptions;
+  submenuOptions?: SubmenuOptions;
+  disableExpandOnHover?: boolean;
+  children?: React.ReactNode;
+};
+
+export type DesktopSidebarProps = {
   openDelayMs?: number;
   closeDelayMs?: number;
   disableExpandOnHover?: boolean;
+  children?: React.ReactNode;
 };
 
-export function Sidebar(props: PropsWithChildren<Props>) {
+/**
+ * Places the Sidebar & wraps the children providing context weather the `Sidebar` is open or not.
+ *
+ * Handles & delays hover events for expanding the `Sidebar`
+ *
+ * @param props `disableExpandOnHover` disables the default hover behaviour;
+ * `openDelayMs` & `closeDelayMs` set delay until sidebar will open/close on hover
+ * @returns
+ * @internal
+ */
+const DesktopSidebar = (props: DesktopSidebarProps) => {
+  const { sidebarConfig } = useContext(SidebarConfigContext);
   const {
-    disableExpandOnHover = false,
     openDelayMs = sidebarConfig.defaultOpenDelayMs,
     closeDelayMs = sidebarConfig.defaultCloseDelayMs,
+    disableExpandOnHover,
     children,
   } = props;
-  const classes = useStyles();
-  const isSmallScreen = useMediaQuery<BackstageTheme>(theme =>
-    theme.breakpoints.down('md'),
+
+  const classes = useStyles({ sidebarConfig });
+  const isSmallScreen = useMediaQuery<Theme>(
+    theme => theme.breakpoints.down('md'),
+    { noSsr: true },
   );
   const [state, setState] = useState(State.Closed);
   const hoverTimerRef = useRef<number>();
-  const { isPinned } = useContext(SidebarPinStateContext);
+  const { isPinned, toggleSidebarPinState } = useSidebarPinState();
 
   const handleOpen = () => {
-    if (isPinned) {
+    if (isPinned || disableExpandOnHover) {
       return;
     }
     if (hoverTimerRef.current) {
@@ -129,7 +161,7 @@ export function Sidebar(props: PropsWithChildren<Props>) {
   };
 
   const handleClose = () => {
-    if (isPinned) {
+    if (isPinned || disableExpandOnHover) {
       return;
     }
     if (hoverTimerRef.current) {
@@ -148,73 +180,90 @@ export function Sidebar(props: PropsWithChildren<Props>) {
 
   const isOpen = (state === State.Open && !isSmallScreen) || isPinned;
 
+  /**
+   * Close/Open Sidebar directly without delays. Also toggles `SidebarPinState` to avoid hidden content behind Sidebar.
+   */
   const setOpen = (open: boolean) => {
     if (open) {
-      handleOpen();
+      setState(State.Open);
+      toggleSidebarPinState();
     } else {
-      handleClose();
+      setState(State.Closed);
+      toggleSidebarPinState();
     }
   };
 
   return (
-    <div
-      className={classes.root}
-      data-testid="sidebar-root"
-      onMouseEnter={disableExpandOnHover ? () => {} : handleOpen}
-      onFocus={disableExpandOnHover ? () => {} : handleOpen}
-      onMouseLeave={disableExpandOnHover ? () => {} : handleClose}
-      onBlur={disableExpandOnHover ? () => {} : handleClose}
-    >
-      <SidebarContext.Provider
-        value={{
-          isOpen,
-          setOpen,
-        }}
-      >
-        <div
-          className={classnames(classes.drawer, {
-            [classes.drawerOpen]: isOpen,
-          })}
+    <nav style={{}} aria-label="sidebar nav">
+      <A11ySkipSidebar />
+      <SidebarOpenStateProvider value={{ isOpen, setOpen }}>
+        <Box
+          className={classes.root}
+          data-testid="sidebar-root"
+          onMouseEnter={disableExpandOnHover ? () => {} : handleOpen}
+          onFocus={disableExpandOnHover ? () => {} : handleOpen}
+          onMouseLeave={disableExpandOnHover ? () => {} : handleClose}
+          onBlur={disableExpandOnHover ? () => {} : handleClose}
         >
-          {children}
-        </div>
-      </SidebarContext.Provider>
-    </div>
+          <Box
+            className={classnames(classes.drawer, classes.drawerWidth, {
+              [classes.drawerOpen]: isOpen,
+            })}
+          >
+            {children}
+          </Box>
+        </Box>
+      </SidebarOpenStateProvider>
+    </nav>
   );
-}
+};
 
 /**
- * A button which allows you to expand the sidebar when clicked.
- * Use optionally to replace sidebar's expand-on-hover feature with expand-on-click.
+ * Passing children into the desktop or mobile sidebar depending on the context
  *
  * @public
  */
-export const SidebarExpandButton = () => {
-  const classes = useStyles();
-  const { isOpen, setOpen } = useContext(SidebarContext);
-  const { isPinned } = useContext(SidebarPinStateContext);
-  const isSmallScreen = useMediaQuery<BackstageTheme>(theme =>
-    theme.breakpoints.down('md'),
+export const Sidebar = (props: SidebarProps) => {
+  const sidebarConfig: SidebarConfig = makeSidebarConfig(
+    props.sidebarOptions ?? {},
   );
+  const submenuConfig: SubmenuConfig = makeSidebarSubmenuConfig(
+    props.submenuOptions ?? {},
+  );
+  const { children, disableExpandOnHover, openDelayMs, closeDelayMs } = props;
+  const { isMobile } = useSidebarPinState();
 
-  const handleClick = () => {
-    setOpen(!isOpen);
-  };
-
-  if (isPinned || isSmallScreen) {
-    return null;
-  }
-
-  return (
-    <button
-      onClick={handleClick}
-      className={classes.expandButton}
-      aria-label="Expand Sidebar"
-      data-testid="sidebar-expand-button"
-    >
-      <div className={classes.arrows}>
-        {isOpen ? <DoubleArrowLeft /> : <DoubleArrowRight />}
-      </div>
-    </button>
+  return isMobile ? (
+    <MobileSidebar>{children}</MobileSidebar>
+  ) : (
+    <SidebarConfigContext.Provider value={{ sidebarConfig, submenuConfig }}>
+      <DesktopSidebar
+        openDelayMs={openDelayMs}
+        closeDelayMs={closeDelayMs}
+        disableExpandOnHover={disableExpandOnHover}
+      >
+        {children}
+      </DesktopSidebar>
+    </SidebarConfigContext.Provider>
   );
 };
+
+function A11ySkipSidebar() {
+  const { sidebarConfig } = useContext(SidebarConfigContext);
+  const { focusContent, contentRef } = useContent();
+  const classes = useStyles({ sidebarConfig });
+  const { t } = useTranslationRef(coreComponentsTranslationRef);
+
+  if (!contentRef?.current) {
+    return null;
+  }
+  return (
+    <Button
+      onClick={focusContent}
+      variant="contained"
+      className={classnames(classes.visuallyHidden)}
+    >
+      {t('skipToContent')}
+    </Button>
+  );
+}

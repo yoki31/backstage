@@ -14,10 +14,17 @@
  * limitations under the License.
  */
 
-import { FieldValidation } from '@rjsf/core';
+import { FieldValidation } from '@rjsf/utils';
 import { ApiHolder } from '@backstage/core-plugin-api';
 import { scmIntegrationsApiRef } from '@backstage/integration-react';
 
+/**
+ * The validation function for the `repoUrl` that is returned from the
+ * field extension. Ensures that you have all the required fields filled for
+ * the different providers that exist.
+ *
+ * @public
+ */
 export const repoPickerValidation = (
   value: string,
   validation: FieldValidation,
@@ -46,9 +53,15 @@ export const repoPickerValidation = (
             'Incomplete repository location provided, project not provided',
           );
         }
+      } else if (integrationApi?.byHost(host)?.type === 'azure') {
+        if (!searchParams.get('project')) {
+          validation.addError(
+            'Incomplete repository location provided, project not provided',
+          );
+        }
       }
-      // For anything other than bitbucket
-      else {
+      // For anything other than bitbucket, azure, and gerrit
+      else if (integrationApi?.byHost(host)?.type !== 'gerrit') {
         if (!searchParams.get('owner')) {
           validation.addError(
             'Incomplete repository location provided, owner not provided',

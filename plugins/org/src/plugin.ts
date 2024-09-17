@@ -17,11 +17,17 @@ import {
   createComponentExtension,
   createPlugin,
 } from '@backstage/core-plugin-api';
+import { catalogIndexRouteRef } from './routes';
 
+/** @public */
 export const orgPlugin = createPlugin({
   id: 'org',
+  externalRoutes: {
+    catalogIndex: catalogIndexRouteRef,
+  },
 });
 
+/** @public */
 export const EntityGroupProfileCard = orgPlugin.provide(
   createComponentExtension({
     name: 'EntityGroupProfileCard',
@@ -30,6 +36,8 @@ export const EntityGroupProfileCard = orgPlugin.provide(
     },
   }),
 );
+
+/** @public */
 export const EntityMembersListCard = orgPlugin.provide(
   createComponentExtension({
     name: 'EntityMembersListCard',
@@ -38,6 +46,8 @@ export const EntityMembersListCard = orgPlugin.provide(
     },
   }),
 );
+
+/** @public */
 export const EntityOwnershipCard = orgPlugin.provide(
   createComponentExtension({
     name: 'EntityOwnershipCard',
@@ -46,6 +56,8 @@ export const EntityOwnershipCard = orgPlugin.provide(
     },
   }),
 );
+
+/** @public */
 export const EntityUserProfileCard = orgPlugin.provide(
   createComponentExtension({
     name: 'EntityUserProfileCard',

@@ -15,6 +15,9 @@
  */
 
 import OAuth2 from './OAuth2';
+import MockOAuthApi from '../../OAuthRequestApi/MockOAuthApi';
+import { UrlPatternDiscovery } from '../../DiscoveryApi';
+import { MockConfigApi } from '@backstage/test-utils';
 
 const theFuture = new Date(Date.now() + 3600000);
 const thePast = new Date(Date.now() - 10);
@@ -23,71 +26,130 @@ const PREFIX = 'https://www.googleapis.com/auth/';
 
 const scopeTransform = (x: string[]) => x;
 
+let getSession = jest.fn();
+
+jest.mock('../../../../lib/AuthSessionManager', () => ({
+  ...(jest.requireActual('../../../../lib/AuthSessionManager') as any),
+  RefreshingAuthSessionManager: class {
+    getSession = getSession;
+  },
+}));
+
+const configApi = new MockConfigApi({});
+
 describe('OAuth2', () => {
   it('should get refreshed access token', async () => {
-    const getSession = jest.fn().mockResolvedValue({
+    getSession = jest.fn().mockResolvedValue({
       providerInfo: { accessToken: 'access-token', expiresAt: theFuture },
     });
-    const oauth2 = new OAuth2({
-      sessionManager: { getSession } as any,
-      scopeTransform,
+    const oauth2 = OAuth2.create({
+      configApi: configApi,
+      scopeTransform: scopeTransform,
+      oauthRequestApi: new MockOAuthApi(),
+      discoveryApi: UrlPatternDiscovery.compile('http://example.com'),
     });
 
     expect(await oauth2.getAccessToken('my-scope my-scope2')).toBe(
       'access-token',
     );
-    expect(getSession).toBeCalledTimes(1);
-    expect(getSession.mock.calls[0][0].scopes).toEqual(
-      new Set(['my-scope', 'my-scope2']),
+    expect(getSession).toHaveBeenCalledWith(
+      expect.objectContaining({ scopes: new Set(['my-scope', 'my-scope2']) }),
     );
   });
 
   it('should transform scopes', async () => {
-    const getSession = jest.fn().mockResolvedValue({
+    getSession = jest.fn().mockResolvedValue({
       providerInfo: { accessToken: 'access-token', expiresAt: theFuture },
     });
-    const oauth2 = new OAuth2({
-      sessionManager: { getSession } as any,
+    const oauth2 = OAuth2.create({
+      configApi: configApi,
       scopeTransform: scopes => scopes.map(scope => `my-prefix/${scope}`),
+      oauthRequestApi: new MockOAuthApi(),
+      discoveryApi: UrlPatternDiscovery.compile('http://example.com'),
     });
 
     expect(await oauth2.getAccessToken('my-scope')).toBe('access-token');
-    expect(getSession).toBeCalledTimes(1);
-    expect(getSession.mock.calls[0][0].scopes).toEqual(
-      new Set(['my-prefix/my-scope']),
+    expect(getSession).toHaveBeenCalledWith(
+      expect.objectContaining({
+        scopes: new Set(['my-prefix/my-scope']),
+      }),
     );
   });
 
+  it('should forward backstage identity', async () => {
+    getSession = jest.fn().mockResolvedValue({
+      providerInfo: { accessToken: 'access-token', expiresAt: theFuture },
+      backstageIdentity: {
+        token: 'a.b.c',
+        expiresAt: theFuture,
+        identity: {
+          type: 'user',
+          userEntityRef: 'user:default/mock',
+          ownershipEntityRefs: [],
+        },
+      },
+    });
+    const oauth2 = OAuth2.create({
+      configApi: configApi,
+      scopeTransform: scopes => scopes.map(scope => `my-prefix/${scope}`),
+      oauthRequestApi: new MockOAuthApi(),
+      discoveryApi: UrlPatternDiscovery.compile('http://example.com'),
+    });
+
+    await expect(oauth2.getBackstageIdentity()).resolves.toEqual({
+      token: 'a.b.c',
+      expiresAt: theFuture,
+      identity: {
+        type: 'user',
+        userEntityRef: 'user:default/mock',
+        ownershipEntityRefs: [],
+      },
+    });
+  });
+
   it('should get refreshed id token', async () => {
-    const getSession = jest.fn().mockResolvedValue({
+    getSession = jest.fn().mockResolvedValue({
       providerInfo: { idToken: 'id-token', expiresAt: theFuture },
     });
-    const oauth2 = new OAuth2({
-      sessionManager: { getSession } as any,
-      scopeTransform,
+
+    const oauth2 = OAuth2.create({
+      configApi: configApi,
+      scopeTransform: scopeTransform,
+      oauthRequestApi: new MockOAuthApi(),
+      discoveryApi: UrlPatternDiscovery.compile('http://example.com'),
     });
 
     expect(await oauth2.getIdToken()).toBe('id-token');
-    expect(getSession).toBeCalledTimes(1);
+    expect(getSession).toHaveBeenCalledWith(
+      expect.objectContaining({
+        scopes: new Set(['openid']),
+      }),
+    );
   });
 
   it('should get optional id token', async () => {
-    const getSession = jest.fn().mockResolvedValue({
+    getSession = jest.fn().mockResolvedValue({
       providerInfo: { idToken: 'id-token', expiresAt: theFuture },
     });
-    const oauth2 = new OAuth2({
-      sessionManager: { getSession } as any,
-      scopeTransform,
+    const oauth2 = OAuth2.create({
+      configApi: configApi,
+      scopeTransform: scopes => scopes.map(scope => `my-prefix/${scope}`),
+      oauthRequestApi: new MockOAuthApi(),
+      discoveryApi: UrlPatternDiscovery.compile('http://example.com'),
     });
 
     expect(await oauth2.getIdToken({ optional: true })).toBe('id-token');
-    expect(getSession).toBeCalledTimes(1);
+    expect(getSession).toHaveBeenCalledWith(
+      expect.objectContaining({
+        scopes: new Set(['openid']),
+      }),
+    );
   });
 
   it('should share popup closed errors', async () => {
     const error = new Error('NOPE');
     error.name = 'RejectedError';
-    const getSession = jest
+    getSession = jest
       .fn()
       .mockResolvedValueOnce({
         providerInfo: {
@@ -97,9 +159,11 @@ describe('OAuth2', () => {
         },
       })
       .mockRejectedValue(error);
-    const oauth2 = new OAuth2({
-      sessionManager: { getSession } as any,
-      scopeTransform,
+    const oauth2 = OAuth2.create({
+      configApi: configApi,
+      scopeTransform: scopes => scopes.map(scope => `my-prefix/${scope}`),
+      oauthRequestApi: new MockOAuthApi(),
+      discoveryApi: UrlPatternDiscovery.compile('http://example.com'),
     });
 
     // Make sure we have a session before we do the double request, so that we get past the !this.currentSession check
@@ -109,7 +173,7 @@ describe('OAuth2', () => {
     const promise2 = oauth2.getAccessToken('more');
     await expect(promise1).rejects.toBe(error);
     await expect(promise2).rejects.toBe(error);
-    expect(getSession).toBeCalledTimes(3);
+    expect(getSession).toHaveBeenCalledTimes(3);
   });
 
   it('should wait for all session refreshes', async () => {
@@ -120,7 +184,7 @@ describe('OAuth2', () => {
         scopes: new Set(),
       },
     };
-    const getSession = jest
+    getSession = jest
       .fn()
       .mockResolvedValueOnce(initialSession)
       .mockResolvedValue({
@@ -130,14 +194,16 @@ describe('OAuth2', () => {
           scopes: new Set(),
         },
       });
-    const oauth2 = new OAuth2({
-      sessionManager: { getSession } as any,
-      scopeTransform,
+    const oauth2 = OAuth2.create({
+      configApi: configApi,
+      scopeTransform: scopes => scopes.map(scope => `my-prefix/${scope}`),
+      oauthRequestApi: new MockOAuthApi(),
+      discoveryApi: UrlPatternDiscovery.compile('http://example.com'),
     });
 
     // Grab the expired session first
     await expect(oauth2.getIdToken()).resolves.toBe('token1');
-    expect(getSession).toBeCalledTimes(1);
+    expect(getSession).toHaveBeenCalledTimes(1);
 
     initialSession.providerInfo.expiresAt = thePast;
 
@@ -147,6 +213,6 @@ describe('OAuth2', () => {
     await expect(promise1).resolves.toBe('token2');
     await expect(promise2).resolves.toBe('token2');
     await expect(promise3).resolves.toBe('token2');
-    expect(getSession).toBeCalledTimes(4); // De-duping of session requests happens in client
+    expect(getSession).toHaveBeenCalledTimes(4); // De-duping of session requests happens in client
   });
 });

@@ -13,77 +13,85 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 import {
-  getEntityName,
+  getCompoundEntityRef,
   parseEntityRef,
   stringifyEntityRef,
 } from '@backstage/catalog-model';
 import { InfoCard, InfoCardVariants } from '@backstage/core-components';
 import { useAnalytics, useRouteRef } from '@backstage/core-plugin-api';
 import {
-  formatEntityRefTitle,
+  humanizeEntityRef,
   useEntity,
+  entityRouteRef,
 } from '@backstage/plugin-catalog-react';
-import { makeStyles, Theme } from '@material-ui/core';
+import { makeStyles, Theme } from '@material-ui/core/styles';
 import qs from 'qs';
 import React, { MouseEvent, useCallback } from 'react';
-import { useNavigate } from 'react-router';
-import { catalogEntityRouteRef, catalogGraphRouteRef } from '../../routes';
+import { useNavigate } from 'react-router-dom';
+import { catalogGraphRouteRef } from '../../routes';
 import {
   ALL_RELATION_PAIRS,
   Direction,
   EntityNode,
   EntityRelationsGraph,
-  RelationPairs,
 } from '../EntityRelationsGraph';
+import { EntityRelationsGraphProps } from '../EntityRelationsGraph';
 
-const useStyles = makeStyles<Theme, { height: number | undefined }>({
-  card: ({ height }) => ({
-    display: 'flex',
-    flexDirection: 'column',
-    maxHeight: height,
-    minHeight: height,
-  }),
-  graph: {
-    flex: 1,
-    minHeight: 0,
+/** @public */
+export type CatalogGraphCardClassKey = 'card' | 'graph';
+
+const useStyles = makeStyles<Theme, { height: number | undefined }>(
+  {
+    card: ({ height }) => ({
+      display: 'flex',
+      flexDirection: 'column',
+      maxHeight: height,
+      minHeight: height,
+    }),
+    graph: {
+      flex: 1,
+      minHeight: 0,
+    },
   },
-});
+  { name: 'PluginCatalogGraphCatalogGraphCard' },
+);
 
-export const CatalogGraphCard = ({
-  variant = 'gridItem',
-  relationPairs = ALL_RELATION_PAIRS,
-  maxDepth = 1,
-  unidirectional = true,
-  mergeRelations = true,
-  kinds,
-  relations,
-  direction = Direction.LEFT_RIGHT,
-  height,
-  title = 'Relations',
-  zoom = 'enable-on-click',
-}: {
-  variant?: InfoCardVariants;
-  relationPairs?: RelationPairs;
-  maxDepth?: number;
-  unidirectional?: boolean;
-  mergeRelations?: boolean;
-  kinds?: string[];
-  relations?: string[];
-  direction?: Direction;
-  height?: number;
-  title?: string;
-  zoom?: 'enabled' | 'disabled' | 'enable-on-click';
-}) => {
+export const CatalogGraphCard = (
+  props: Partial<EntityRelationsGraphProps> & {
+    variant?: InfoCardVariants;
+    height?: number;
+    title?: string;
+  },
+) => {
+  const {
+    variant = 'gridItem',
+    relationPairs = ALL_RELATION_PAIRS,
+    maxDepth = 1,
+    unidirectional = true,
+    mergeRelations = true,
+    direction = Direction.LEFT_RIGHT,
+    kinds,
+    relations,
+    entityFilter,
+    height,
+    className,
+    rootEntityNames,
+    onNodeClick,
+    title = 'Relations',
+    zoom = 'enable-on-click',
+  } = props;
+
   const { entity } = useEntity();
-  const entityName = getEntityName(entity);
-  const catalogEntityRoute = useRouteRef(catalogEntityRouteRef);
+  const entityName = getCompoundEntityRef(entity);
+  const catalogEntityRoute = useRouteRef(entityRouteRef);
   const catalogGraphRoute = useRouteRef(catalogGraphRouteRef);
   const navigate = useNavigate();
   const classes = useStyles({ height });
   const analytics = useAnalytics();
 
-  const onNodeClick = useCallback(
+  const defaultOnNodeClick = useCallback(
     (node: EntityNode, _: MouseEvent<unknown>) => {
       const nodeEntityName = parseEntityRef(node.id);
       const path = catalogEntityRoute({
@@ -93,7 +101,7 @@ export const CatalogGraphCard = ({
       });
       analytics.captureEvent(
         'click',
-        node.title ?? formatEntityRefTitle(nodeEntityName),
+        node.entity.metadata.title ?? humanizeEntityRef(nodeEntityName),
         { attributes: { to: path } },
       );
       navigate(path);
@@ -102,7 +110,15 @@ export const CatalogGraphCard = ({
   );
 
   const catalogGraphParams = qs.stringify(
-    { rootEntityRefs: [stringifyEntityRef(entity)] },
+    {
+      rootEntityRefs: [stringifyEntityRef(entity)],
+      maxDepth: maxDepth,
+      unidirectional,
+      mergeRelations,
+      selectedKinds: kinds,
+      selectedRelations: relations,
+      direction,
+    },
     { arrayFormat: 'brackets', addQueryPrefix: true },
   );
   const catalogGraphUrl = `${catalogGraphRoute()}${catalogGraphParams}`;
@@ -119,16 +135,16 @@ export const CatalogGraphCard = ({
       }}
     >
       <EntityRelationsGraph
-        rootEntityNames={entityName}
+        {...props}
+        rootEntityNames={rootEntityNames || entityName}
+        onNodeClick={onNodeClick || defaultOnNodeClick}
+        className={className || classes.graph}
         maxDepth={maxDepth}
         unidirectional={unidirectional}
         mergeRelations={mergeRelations}
-        kinds={kinds}
-        relations={relations}
         direction={direction}
-        onNodeClick={onNodeClick}
-        className={classes.graph}
         relationPairs={relationPairs}
+        entityFilter={entityFilter}
         zoom={zoom}
       />
     </InfoCard>

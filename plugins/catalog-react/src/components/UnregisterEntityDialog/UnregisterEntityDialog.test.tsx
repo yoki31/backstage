@@ -19,7 +19,7 @@ jest.mock('./useUnregisterEntityDialogState');
 import userEvent from '@testing-library/user-event';
 import React from 'react';
 import { UnregisterEntityDialog } from './UnregisterEntityDialog';
-import { ORIGIN_LOCATION_ANNOTATION } from '@backstage/catalog-model';
+import { ANNOTATION_ORIGIN_LOCATION } from '@backstage/catalog-model';
 import { CatalogClient } from '@backstage/catalog-client';
 import { catalogApiRef } from '../../api';
 import { entityRouteRef } from '../../routes';
@@ -48,6 +48,10 @@ describe('UnregisterEntityDialog', () => {
     },
   };
 
+  beforeEach(() => {
+    jest.spyOn(alertApi, 'post').mockImplementation(() => {});
+  });
+
   const entity = {
     apiVersion: 'backstage.io/v1alpha1',
     kind: 'Component',
@@ -55,20 +59,20 @@ describe('UnregisterEntityDialog', () => {
       name: 'n',
       namespace: 'ns',
       annotations: {
-        [ORIGIN_LOCATION_ANNOTATION]: 'url:http://example.com',
+        [ANNOTATION_ORIGIN_LOCATION]: 'url:http://example.com',
       },
     },
     spec: {},
   };
 
-  const Wrapper = ({ children }: { children?: React.ReactNode }) => (
+  const Wrapper = (props: { children?: React.ReactNode }) => (
     <TestApiProvider
       apis={[
         [catalogApiRef, new CatalogClient({ discoveryApi })],
         [alertApiRef, alertApi],
       ]}
     >
-      {children}
+      {props.children}
     </TestApiProvider>
   );
 
@@ -80,7 +84,11 @@ describe('UnregisterEntityDialog', () => {
 
   it('can cancel', async () => {
     const onClose = jest.fn();
-    stateSpy.mockImplementation(() => ({ type: 'loading' }));
+    stateSpy.mockImplementation(() => ({
+      type: 'bootstrap',
+      location: '',
+      deleteEntity: jest.fn(),
+    }));
 
     await renderInTestApp(
       <Wrapper>
@@ -98,10 +106,10 @@ describe('UnregisterEntityDialog', () => {
       },
     );
 
-    userEvent.click(screen.getByText('Cancel'));
+    await userEvent.click(screen.getByText('Cancel'));
 
     await waitFor(() => {
-      expect(onClose).toBeCalled();
+      expect(onClose).toHaveBeenCalled();
     });
   });
 
@@ -187,17 +195,17 @@ describe('UnregisterEntityDialog', () => {
       expect(screen.getByText(/You cannot unregister/)).toBeInTheDocument();
     });
 
-    userEvent.click(screen.getByText('Advanced Options'));
+    await userEvent.click(screen.getByText('Advanced Options'));
 
     await waitFor(() => {
       expect(screen.getByText(/option to delete/)).toBeInTheDocument();
     });
 
-    userEvent.click(screen.getByText('Delete Entity'));
+    await userEvent.click(screen.getByText('Delete Entity'));
 
     await waitFor(() => {
-      expect(deleteEntity).toBeCalled();
-      expect(onConfirm).toBeCalled();
+      expect(deleteEntity).toHaveBeenCalled();
+      expect(onConfirm).toHaveBeenCalled();
     });
   });
 
@@ -233,11 +241,11 @@ describe('UnregisterEntityDialog', () => {
       ).toBeInTheDocument();
     });
 
-    userEvent.click(screen.getByText('Delete Entity'));
+    await userEvent.click(screen.getByText('Delete Entity'));
 
     await waitFor(() => {
-      expect(deleteEntity).toBeCalled();
-      expect(onConfirm).toBeCalled();
+      expect(deleteEntity).toHaveBeenCalled();
+      expect(onConfirm).toHaveBeenCalled();
     });
   });
 
@@ -277,15 +285,15 @@ describe('UnregisterEntityDialog', () => {
       expect(
         screen.getByText(/will unregister the following entities/),
       ).toBeInTheDocument();
-      expect(screen.getByText(/k1:ns1\/n1/)).toBeInTheDocument();
-      expect(screen.getByText(/k2:ns2\/n2/)).toBeInTheDocument();
+      expect(screen.getByText(/ns1\/n1/)).toBeInTheDocument();
+      expect(screen.getByText(/ns2\/n2/)).toBeInTheDocument();
     });
 
-    userEvent.click(screen.getByText('Unregister Location'));
+    await userEvent.click(screen.getByText('Unregister Location'));
 
     await waitFor(() => {
-      expect(unregisterLocation).toBeCalled();
-      expect(onConfirm).toBeCalled();
+      expect(unregisterLocation).toHaveBeenCalled();
+      expect(onConfirm).toHaveBeenCalled();
     });
   });
 
@@ -325,11 +333,11 @@ describe('UnregisterEntityDialog', () => {
       expect(
         screen.getByText(/will unregister the following entities/),
       ).toBeInTheDocument();
-      expect(screen.getByText(/k1:ns1\/n1/)).toBeInTheDocument();
-      expect(screen.getByText(/k2:ns2\/n2/)).toBeInTheDocument();
+      expect(screen.getByText(/ns1\/n1/)).toBeInTheDocument();
+      expect(screen.getByText(/ns2\/n2/)).toBeInTheDocument();
     });
 
-    userEvent.click(screen.getByText('Advanced Options'));
+    await userEvent.click(screen.getByText('Advanced Options'));
 
     await waitFor(() => {
       expect(
@@ -337,11 +345,16 @@ describe('UnregisterEntityDialog', () => {
       ).toBeInTheDocument();
     });
 
-    userEvent.click(screen.getByText('Delete Entity'));
+    await userEvent.click(screen.getByText('Delete Entity'));
 
     await waitFor(() => {
-      expect(deleteEntity).toBeCalled();
-      expect(onConfirm).toBeCalled();
+      expect(deleteEntity).toHaveBeenCalled();
+      expect(onConfirm).toHaveBeenCalled();
+      expect(alertApi.post).toHaveBeenCalledWith({
+        message: 'Removed entity n',
+        severity: 'success',
+        display: 'transient',
+      });
     });
   });
 });

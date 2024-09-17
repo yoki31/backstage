@@ -38,7 +38,9 @@ files from here to serve documentation in Backstage. Note that the bucket names
 are globally unique.
 
 Set the config `techdocs.publisher.googleGcs.bucketName` in your
-`app-config.yaml` to the name of the bucket you just created.
+`app-config.yaml` to the name of the bucket you just created. Set
+`techdocs.publisher.googleGcs.projectId` to the ID of the Google Cloud project
+that contains your bucket.
 
 ```yaml
 techdocs:
@@ -46,6 +48,7 @@ techdocs:
     type: 'googleGcs'
     googleGcs:
       bucketName: 'name-of-techdocs-storage-bucket'
+      projectId: 'name-of-project'
 ```
 
 **3a. (Recommended) Authentication using environment variable**
@@ -96,6 +99,20 @@ techdocs:
     googleGcs:
       bucketName: 'name-of-techdocs-storage-bucket'
       credentials: ${GOOGLE_APPLICATION_CREDENTIALS}
+```
+
+Assuming the service account you are using was created in the same project as
+the bucket, you do not need to set the `projectId` field. If not, you will
+have to override it as with default credentials:
+
+```yaml
+techdocs:
+  publisher:
+    type: 'googleGcs'
+    googleGcs:
+      bucketName: 'name-of-techdocs-storage-bucket'
+      credentials: ${GOOGLE_APPLICATION_CREDENTIALS}
+      projectId: 'name-of-project'
 ```
 
 **4. That's it!**
@@ -152,17 +169,21 @@ permissions to:
 - `s3:ListBucket` - To retrieve bucket metadata
 - `s3:GetObject` - To retrieve files from the bucket
 
-> Note: If you need to migrate documentation objects from an older-style path
-> format including case-sensitive entity metadata, you will need to add some
-> additional permissions to be able to perform the migration, including:
->
-> - `s3:PutBucketAcl` (for copying files,
->   [more info here](https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutObjectAcl.html))
-> - `s3:DeleteObject` and `s3:DeleteObjectVersion` (for deleting migrated files,
->   [more info here](https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteObject.html))
->
-> ...And you will need to ensure the permissions apply to the bucket itself, as
-> well as all resources under the bucket. See the example policy below.
+:::note Note
+
+If you need to migrate documentation objects from an older-style path
+format including case-sensitive entity metadata, you will need to add some
+additional permissions to be able to perform the migration, including:
+
+- `s3:PutBucketAcl` (for copying files,
+  [more info here](https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutObjectAcl.html))
+- `s3:DeleteObject` and `s3:DeleteObjectVersion` (for deleting migrated files,
+  [more info here](https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteObject.html))
+
+...And you will need to ensure the permissions apply to the bucket itself, as
+well as all resources under the bucket. See the example policy below.
+
+:::
 
 ```json
 {
@@ -202,21 +223,18 @@ If the environment variables
 - `AWS_REGION`
 
 are set and can be used to access the bucket you created in step 2, they will be
-used by the AWS SDK V2 Node.js client for authentication.
-[Refer to the official documentation for loading credentials in Node.js from environment variables](https://docs.aws.amazon.com/sdk-for-javascript/v2/developer-guide/loading-node-credentials-environment.html).
+used by the AWS SDK V3 Node.js client for authentication.
+[Refer to the official documentation for loading credentials in Node.js from environment variables](https://docs.aws.amazon.com/sdk-for-javascript/v3/developer-guide/loading-node-credentials-environment.html).
 
 If the environment variables are missing, the AWS SDK tries to read the
 `~/.aws/credentials` file for credentials.
-[Refer to the official documentation.](https://docs.aws.amazon.com/sdk-for-javascript/v2/developer-guide/loading-node-credentials-shared.html)
+[Refer to the official documentation.](https://docs.aws.amazon.com/sdk-for-javascript/v3/developer-guide/loading-node-credentials-shared.html)
 
-If you are using Amazon EC2 instance to deploy Backstage, you do not need to
-obtain the access keys separately. They can be made available in the environment
-automatically by defining appropriate IAM role with access to the bucket. Read
-more in
-[official AWS documentation for using IAM roles.](https://docs.aws.amazon.com/general/latest/gr/aws-access-keys-best-practices.html#use-roles).
-
-The AWS Region of the bucket is optional since TechDocs uses AWS SDK V2 and not
-V3.
+If you are deploying Backstage to Amazon EC2, Amazon ECS, or Amazon EKS, you do
+not need to obtain the access keys separately. They can be made available in the
+environment automatically by defining appropriate IAM role with access to the
+bucket. Read more in the
+[official AWS documentation for using IAM roles](https://docs.aws.amazon.com/general/latest/gr/aws-access-keys-best-practices.html#use-roles).
 
 **4b. Authentication using app-config.yaml**
 
@@ -230,14 +248,17 @@ techdocs:
     type: 'awsS3'
     awsS3:
       bucketName: 'name-of-techdocs-storage-bucket'
+      accountId: '123456789012'
       region: ${AWS_REGION}
-      credentials:
-        accessKeyId: ${AWS_ACCESS_KEY_ID}
-        secretAccessKey: ${AWS_SECRET_ACCESS_KEY}
+aws:
+  accounts:
+    - accountId: '123456789012'
+      accessKeyId: ${AWS_ACCESS_KEY_ID}
+      secretAccessKey: ${AWS_SECRET_ACCESS_KEY}
 ```
 
 Refer to the
-[official AWS documentation for obtaining the credentials](https://docs.aws.amazon.com/sdk-for-javascript/v2/developer-guide/getting-your-credentials.html).
+[official AWS documentation for obtaining the credentials](https://docs.aws.amazon.com/sdk-for-javascript/v3/developer-guide/setting-credentials-node.html).
 
 **4c. Authentication using an assumed role** Users with multiple AWS accounts
 may want to use a role for S3 storage that is in a different AWS account. Using
@@ -461,7 +482,7 @@ Since the new SDK doesn't use the old way authentication, we don't need the keys
 
 The new SDK needs the OpenStack Swift connection URL for connecting the Swift.
 So you need to add a new key called `openStackSwift.swiftUrl` and give the
-OpenStack Swift url here. Example url should look like that:
+OpenStack Swift URL here. Example URL should look like that:
 `https://example.com:6780/swift/v1`
 
 ##### That's it!

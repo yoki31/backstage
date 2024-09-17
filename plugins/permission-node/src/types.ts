@@ -14,11 +14,16 @@
  * limitations under the License.
  */
 
-import type { PermissionCriteria } from '@backstage/plugin-permission-common';
+import type {
+  PermissionCriteria,
+  PermissionRuleParams,
+} from '@backstage/plugin-permission-common';
+import { z } from 'zod';
+import { NoInfer } from './integration/util';
 
 /**
  * A conditional rule that can be provided in an
- * {@link @backstage/permission-common#AuthorizeResult} response to an authorization request.
+ * {@link @backstage/plugin-permission-common#AuthorizeDecision} response to an authorization request.
  *
  * @remarks
  *
@@ -35,22 +40,29 @@ import type { PermissionCriteria } from '@backstage/plugin-permission-common';
 export type PermissionRule<
   TResource,
   TQuery,
-  TParams extends unknown[] = unknown[],
+  TResourceType extends string,
+  TParams extends PermissionRuleParams = PermissionRuleParams,
 > = {
   name: string;
   description: string;
+  resourceType: TResourceType;
+
+  /**
+   * A ZodSchema that reflects the structure of the parameters that are passed to
+   */
+  paramsSchema?: z.ZodSchema<TParams>;
 
   /**
    * Apply this rule to a resource already loaded from a backing data source. The params are
    * arguments supplied for the rule; for example, a rule could be `isOwner` with entityRefs as the
    * params.
    */
-  apply(resource: TResource, ...params: TParams): boolean;
+  apply(resource: TResource, params: NoInfer<TParams>): boolean;
 
   /**
    * Translate this rule to criteria suitable for use in querying a backing data store. The criteria
    * can be used for loading a collection of resources efficiently with conditional criteria already
    * applied.
    */
-  toQuery(...params: TParams): PermissionCriteria<TQuery>;
+  toQuery(params: NoInfer<TParams>): PermissionCriteria<TQuery>;
 };

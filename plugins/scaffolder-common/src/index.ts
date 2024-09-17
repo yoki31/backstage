@@ -20,13 +20,17 @@
  * @packageDocumentation
  */
 
-import { JSONSchema } from '@backstage/catalog-model';
-import v1beta3Schema from './Template.v1beta3.schema.json';
+export * from './TaskSpec';
 
-export type { TemplateEntityV1beta3 } from './TemplateEntityV1beta3';
-
-/** @public */
-export const templateEntityV1beta3Schema: JSONSchema = v1beta3Schema as Omit<
-  JSONSchema,
-  'examples'
->;
+export {
+  templateEntityV1beta3Validator,
+  isTemplateEntityV1beta3,
+} from './TemplateEntityV1beta3';
+export type {
+  TemplatePresentationV1beta3,
+  TemplateEntityV1beta3,
+  TemplateEntityStepV1beta3,
+  TemplateParametersV1beta3,
+  TemplatePermissionsV1beta3,
+  TemplateRecoveryV1beta3,
+} from './TemplateEntityV1beta3';

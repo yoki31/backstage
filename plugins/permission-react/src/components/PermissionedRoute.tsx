@@ -14,27 +14,48 @@
  * limitations under the License.
  */
 
-import React, { ComponentProps, ReactElement } from 'react';
-import { Route } from 'react-router';
+import React, { ReactElement, ReactNode } from 'react';
+import { Route } from 'react-router-dom';
 import { useApp } from '@backstage/core-plugin-api';
 import { usePermission } from '../hooks';
-import { Permission } from '@backstage/plugin-permission-common';
+import {
+  isResourcePermission,
+  Permission,
+  ResourcePermission,
+} from '@backstage/plugin-permission-common';
 
 /**
  * Returns a React Router Route which only renders the element when authorized. If unauthorized, the Route will render a
  * NotFoundErrorPage (see {@link @backstage/core-app-api#AppComponents}).
  *
  * @public
+ * @deprecated This component no longer works with the most recent version of `@backstage/core-app-api` and react-router v6, use {@link RequirePermission} instead.
  */
 export const PermissionedRoute = (
-  props: ComponentProps<typeof Route> & {
-    permission: Permission;
-    resourceRef?: string;
+  props: {
+    caseSensitive?: boolean;
+    children?: ReactNode;
+    element?: ReactElement | null;
+    path?: string;
     errorComponent?: ReactElement | null;
-  },
+  } & (
+    | {
+        permission: Exclude<Permission, ResourcePermission>;
+        resourceRef?: never;
+      }
+    | {
+        permission: ResourcePermission;
+        resourceRef: string | undefined;
+      }
+  ),
 ) => {
   const { permission, resourceRef, errorComponent, ...otherProps } = props;
-  const permissionResult = usePermission(permission, resourceRef);
+
+  const permissionResult = usePermission(
+    isResourcePermission(permission)
+      ? { permission, resourceRef }
+      : { permission },
+  );
   const app = useApp();
   const { NotFoundErrorPage } = app.getComponents();
 

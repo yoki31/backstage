@@ -44,6 +44,7 @@ const useStyles = makeStyles(
 /**
  * Renders a warning panel as the effect of a failed server request.
  *
+ * @remarks
  * Has special treatment for ResponseError errors, to display rich
  * server-provided information about what happened.
  */
@@ -61,14 +62,14 @@ export function ResponseErrorPanel(props: ErrorPanelProps) {
     );
   }
 
-  const { data, cause } = error as ResponseError;
-  const { request, response } = data;
+  const { body, cause } = error as ResponseError;
+  const { request, response } = body;
 
   const errorString = `${response.statusCode}: ${cause.name}`;
   const requestString = request && `${request.method} ${request.url}`;
   const messageString = cause.message.replace(/\\n/g, '\n');
   const stackString = cause.stack?.replace(/\\n/g, '\n');
-  const jsonString = JSON.stringify(data, undefined, 2);
+  const jsonString = JSON.stringify(body, undefined, 2);
 
   return (
     <ErrorPanel

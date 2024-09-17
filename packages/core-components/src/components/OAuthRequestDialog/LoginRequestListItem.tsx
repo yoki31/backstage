@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { makeStyles, Theme } from '@material-ui/core/styles';
+import { makeStyles } from '@material-ui/core/styles';
 import ListItem from '@material-ui/core/ListItem';
 import ListItemAvatar from '@material-ui/core/ListItemAvatar';
 import ListItemText from '@material-ui/core/ListItemText';
@@ -23,10 +23,12 @@ import Button from '@material-ui/core/Button';
 import React, { useState } from 'react';
 import { isError } from '@backstage/errors';
 import { PendingOAuthRequest } from '@backstage/core-plugin-api';
+import { coreComponentsTranslationRef } from '../../translation';
+import { useTranslationRef } from '@backstage/core-plugin-api/alpha';
 
 export type LoginRequestListItemClassKey = 'root';
 
-const useItemStyles = makeStyles<Theme>(
+const useItemStyles = makeStyles(
   theme => ({
     root: {
       paddingLeft: theme.spacing(3),
@@ -44,6 +46,7 @@ type RowProps = {
 const LoginRequestListItem = ({ request, busy, setBusy }: RowProps) => {
   const classes = useItemStyles();
   const [error, setError] = useState<string>();
+  const { t } = useTranslationRef(coreComponentsTranslationRef);
 
   const handleContinue = async () => {
     setBusy(true);
@@ -59,7 +62,7 @@ const LoginRequestListItem = ({ request, busy, setBusy }: RowProps) => {
   const IconComponent = request.provider.icon;
 
   return (
-    <ListItem button disabled={busy} classes={{ root: classes.root }}>
+    <ListItem disabled={busy} classes={{ root: classes.root }}>
       <ListItemAvatar>
         <IconComponent fontSize="large" />
       </ListItemAvatar>
@@ -68,7 +71,7 @@ const LoginRequestListItem = ({ request, busy, setBusy }: RowProps) => {
         secondary={error && <Typography color="error">{error}</Typography>}
       />
       <Button color="primary" variant="contained" onClick={handleContinue}>
-        Log in
+        {t('oauthRequestDialog.login')}
       </Button>
     </ListItem>
   );

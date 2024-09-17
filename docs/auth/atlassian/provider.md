@@ -46,19 +46,58 @@ auth:
       development:
         clientId: ${AUTH_ATLASSIAN_CLIENT_ID}
         clientSecret: ${AUTH_ATLASSIAN_CLIENT_SECRET}
-        scopes: ${AUTH_ATLASSIAN_SCOPES}
+        scope: ${AUTH_ATLASSIAN_SCOPES}
+        signIn:
+          resolvers:
+            # typically you would pick one of these
+            - resolver: emailMatchingUserEntityProfileEmail
+            - resolver: emailLocalPartMatchingUserEntityName
+            - resolver: usernameMatchingUserEntityName
 ```
 
 The Atlassian provider is a structure with three configuration keys:
 
 - `clientId`: The Key you generated in the developer console.
 - `clientSecret`: The Secret tied to the generated Key.
-- `scopes`: List of scopes the app has permissions for, separated by spaces.
+- `scope`: List of scopes the app has permissions for, separated by spaces.
 
-**NOTE:** the scopes `offline_access` and `read:me` are provided by default.
+**NOTE:** the scopes `offline_access`, `read:jira-work`, and `read:jira-user` are provided by default.
+
+### Resolvers
+
+This provider includes several resolvers out of the box that you can use:
+
+- `emailMatchingUserEntityProfileEmail`: Matches the email address from the auth provider with the User entity that has a matching `spec.profile.email`. If no match is found it will throw a `NotFoundError`.
+- `emailLocalPartMatchingUserEntityName`: Matches the [local part](https://en.wikipedia.org/wiki/Email_address#Local-part) of the email address from the auth provider with the User entity that has a matching `name`. If no match is found it will throw a `NotFoundError`.
+- `usernameMatchingUserEntityName`: Matches the username from the auth provider with the User entity that has a matching `name`. If no match is found it will throw a `NotFoundError`.
+
+:::note Note
+
+The resolvers will be tried in order, but will only be skipped if they throw a `NotFoundError`.
+
+:::
+
+If these resolvers do not fit your needs you can build a custom resolver, this is covered in the [Building Custom Resolvers](../identity-resolver.md#building-custom-resolvers) section of the Sign-in Identities and Resolvers documentation.
+
+## Backend Installation
+
+To add the provider to the backend we will first need to install the package by running this command:
+
+```bash title="from your Backstage root directory"
+yarn --cwd packages/backend add @backstage/plugin-auth-backend-module-atlassian-provider
+```
+
+Then we will need to this line:
+
+```ts title="in packages/backend/src/index.ts"
+backend.add(import('@backstage/plugin-auth-backend'));
+/* highlight-add-start */
+backend.add(import('@backstage/plugin-auth-backend-module-atlassian-provider'));
+/* highlight-add-end */
+```
 
 ## Adding the provider to the Backstage frontend
 
 To add the provider to the frontend, add the `atlassianAuthApi` reference and
 `SignInPage` component as shown in
-[Adding the provider to the sign-in page](../index.md#adding-the-provider-to-the-sign-in-page).
+[Adding the provider to the sign-in page](../index.md#sign-in-configuration).

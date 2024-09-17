@@ -16,10 +16,9 @@
 
 import {
   ComponentEntity,
-  Entity,
   RELATION_API_PROVIDED_BY,
 } from '@backstage/catalog-model';
-import { Typography } from '@material-ui/core';
+import Typography from '@material-ui/core/Typography';
 import {
   EntityTable,
   useEntity,
@@ -29,18 +28,20 @@ import React from 'react';
 import {
   CodeSnippet,
   InfoCard,
+  InfoCardVariants,
   Link,
   Progress,
+  TableColumn,
   WarningPanel,
 } from '@backstage/core-components';
 
-type Props = {
-  /** @deprecated The entity is now grabbed from context instead */
-  entity?: Entity;
-  variant?: 'gridItem';
-};
-
-export const ProvidingComponentsCard = ({ variant = 'gridItem' }: Props) => {
+/** @public */
+export const ProvidingComponentsCard = (props: {
+  variant?: InfoCardVariants;
+  columns?: TableColumn<ComponentEntity>[];
+}) => {
+  const { variant = 'gridItem', columns = EntityTable.componentEntityColumns } =
+    props;
   const { entity } = useEntity();
   const { entities, loading, error } = useRelatedEntities(entity, {
     type: RELATION_API_PROVIDED_BY,
@@ -82,7 +83,7 @@ export const ProvidingComponentsCard = ({ variant = 'gridItem' }: Props) => {
           </Typography>
         </div>
       }
-      columns={EntityTable.componentEntityColumns}
+      columns={columns}
       entities={entities as ComponentEntity[]}
     />
   );

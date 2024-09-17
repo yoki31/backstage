@@ -7,86 +7,107 @@
 
 import { ApiRef } from '@backstage/core-plugin-api';
 import { BackstagePlugin } from '@backstage/core-plugin-api';
+import { BackstageUserIdentity } from '@backstage/core-plugin-api';
+import { DiscoveryApi } from '@backstage/core-plugin-api';
+import { ErrorApi } from '@backstage/core-plugin-api';
+import { FetchApi } from '@backstage/core-plugin-api';
 import { IconComponent } from '@backstage/core-plugin-api';
+import { IdentityApi } from '@backstage/core-plugin-api';
+import { JsonValue } from '@backstage/types';
+import { JSX as JSX_2 } from 'react';
+import { Observable } from '@backstage/types';
 import { ProfileInfo } from '@backstage/core-plugin-api';
+import { ProfileInfoApi } from '@backstage/core-plugin-api';
+import { PropsWithChildren } from 'react';
+import { default as React_2 } from 'react';
 import { RouteRef } from '@backstage/core-plugin-api';
 import { SessionApi } from '@backstage/core-plugin-api';
+import { SignalApi } from '@backstage/plugin-signals-react';
+import { StorageApi } from '@backstage/core-plugin-api';
+import { StorageValueSnapshot } from '@backstage/core-plugin-api';
+import { TabProps } from '@material-ui/core/Tab';
 
-// Warning: (ae-forgotten-export) The symbol "Props" needs to be exported by the entry point index.d.ts
-// Warning: (ae-missing-release-tag) "DefaultProviderSettings" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
-export const DefaultProviderSettings: ({
-  configuredProviders,
-}: Props_3) => JSX.Element;
+export const DefaultProviderSettings: (props: {
+  configuredProviders: string[];
+}) => React_2.JSX.Element;
 
-// Warning: (ae-forgotten-export) The symbol "Props" needs to be exported by the entry point index.d.ts
-// Warning: (ae-missing-release-tag) "ProviderSettingsItem" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
-export const ProviderSettingsItem: ({
-  title,
-  description,
-  icon: Icon,
-  apiRef,
-}: Props_4) => JSX.Element;
+export const ProviderSettingsItem: (props: {
+  title: string;
+  description: string;
+  icon: IconComponent;
+  apiRef: ApiRef<ProfileInfoApi & SessionApi>;
+}) => React_2.JSX.Element;
 
-// Warning: (ae-forgotten-export) The symbol "Props" needs to be exported by the entry point index.d.ts
-// Warning: (ae-missing-release-tag) "SettingsPage" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
-export const Router: ({ providerSettings }: Props) => JSX.Element;
+export const Router: (props: {
+  providerSettings?: JSX.Element;
+}) => React_2.JSX.Element;
 
-// Warning: (ae-forgotten-export) The symbol "SettingsProps" needs to be exported by the entry point index.d.ts
-// Warning: (ae-missing-release-tag) "Settings" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
-export const Settings: (props: SettingsProps) => JSX.Element;
+export const Settings: (props: { icon?: IconComponent }) => React_2.JSX.Element;
 
-// Warning: (ae-missing-release-tag) "UserSettingsAppearanceCard" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
-export const UserSettingsAppearanceCard: () => JSX.Element;
+export const SettingsLayout: {
+  (props: SettingsLayoutProps): React_2.JSX.Element;
+  Route: (props: SettingsLayoutRouteProps) => null;
+};
 
-// Warning: (ae-forgotten-export) The symbol "Props" needs to be exported by the entry point index.d.ts
-// Warning: (ae-missing-release-tag) "UserSettingsAuthProviders" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
-export const UserSettingsAuthProviders: ({
-  providerSettings,
-}: Props_2) => JSX.Element;
+export type SettingsLayoutProps = {
+  title?: string;
+  subtitle?: string;
+  children?: React_2.ReactNode;
+};
 
-// Warning: (ae-missing-release-tag) "UserSettingsFeatureFlags" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
-export const UserSettingsFeatureFlags: () => JSX.Element;
+export type SettingsLayoutRouteProps = {
+  path: string;
+  title: string;
+  children: JSX.Element;
+  tabProps?: TabProps<
+    React_2.ElementType,
+    {
+      component?: React_2.ElementType;
+    }
+  >;
+};
 
-// Warning: (ae-missing-release-tag) "UserSettingsGeneral" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
-// @public (undocumented)
-export const UserSettingsGeneral: () => JSX.Element;
+// @public @deprecated (undocumented)
+export const USER_SETTINGS_TAB_KEY = 'plugin.user-settings.settingsLayoutRoute';
 
-// Warning: (ae-missing-release-tag) "UserSettingsMenu" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
-export const UserSettingsMenu: () => JSX.Element;
+export const UserSettingsAppearanceCard: () => React_2.JSX.Element;
 
-// Warning: (ae-missing-release-tag) "UserSettingsPage" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
-export const UserSettingsPage: ({
-  providerSettings,
-}: {
+export const UserSettingsAuthProviders: (props: {
+  providerSettings?: JSX.Element;
+}) => React_2.JSX.Element;
+
+// @public (undocumented)
+export const UserSettingsFeatureFlags: () => React_2.JSX.Element;
+
+// @public (undocumented)
+export const UserSettingsGeneral: () => React_2.JSX.Element;
+
+// @public (undocumented)
+export const UserSettingsIdentityCard: () => React_2.JSX.Element;
+
+// @public (undocumented)
+export const UserSettingsLanguageToggle: () => React_2.JSX.Element | null;
+
+// @public (undocumented)
+export const UserSettingsMenu: () => React_2.JSX.Element;
+
+// @public (undocumented)
+export const UserSettingsPage: (props: {
   providerSettings?: JSX.Element | undefined;
-}) => JSX.Element;
+}) => JSX_2.Element;
 
-// Warning: (ae-missing-release-tag) "UserSettingsPinToggle" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
-export const UserSettingsPinToggle: () => JSX.Element;
+export const UserSettingsPinToggle: () => React_2.JSX.Element;
 
-// Warning: (ae-missing-release-tag) "userSettingsPlugin" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 const userSettingsPlugin: BackstagePlugin<
   {
@@ -97,27 +118,65 @@ const userSettingsPlugin: BackstagePlugin<
 export { userSettingsPlugin as plugin };
 export { userSettingsPlugin };
 
-// Warning: (ae-missing-release-tag) "UserSettingsProfileCard" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
-export const UserSettingsProfileCard: () => JSX.Element;
+export const UserSettingsProfileCard: () => React_2.JSX.Element;
 
-// Warning: (ae-forgotten-export) The symbol "Props" needs to be exported by the entry point index.d.ts
-// Warning: (ae-missing-release-tag) "UserSettingsSignInAvatar" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
-export const UserSettingsSignInAvatar: ({ size }: Props_5) => JSX.Element;
+export const UserSettingsSignInAvatar: (props: {
+  size?: number;
+}) => React_2.JSX.Element;
 
-// Warning: (ae-missing-release-tag) "UserSettingsThemeToggle" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
-// @public (undocumented)
-export const UserSettingsThemeToggle: () => JSX.Element;
+// @public
+export class UserSettingsStorage implements StorageApi {
+  // (undocumented)
+  static create(options: {
+    fetchApi: FetchApi;
+    discoveryApi: DiscoveryApi;
+    errorApi: ErrorApi;
+    identityApi: IdentityApi;
+    signalApi?: SignalApi;
+    namespace?: string;
+  }): UserSettingsStorage;
+  // (undocumented)
+  forBucket(name: string): StorageApi;
+  // (undocumented)
+  observe$<T extends JsonValue>(
+    key: string,
+  ): Observable<StorageValueSnapshot<T>>;
+  // (undocumented)
+  remove(key: string): Promise<void>;
+  // (undocumented)
+  set<T extends JsonValue>(key: string, data: T): Promise<void>;
+  // (undocumented)
+  snapshot<T extends JsonValue>(key: string): StorageValueSnapshot<T>;
+}
 
-// Warning: (ae-missing-release-tag) "useUserProfile" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
+// @public @deprecated
+export const UserSettingsTab: (
+  props: UserSettingsTabProps,
+) => React_2.JSX.Element;
+
+// @public @deprecated (undocumented)
+export type UserSettingsTabProps = PropsWithChildren<{
+  path: string;
+  title: string;
+}>;
+
 // @public (undocumented)
-export const useUserProfile: () => {
-  profile: ProfileInfo;
-  displayName: string;
-};
+export const UserSettingsThemeToggle: () => React_2.JSX.Element;
+
+// @public (undocumented)
+export const useUserProfile: () =>
+  | {
+      profile: ProfileInfo;
+      displayName: string;
+      loading: boolean;
+      backstageIdentity?: undefined;
+    }
+  | {
+      profile: ProfileInfo;
+      backstageIdentity: BackstageUserIdentity;
+      displayName: string;
+      loading: false;
+    };
 ```

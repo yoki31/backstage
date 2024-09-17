@@ -20,26 +20,29 @@
  * @packageDocumentation
  */
 
-export { CatalogClientWrapper } from './CatalogClientWrapper';
-export * from './components/AboutCard';
+export * from './apis';
+
+export type {
+  AboutCardProps,
+  AboutContentProps,
+  AboutFieldProps,
+} from './components/AboutCard';
+export { AboutContent, AboutField } from './components/AboutCard';
 export * from './components/CatalogKindHeader';
-export * from './components/CatalogResultListItem';
-export { CatalogTable } from './components/CatalogTable';
-export type { EntityRow as CatalogTableRow } from './components/CatalogTable';
-export * from './components/CatalogTable/columns';
+export * from './components/CatalogTable';
 export * from './components/EntityLayout';
 export * from './components/EntityOrphanWarning';
+export * from './components/EntityRelationWarning';
 export * from './components/EntityProcessingErrorsPanel';
-export * from './components/EntityPageLayout';
 export * from './components/EntitySwitch';
 export * from './components/FilteredEntityLayout';
 export * from './overridableComponents';
-export { Router } from './components/Router';
+export * from './components/EntityLabelsCard';
+export * from './components/CatalogSearchResultListItem';
 export {
   CatalogEntityPage,
   CatalogIndexPage,
   catalogPlugin,
-  catalogPlugin as plugin,
   EntityAboutCard,
   EntityDependencyOfComponentsCard,
   EntityDependsOnComponentsCard,
@@ -47,10 +50,30 @@ export {
   EntityHasComponentsCard,
   EntityHasResourcesCard,
   EntityHasSubcomponentsCard,
+  EntityHasSubdomainsCard,
   EntityHasSystemsCard,
   EntityLinksCard,
-  EntitySystemDiagramCard,
+  EntityLabelsCard,
+  RelatedEntitiesCard,
+  CatalogSearchResultListItem,
 } from './plugin';
 
-export type { EntityLinksEmptyStateClassKey } from './components/EntityLinksCard';
+export type { DependencyOfComponentsCardProps } from './components/DependencyOfComponentsCard';
+export type { DependsOnComponentsCardProps } from './components/DependsOnComponentsCard';
+export type { DependsOnResourcesCardProps } from './components/DependsOnResourcesCard';
+export type {
+  EntityLinksEmptyStateClassKey,
+  EntityLinksCardProps,
+  Breakpoint,
+  ColumnBreakpoints,
+} from './components/EntityLinksCard';
 export type { SystemDiagramCardClassKey } from './components/SystemDiagramCard';
+export type { DefaultCatalogPageProps } from './components/CatalogPage';
+export type { EntityContextMenuClassKey } from './components/EntityContextMenu';
+export type { HasComponentsCardProps } from './components/HasComponentsCard';
+export type { HasResourcesCardProps } from './components/HasResourcesCard';
+export type { HasSubcomponentsCardProps } from './components/HasSubcomponentsCard';
+export type { HasSubdomainsCardProps } from './components/HasSubdomainsCard';
+export type { HasSystemsCardProps } from './components/HasSystemsCard';
+export type { RelatedEntitiesCardProps } from './components/RelatedEntitiesCard';
+export type { CatalogSearchResultListItemProps } from './components/CatalogSearchResultListItem';

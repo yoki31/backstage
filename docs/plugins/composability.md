@@ -74,7 +74,7 @@ The extension type is a simple one:
 
 ```ts
 export type Extension<T> = {
-  expose(plugin: BackstagePlugin<any, any>): T;
+  expose(plugin: BackstagePlugin): T;
 };
 ```
 
@@ -193,17 +193,17 @@ const App = () => (
 
 ### Naming Patterns
 
-There are a couple of naming patters to adhere to as you build plugins, which
+There are a couple of naming patterns to adhere to as you build plugins, which
 helps clarify the intent and usage of the exports.
 
-| Description           | Pattern         | Examples                                       |
-| --------------------- | --------------- | ---------------------------------------------- |
-| Top-level Pages       | \*Page          | CatalogIndexPage, SettingsPage, LighthousePage |
-| Entity Tab Content    | Entity\*Content | EntityJenkinsContent, EntityKubernetesContent  |
-| Entity Overview Card  | Entity\*Card    | EntitySentryCard, EntityPagerDutyCard          |
-| Entity Conditional    | is\*Available   | isPagerDutyAvailable, isJenkinsAvailable       |
-| Plugin Instance       | \*Plugin        | jenkinsPlugin, catalogPlugin                   |
-| Utility API Reference | \*ApiRef        | configApiRef, catalogApiRef                    |
+| Description           | Pattern          | Examples                                             |
+| --------------------- | ---------------- | ---------------------------------------------------- |
+| Top-level Pages       | `*Page`          | `CatalogIndexPage`, `SettingsPage`, `LighthousePage` |
+| Entity Tab Content    | `Entity*Content` | `EntityJenkinsContent`, `EntityKubernetesContent`    |
+| Entity Overview Card  | `Entity*Card`    | `EntitySentryCard`, `EntityPagerDutyCard`            |
+| Entity Conditional    | `is*Available`   | `isPagerDutyAvailable`, `isJenkinsAvailable`         |
+| Plugin Instance       | `*Plugin`        | `jenkinsPlugin`, `catalogPlugin`                     |
+| Utility API Reference | `*ApiRef`        | `configApiRef`, `catalogApiRef`                      |
 
 ### Routing System
 
@@ -325,6 +325,33 @@ concrete routes directly. Although there can be some benefits to using the full
 routing system even in internal plugins. It can help you structure your routes,
 and as you will see further down it also helps you manage route parameters.
 
+You can also use static configuration to bind routes, removing the need to make
+changes to the app code. It does however mean that you won't get type safety
+when binding routes and compile-time validation of the bindings. Static
+configuration of route bindings is done under the `app.routes.bindings` key in
+`app-config.yaml`. It works the same way as [route bindings in the new frontend system](../frontend-system/architecture/36-routes.md#binding-external-route-references),
+for example:
+
+```yaml
+app:
+  routes:
+    bindings:
+      bar.headerLink: foo.root
+```
+
+### Default Targets for External Route References
+
+Following the `1.28` release of Backstage you can now define default targets for
+external route references. They work the same way as [default targets in the new frontend system](../frontend-system/architecture/36-routes.md#default-targets-for-external-route-references),
+for example:
+
+```ts
+export const createComponentExternalRouteRef = createExternalRouteRef({
+  // highlight-next-line
+  defaultTarget: 'scaffolder.createComponent',
+});
+```
+
 ### Optional External Routes
 
 When creating an `ExternalRouteRef` it is possible to mark it as optional:
@@ -368,7 +395,7 @@ The following is an example of creation and usage of a parameterized route:
 ```tsx
 // Creation of a parameterized route
 const myRouteRef = createRouteRef({
-  title: 'My Named Route',
+  id: 'myroute',
   params: ['name']
 })
 
@@ -480,7 +507,7 @@ function isKind(kind: string) {
 ```
 
 The `@backstage/catalog` plugin provides a couple of built-in conditions,
-`isKind`, `isComponentType`, and `isNamespace`.
+`isKind`, `isComponentType`, `isResourceType`, `isEntityWith`, and `isNamespace`.
 
 In addition to the `EntitySwitch` component, the catalog plugin also exports a
 new `EntityLayout` component. It is a tweaked version and replacement for the
@@ -515,164 +542,10 @@ deprecated while making the new additions, to then be removed at a later point.
 Many export naming patterns have been changed to avoid import aliases and to
 clarify intent. Refer to the following table to formulate the new name:
 
-| Description          | Existing Pattern           | New Pattern     | Examples                                       |
-| -------------------- | -------------------------- | --------------- | ---------------------------------------------- |
-| Top-level Pages      | Router                     | \*Page          | CatalogIndexPage, SettingsPage, LighthousePage |
-| Entity Tab Content   | Router                     | Entity\*Content | EntityJenkinsContent, EntityKubernetesContent  |
-| Entity Overview Card | \*Card                     | Entity\*Card    | EntitySentryCard, EntityPagerDutyCard          |
-| Entity Conditional   | isPluginApplicableToEntity | is\*Available   | isPagerDutyAvailable, isJenkinsAvailable       |
-| Plugin Instance      | plugin                     | \*Plugin        | jenkinsPlugin, catalogPlugin                   |
-
-## Porting Existing Apps
-
-The first step of porting any app is to replace the root `Routes` component with
-`FlatRoutes` from `@backstage/core-app-api`. As opposed to the `Routes`
-component, `FlatRoutes` only considers the first level of `Route` components in
-its children, and provides any additional children to the outlet of the route.
-It also removes the need to append `"/*"` to paths, as it is added
-automatically.
-
-```diff
-const AppRoutes = () => (
--  <Routes>
-+  <FlatRoutes>
-    ...
--    <Route path="/docs/*" element={<DocsRouter />} />
-+    <Route path="/docs" element={<DocsRouter />} />
-    ...
--  </Routes>
-+  </FlatRoutes>
-);
-```
-
-The next step should be to switch from using `EntityPageLayout` to
-`EntityLayout`, as this can also be done without waiting for plugins to be
-ported. You should also replace the top-level `Router` from the catalog plugin
-with the separate `CatalogIndexPage` and `CatalogEntityPage` extensions that
-have been added to the catalog:
-
-```diff
--<Route
--  path={`${catalogRouteRef.path}/*`}
--  element={<CatalogRouter EntityPage={EntityPage} />}
--/>
-+<Route path="/catalog" element={<CatalogIndexPage />} />
-+<Route
-+  path="/catalog/:namespace/:kind/:name"
-+  element={<CatalogEntityPage />}
-+>
-+  <EntityPage />
-+</Route>
-```
-
-At that point you should flatten out the element tree as much as possible in the
-app, removing any intermediate components. At the top level this should usually
-be straightforward, but when reaching the catalog entity pages you may need to
-wait for some plugins to be migrated. This is because it is no longer possible
-to pass in the selected entity through component props, and it should be picked
-up from context inside the plugin instead. See the sections below for how to
-carry out migrations of some common entity page patterns.
-
-Once the app element tree doesn't contain any intermediate components, and all
-plugin imports have been switched to extensions rather than plain components,
-the app has been fully ported.
-
-### Switching from EntityPageLayout to EntityLayout
-
-The existing `EntityPageLayout` is replaced by the new `EntityLayout` component,
-which has a slightly different pattern for expressing the contents and paths.
-
-Porting from the old to the new API is just a matter of moving some things
-around. For example, given the following existing code:
-
-```tsx
-<EntityPageLayout>
-  <EntityPageLayout.Content
-    path="/"
-    title="Overview"
-    element={<ComponentOverviewContent entity={entity} />}
-  />
-  <EntityPageLayout.Content
-    path="/sentry"
-    title="Sentry"
-    element={<SentryRouter entity={entity} />}
-  />
-  <EntityPageLayout.Content
-    path="/kubernetes/*"
-    title="Kubernetes"
-    element={<KubernetesRouter entity={entity} />}
-  />
-</EntityPageLayout>
-```
-
-It would be ported to this:
-
-```tsx
-<EntityLayout>
-  <EntityLayout.Route path="/" title="Overview">
-    <ComponentOverviewContent entity={entity} />
-  </EntityLayout.Route>
-
-  <EntityLayout.Route path="/sentry" title="Sentry">
-    <SentryRouter entity={entity} />
-  </EntityLayout.Route>
-
-  <EntityLayout.Route path="/kubernetes" title="Kubernetes">
-    <KubernetesRouter entity={entity} />
-  </EntityLayout.Route>
-</EntityLayout>
-```
-
-In addition to the renaming, the `element` prop has been moved to `children`.
-Also note that the `/*` suffix has been removed from the `"/kubernetes"` path,
-as it's now added automatically.
-
-Usage of the `EntityLayout` component is required to be able to properly
-discover routes, and so it is required to apply this change before you can start
-using routable entity content extensions from plugins.
-
-### Porting Entity Pages
-
-The established pattern in the app is to use custom components in order to
-select what plugin components to render for a given entity. The new
-`EntitySwitch` component introduced above is what is intended to replace this
-pattern, now that the entire app needs to be rendered as a single element tree.
-For example, given the following existing code:
-
-```tsx
-export const EntityPage = () => {
-  const { entity } = useEntity();
-
-  switch (entity?.kind?.toLowerCase()) {
-    case 'component':
-      return <ComponentEntityPage entity={entity} />;
-    case 'api':
-      return <ApiEntityPage entity={entity} />;
-    case 'group':
-      return <GroupEntityPage entity={entity} />;
-    case 'user':
-      return <UserEntityPage entity={entity} />;
-    default:
-      return <DefaultEntityPage entity={entity} />;
-  }
-};
-```
-
-It would be migrated to this:
-
-```tsx
-export const entityPage = (
-  <EntitySwitch>
-    <EntitySwitch.Case if={isKind('component')} children={componentPage} />
-    <EntitySwitch.Case if={isKind('api')} children={apiPage} />
-    <EntitySwitch.Case if={isKind('group')} children={groupPage} />
-    <EntitySwitch.Case if={isKind('user')} children={userPage} />
-    <EntitySwitch.Case children={defaultPage} />
-  </EntitySwitch>
-);
-```
-
-Note that for example `<ComponentEntityPage ... />` has been changed to simply
-`componentPage`, that is because just like the `EntityPage` component, the
-`ComponentEntityPage` also needs to be ported to be an element rather a
-component in a similar way.
+| Description          | Existing Pattern             | New Pattern       | Examples                                             |
+| -------------------- | ---------------------------- | ----------------- | ---------------------------------------------------- |
+| Top-level Pages      | `Router`                     | `\*Page`          | `CatalogIndexPage`, `SettingsPage`, `LighthousePage` |
+| Entity Tab Content   | `Router`                     | `Entity\*Content` | `EntityJenkinsContent`, `EntityKubernetesContent`    |
+| Entity Overview Card | `\*Card`                     | `Entity\*Card`    | `EntitySentryCard`, `EntityPagerDutyCard`            |
+| Entity Conditional   | `isPluginApplicableToEntity` | `is\*Available`   | `isPagerDutyAvailable`, `isJenkinsAvailable`         |
+| Plugin Instance      | `plugin`                     | `\*Plugin`        | `jenkinsPlugin`, `catalogPlugin`                     |

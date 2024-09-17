@@ -8,43 +8,25 @@ You need to configure the action in your backend:
 
 ## From your Backstage root directory
 
-```
-cd packages/backend
-yarn add @backstage/plugin-scaffolder-backend-module-cookiecutter
+```bash
+# From your Backstage root directory
+yarn --cwd packages/backend add @backstage/plugin-scaffolder-backend-module-cookiecutter
 ```
 
-Configure the action:
-(you can check the [docs](https://backstage.io/docs/features/software-templates/writing-custom-actions#registering-custom-actions) to see all options):
+Then ensure that both the scaffolder and this module are added to your backend:
 
 ```typescript
-// packages/backend/src/plugins/scaffolder.ts
-
-const actions = [
-  createFetchCookiecutterAction({
-    integrations,
-    reader,
-    containerRunner,
-  }),
-  ...createBuiltInActions({
-    ...
-  })
-];
-
-return await createRouter({
-  containerRunner,
-  logger,
-  config,
-  database,
-  catalogClient,
-  reader,
-  actions,
-});
+// In packages/backend/src/index.ts
+const backend = createBackend();
+// ...
+backend.add(import('@backstage/plugin-scaffolder-backend/alpha'));
+backend.add(import('@backstage/plugin-scaffolder-backend-module-cookiecutter'));
 ```
 
 After that you can use the action in your template:
 
 ```yaml
-apiVersion: backstage.io/v1beta2
+apiVersion: scaffolder.backstage.io/v1beta3
 kind: Template
 metadata:
   name: cookiecutter-demo
@@ -73,16 +55,16 @@ spec:
           description: Owner of the component
           ui:field: OwnerPicker
           ui:options:
-            allowedKinds:
-              - Group
+            catalogFilter:
+              kind: Group
         system:
           title: System
           type: string
           description: System of the component
           ui:field: EntityPicker
           ui:options:
-            allowedKinds:
-              - System
+            catalogFilter:
+              kind: System
             defaultKind: System
 
     - title: Choose a location
@@ -109,30 +91,31 @@ spec:
       input:
         url: ./template
         values:
-          name: '{{ parameters.name }}'
-          owner: '{{ parameters.owner }}'
-          system: '{{ parameters.system }}'
-          destination: '{{ parseRepoUrl parameters.repoUrl }}'
+          name: ${{ parameters.name }}
+          owner: ${{ parameters.owner }}
+          system: ${{ parameters.system }}
+          destination: ${{ parameters.repoUrl | parseRepoUrl }}
 
     - id: publish
-      if: '{{ not parameters.dryRun }}'
+      if: ${{ parameters.dryRun !== true }}
       name: Publish
       action: publish:github
       input:
-        allowedHosts: ['github.com']
-        description: 'This is {{ parameters.name }}'
-        repoUrl: '{{ parameters.repoUrl }}'
+        allowedHosts:
+          - github.com
+        description: This is ${{ parameters.name }}
+        repoUrl: ${{ parameters.repoUrl }}
 
     - id: register
-      if: '{{ not parameters.dryRun }}'
+      if: ${{ parameters.dryRun !== true }}
       name: Register
       action: catalog:register
       input:
-        repoContentsUrl: '{{ steps.publish.output.repoContentsUrl }}'
+        repoContentsUrl: ${{ steps['publish'].output.repoContentsUrl }}
         catalogInfoPath: '/catalog-info.yaml'
 
     - name: Results
-      if: '{{ parameters.dryRun }}'
+      if: ${{ parameters.dryRun }}
       action: debug:log
       input:
         listWorkspace: true
@@ -140,10 +123,10 @@ spec:
   output:
     links:
       - title: Repository
-        url: '{{ steps.publish.output.remoteUrl }}'
+        url: ${{ steps['publish'].output.remoteUrl }}
       - title: Open in catalog
-        icon: 'catalog'
-        entityRef: '{{ steps.register.output.entityRef }}'
+        icon: catalog
+        entityRef: ${{ steps['register'].output.entityRef }}
 ```
 
 You can also visit the `/create/actions` route in your Backstage application to find out more about the parameters this action accepts when it's installed to configure how you like.
@@ -160,3 +143,5 @@ You can do so by including the following lines in the last step of your Dockerfi
 RUN apt-get update && apt-get install -y python3 python3-pip
 RUN pip3 install cookiecutter
 ```
+
+In this case, you don't have to include `containerRunner` in the action configuration.

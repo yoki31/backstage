@@ -14,9 +14,4 @@
  * limitations under the License.
  */
 
-export type {
-  ConditionalPolicyDecision,
-  PermissionPolicy,
-  PolicyAuthorizeRequest,
-  PolicyDecision,
-} from './types';
+export type { PermissionPolicy, PolicyQuery, PolicyQueryUser } from './types';

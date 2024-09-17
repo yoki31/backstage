@@ -14,7 +14,15 @@
  * limitations under the License.
  */
 
-import { RELATION_DEPENDENCY_OF } from '@backstage/catalog-model';
+import {
+  ComponentEntity,
+  RELATION_DEPENDENCY_OF,
+} from '@backstage/catalog-model';
+import {
+  InfoCardVariants,
+  TableColumn,
+  TableOptions,
+} from '@backstage/core-components';
 import React from 'react';
 import {
   asComponentEntities,
@@ -22,26 +30,38 @@ import {
   componentEntityHelpLink,
   RelatedEntitiesCard,
 } from '../RelatedEntitiesCard';
+import { catalogTranslationRef } from '../../alpha/translation';
+import { useTranslationRef } from '@backstage/core-plugin-api/alpha';
 
-type Props = {
-  variant?: 'gridItem';
+/** @public */
+export interface DependencyOfComponentsCardProps {
+  variant?: InfoCardVariants;
   title?: string;
-};
+  columns?: TableColumn<ComponentEntity>[];
+  tableOptions?: TableOptions;
+}
 
-export const DependencyOfComponentsCard = ({
-  variant = 'gridItem',
-  title = 'Dependency of components',
-}: Props) => {
+export function DependencyOfComponentsCard(
+  props: DependencyOfComponentsCardProps,
+) {
+  const { t } = useTranslationRef(catalogTranslationRef);
+  const {
+    variant = 'gridItem',
+    title = t('dependencyOfComponentsCard.title'),
+    columns = componentEntityColumns,
+    tableOptions = {},
+  } = props;
   return (
     <RelatedEntitiesCard
       variant={variant}
       title={title}
       entityKind="Component"
       relationType={RELATION_DEPENDENCY_OF}
-      columns={componentEntityColumns}
-      emptyMessage="No component depends on this component"
+      columns={columns}
+      emptyMessage={t('dependencyOfComponentsCard.emptyMessage')}
       emptyHelpLink={componentEntityHelpLink}
       asRenderableEntities={asComponentEntities}
+      tableOptions={tableOptions}
     />
   );
-};
+}

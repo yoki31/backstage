@@ -16,8 +16,15 @@
 
 export { LdapClient } from './client';
 export { mapStringAttr } from './util';
-export { readLdapConfig } from './config';
-export type { LdapProviderConfig, GroupConfig, UserConfig } from './config';
+export { readProviderConfigs, readLdapLegacyConfig } from './config';
+export type {
+  LdapProviderConfig,
+  GroupConfig,
+  UserConfig,
+  BindConfig,
+  TLSConfig,
+  VendorConfig,
+} from './config';
 export type { LdapVendor } from './vendors';
 export {
   LDAP_DN_ANNOTATION,

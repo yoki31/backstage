@@ -26,7 +26,11 @@ export async function serveBackend(options: BackendServeOptions) {
     isDev: true,
   });
 
-  const compiler = webpack(config, (err: Error | undefined) => {
+  // Webpack only replaces occurrences of this in code it touches, which does
+  // not include dependencies in node_modules. So we set it here at runtime as well.
+  (process.env as { NODE_ENV: string }).NODE_ENV = 'development';
+
+  const compiler = webpack(config, (err: Error | null) => {
     if (err) {
       console.error(err);
     } else console.log('Build succeeded');
@@ -35,9 +39,8 @@ export async function serveBackend(options: BackendServeOptions) {
   const waitForExit = async () => {
     for (const signal of ['SIGINT', 'SIGTERM'] as const) {
       process.on(signal, () => {
-        compiler.close(() => console.log('Stopped watcher'));
         // exit instead of resolve. The process is shutting down and resolving a promise here logs an error
-        process.exit();
+        compiler.close(() => process.exit());
       });
     }
 

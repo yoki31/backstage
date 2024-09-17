@@ -34,42 +34,46 @@ is a concrete implementation of [AnalyticsApi][analytics-api-type], common
 integrations are packaged and provided as plugins. Find your analytics tool of
 choice below.
 
-| Analytics Tool         | Support Status |
-| ---------------------- | -------------- |
-| [Google Analytics][ga] | Yes ✅         |
+| Analytics Tool                        | Support Status |
+| ------------------------------------- | -------------- |
+| [Google Analytics][ga]                | Yes ✅         |
+| [Google Analytics 4][ga4]             | Yes ✅         |
+| [New Relic Browser][newrelic-browser] | Community ✅   |
+| [Matomo][matomo]                      | Community ✅   |
+| [Quantum Metric][qm]                  | Community ✅   |
 
 To suggest an integration, please [open an issue][add-tool] for the analytics
 tool your organization uses. Or jump to [Writing Integrations][int-howto] to
 learn how to contribute the integration yourself!
 
-[ga]:
-  https://github.com/backstage/backstage/blob/master/plugins/analytics-module-ga/README.md
-[add-tool]:
-  https://github.com/backstage/backstage/issues/new?assignees=&labels=plugin&template=plugin_template.md&title=%5BAnalytics+Module%5D+THE+ANALYTICS+TOOL+TO+INTEGRATE
+[ga]: https://github.com/backstage/community-plugins/blob/main/workspaces/analytics/plugins/analytics-module-ga/README.md
+[ga4]: https://github.com/backstage/community-plugins/blob/main/workspaces/analytics/plugins/analytics-module-ga4/README.md
+[newrelic-browser]: https://github.com/backstage/community-plugins/blob/main/workspaces/analytics/plugins/analytics-module-newrelic-browser/README.md
+[qm]: https://github.com/quantummetric/analytics-module-qm/blob/main/README.md
+[matomo]: https://github.com/janus-idp/backstage-plugins/blob/main/plugins/analytics-module-matomo/README.md
+[add-tool]: https://github.com/backstage/backstage/issues/new?assignees=&labels=plugin&template=plugin_template.md&title=%5BAnalytics+Module%5D+THE+ANALYTICS+TOOL+TO+INTEGRATE
 [int-howto]: #writing-integrations
-[analytics-api-type]:
-  https://backstage.io/docs/reference/core-plugin-api.analyticsapi
+[analytics-api-type]: https://backstage.io/docs/reference/core-plugin-api.analyticsapi
 
 ## Key Events
 
 The following table summarizes events that, depending on the plugins you have
 installed, may be captured.
 
-| Action     | Provided By    | Subject                                   |
-| ---------- | -------------- | ----------------------------------------- |
-| `navigate` | Backstage Core | The URL of the page that was navigated to |
-| `click`    | Backstage Core | The text of the link that was clicked on  |
+| Action      | Subject                                                                                                                                                            | Other Notes                                                                                                                                                                                                                                                                                         |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `navigate`  | The URL of the page that was navigated to.                                                                                                                         | Fired immediately when route location changes (unless associated plugin/route data is ambiguous, in which case the event is fired after plugin/route data becomes known, immediately before the next event or document unload). The parameters of the current route will be included as attributes. |
+| `click`     | The text of the link that was clicked on.                                                                                                                          | The `to` attribute represents the URL clicked to.                                                                                                                                                                                                                                                   |
+| `create`    | The `name` of the software being created; if no `name` property is requested by the given Software Template, then the string `new {templateName}` is used instead. | The context holds an `entityRef`, set to the template's ref (e.g. `template:default/template-name`). The `value` represents the number of minutes saved by running the template (based on the template's `backstage.io/time-saved` annotation, if available).                                       |
+| `search`    | The search term entered in any search bar component.                                                                                                               | The context holds `searchTypes`, representing `types` constraining the search. The `value` represents the total number of search results for the query. This may not be visible if the permission framework is being used.                                                                          |
+| `discover`  | The title of the search result that was clicked on                                                                                                                 | The `value` is the result rank. A `to` attribute is also provided.                                                                                                                                                                                                                                  |
+| `not-found` | The path of the resource that resulted in a not found page                                                                                                         | Fired by at least TechDocs.                                                                                                                                                                                                                                                                         |
 
-If there is an event you'd like to see captured, please [open an
-issue][add-event] describing the event you want to see and the questions it
-would help you answer. Or jump to [Capturing Events][event-howto] to learn how
+If there is an event you'd like to see captured, please [open an issue](https://github.com/backstage/backstage/issues/new?assignees=&labels=enhancement&template=feature_template.md&title=[Analytics%20Event]:%20THE+EVENT+TO+CAPTURE) describing the event you want to see and the questions it
+would help you answer. Or jump to [Capturing Events](#capturing-events) to learn how
 to contribute the instrumentation yourself!
 
 _OSS plugin maintainers: feel free to document your events in the table above._
-
-[add-event]:
-https://github.com/backstage/backstage/issues/new?assignees=&labels=enhancement&template=feature_template.md&title=[Analytics%20Event]:%20THE+EVENT+TO+CAPTURE
-[event-howto]: #capturing-events
 
 ## Writing Integrations
 
@@ -142,6 +146,63 @@ tool), consider contributing your API implementation as a plugin!
 By convention, such packages should be named
 `@backstage/analytics-module-[name]`, and any configuration should be keyed
 under `app.analytics.[name]`.
+
+### Handling User Identity
+
+If the analytics platform you are integrating with has a first-class concept of
+user identity, you can (optionally) choose to support this by the following this
+convention:
+
+- Allow your implementation to be instantiated with the `identityApi` as one of
+  its options in a `fromConfig` static method.
+- Use the `userEntityRef` resolved by `identityApi`'s `getBackstageIdentity()`
+  method as the basis for the user ID you send to your analytics platform.
+
+For example:
+
+```typescript
+import {
+  AnalyticsApi,
+  analyticsApiRef,
+  AnyApiFactory,
+  configApiRef,
+  createApiFactory,
+  identityApiRef,
+  IdentityApi,
+} from '@backstage/core-plugin-api';
+
+// Implementation that optionally initializes with a userId.
+class AcmeAnalytics implements AnalyticsApi {
+  private constructor(accountId: number, identityApi?: IdentityApi) {
+    if (identityApi) {
+      identityApi.getBackstageIdentity().then(identity => {
+        AcmeAnalytics.init(accountId, {
+          userId: identity.userEntityRef,
+        });
+      });
+    } else {
+      AcmeAnalytics.init(accountId);
+    }
+  }
+
+  static fromConfig(config, options) {
+    const accountId = config.getString('app.analytics.acme.id');
+    return new AcmeAnalytics(accountId, options.identityApi);
+  }
+}
+
+// Your implementation should be instantiated like this:
+export const apis: AnyApiFactory[] = [
+  createApiFactory({
+    api: analyticsApiRef,
+    deps: { configApi: configApiRef, identityApi: identityApiRef },
+    factory: ({ configApi, identityApi }) =>
+      AcmeAnalytics.fromConfig(configApi, {
+        identityApi,
+      }),
+  }),
+];
+```
 
 ## Capturing Events
 
@@ -245,11 +306,11 @@ it's important to keep each of these levels of detail disaggregated.
   automatically as part of the `extension` in which the `filter` event was
   captured).
 
-- On the flip side, when adding `attributes` to an event, look at existing
-  events and see if the data you are capturing matches the intention, type, or
-  even the content of _their_ `attributes`. For instance, it may be common for
-  events that involve the Catalog to add details like entity `name`, `kind`,
-  and/or `namespace` as `attributes`. Using the same keys in your event will
+- On the flip side, when adding `attributes` to or `context` around an event,
+  look at existing events and see if the data you are capturing matches the
+  intention, type, or even the content of _their_ `attributes` or `context`.
+  For instance, it's common for events that involve the Catalog to include an
+  `entityRef` contextual key. Using the same keys and values in your event will
   ensure that events instrumented across plugins can easily be aggregated.
 
 ### Unit Testing Event Capture

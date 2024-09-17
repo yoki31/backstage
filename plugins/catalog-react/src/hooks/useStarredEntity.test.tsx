@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-import { Entity, EntityName } from '@backstage/catalog-model';
+import { Entity, CompoundEntityRef } from '@backstage/catalog-model';
 import { TestApiProvider } from '@backstage/test-utils';
-import { renderHook } from '@testing-library/react-hooks';
+import { waitFor } from '@testing-library/react';
+import { renderHook } from '@testing-library/react';
 import React, { PropsWithChildren } from 'react';
 import Observable from 'zen-observable';
 import { StarredEntitiesApi, starredEntitiesApiRef } from '../apis';
@@ -27,12 +28,12 @@ describe('useStarredEntity', () => {
     toggleStarred: jest.fn(),
     starredEntitie$: jest.fn(),
   };
-  let wrapper: React.ComponentType;
+  let wrapper: React.ComponentType<React.PropsWithChildren<{}>>;
 
   beforeEach(() => {
-    wrapper = ({ children }: PropsWithChildren<{}>) => (
+    wrapper = (props: PropsWithChildren<{}>) => (
       <TestApiProvider apis={[[starredEntitiesApiRef, mockStarredEntitiesApi]]}>
-        {children}
+        {props.children}
       </TestApiProvider>
     );
   });
@@ -44,7 +45,7 @@ describe('useStarredEntity', () => {
   describe.each`
     title                 | entityOrRef
     ${'entity reference'} | ${'component:default/mock'}
-    ${'entity name'}      | ${{ kind: 'component', namespace: 'default', name: 'mock' } as EntityName}
+    ${'entity name'}      | ${{ kind: 'component', namespace: 'default', name: 'mock' } as CompoundEntityRef}
     ${'entity'}           | ${{ apiVersion: '1', kind: 'Component', metadata: { name: 'mock' } } as Entity}
   `('with $title', ({ entityOrRef }) => {
     describe('toggleStarredEntity', () => {
@@ -58,8 +59,8 @@ describe('useStarredEntity', () => {
 
         result.current.toggleStarredEntity();
 
-        expect(mockStarredEntitiesApi.toggleStarred).toBeCalledTimes(1);
-        expect(mockStarredEntitiesApi.toggleStarred).toBeCalledWith(
+        expect(mockStarredEntitiesApi.toggleStarred).toHaveBeenCalledTimes(1);
+        expect(mockStarredEntitiesApi.toggleStarred).toHaveBeenCalledWith(
           'component:default/mock',
         );
       });
@@ -83,18 +84,16 @@ describe('useStarredEntity', () => {
         );
         mockStarredEntitiesApi.toggleStarred.mockResolvedValue();
 
-        const { result, waitForNextUpdate } = renderHook(
-          () => useStarredEntity(entityOrRef),
-          {
-            wrapper,
-          },
-        );
+        const { result } = renderHook(() => useStarredEntity(entityOrRef), {
+          wrapper,
+        });
 
         // the initial value will always be false because the observable triggers async
         expect(result.current.isStarredEntity).toBe(false);
-        await waitForNextUpdate();
 
-        expect(result.current.isStarredEntity).toBe(true);
+        await waitFor(() => {
+          expect(result.current.isStarredEntity).toBe(true);
+        });
       });
     });
   });

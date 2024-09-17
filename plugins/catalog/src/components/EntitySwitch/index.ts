@@ -15,4 +15,13 @@
  */
 
 export { EntitySwitch } from './EntitySwitch';
-export { isKind, isNamespace, isComponentType } from './conditions';
+export type { EntitySwitchProps, EntitySwitchCaseProps } from './EntitySwitch';
+export type { EntityPredicates } from './conditions';
+export {
+  isKind,
+  isNamespace,
+  isComponentType,
+  isResourceType,
+  isApiType,
+  isEntityWith,
+} from './conditions';

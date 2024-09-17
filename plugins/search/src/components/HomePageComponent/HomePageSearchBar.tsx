@@ -14,47 +14,64 @@
  * limitations under the License.
  */
 
-import React from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import { makeStyles } from '@material-ui/core/styles';
-
-import { SearchBarBase } from '../SearchBar';
+import {
+  SearchBarBase,
+  SearchBarBaseProps,
+} from '@backstage/plugin-search-react';
 import { useNavigateToQuery } from '../util';
 
 const useStyles = makeStyles({
-  searchBar: {
+  searchBarRoot: {
+    fontSize: '1.5em',
+  },
+  searchBarOutline: {
     border: '1px solid #555',
     borderRadius: '6px',
-    fontSize: '1.5em',
   },
 });
 
-type Props = {
-  placeholder?: string;
-};
+/**
+ * Props for {@link HomePageSearchBar}.
+ *
+ * @public
+ */
+export type HomePageSearchBarProps = Partial<
+  Omit<SearchBarBaseProps, 'onChange' | 'onSubmit'>
+>;
 
-export const HomePageSearchBar = ({ placeholder }: Props) => {
-  const [query, setQuery] = React.useState('');
+/**
+ * The search bar created specifically for the composable home page.
+ */
+export const HomePageSearchBar = (props: HomePageSearchBarProps) => {
+  const classes = useStyles(props);
+  const [query, setQuery] = useState('');
+  const ref = useRef<HTMLInputElement | null>(null);
+
   const handleSearch = useNavigateToQuery();
-  const classes = useStyles();
 
-  const handleSubmit = () => {
-    handleSearch({ query });
-  };
-
-  const handleChange = React.useCallback(
-    value => {
-      setQuery(value);
-    },
-    [setQuery],
-  );
+  // This handler is called when "enter" is pressed
+  const handleSubmit = useCallback(() => {
+    // Using ref to get the current field value without waiting for a query debounce
+    handleSearch({ query: ref.current?.value ?? '' });
+  }, [handleSearch]);
 
   return (
     <SearchBarBase
-      onSubmit={handleSubmit}
-      onChange={handleChange}
       value={query}
-      className={classes.searchBar}
-      placeholder={placeholder}
+      onSubmit={handleSubmit}
+      onChange={setQuery}
+      inputProps={{ ref }}
+      InputProps={{
+        ...props.InputProps,
+        classes: {
+          root: classes.searchBarRoot,
+          notchedOutline: classes.searchBarOutline,
+          ...props.InputProps?.classes,
+        },
+      }}
+      {...props}
     />
   );
 };

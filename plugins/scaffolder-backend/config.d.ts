@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import { HumanDuration } from '@backstage/types';
+
 export interface Config {
   /** Configuration options for the scaffolder plugin */
   scaffolder?: {
@@ -28,30 +30,58 @@ export interface Config {
      * The commit message used when new components are created.
      */
     defaultCommitMessage?: string;
+
     /**
-     * @deprecated Replaced by parameters for the publish:github action
+     * Sets the number of concurrent tasks that can be run at any given time on the TaskWorker.
+     *
+     * Defaults to 10.
+     *
+     * Set to 0 to disable task workers altogether.
      */
-    github?: {
-      [key: string]: string;
-    };
+    concurrentTasksLimit?: number;
+
     /**
-     * @deprecated Use the Gitlab integration instead
+     * Sets the tasks recoverability on system start up.
+     *
+     * If not specified, the default value is false.
      */
-    gitlab?: {
-      api: { [key: string]: string };
-    };
+    EXPERIMENTAL_recoverTasks?: boolean;
+
     /**
-     * @deprecated Use the Azure integration instead
+     * Sets the serialization of the workspace to have an ability to rerun the failed task.
      */
-    azure?: {
-      baseUrl: string;
-      api: { [key: string]: string };
-    };
+    EXPERIMENTAL_workspaceSerialization?: boolean;
+
     /**
-     * @deprecated Use the Bitbucket integration instead
+     * Sets the provider for workspace serialization.
+     *
+     * By default, it is your database.
      */
-    bitbucket?: {
-      api: { [key: string]: string };
-    };
+    EXPERIMENTAL_workspaceSerializationProvider?: string;
+
+    /**
+     * Every task which is in progress state and having a last heartbeat longer than a specified timeout is going to
+     * be attempted to recover.
+     *
+     * If not specified, the default value is 5 seconds.
+     *
+     */
+    EXPERIMENTAL_recoverTasksTimeout?: HumanDuration;
+
+    /**
+     * Makes sure to auto-expire and clean up things that time out or for other reasons should not be left lingering.
+     *
+     * By default, the frequency is every 5 minutes.
+     */
+    taskTimeoutJanitorFrequency?: HumanDuration;
+
+    /**
+     * Sets the task's heartbeat timeout, when to consider a task to be staled.
+     *
+     * Once task is considered to be staled, the scheduler will shut it down on the next cycle.
+     *
+     * Default value is 24 hours.
+     */
+    taskTimeout?: HumanDuration;
   };
 }

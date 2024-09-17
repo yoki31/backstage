@@ -16,35 +16,58 @@
 
 import { InfoCard } from '@backstage/core-components';
 import { configApiRef, useApi } from '@backstage/core-plugin-api';
-import { Chip, Typography } from '@material-ui/core';
+import Chip from '@material-ui/core/Chip';
+import Typography from '@material-ui/core/Typography';
 import React from 'react';
 import { catalogImportApiRef } from '../../api';
+import { useCatalogFilename } from '../../hooks';
 
-export const ImportInfoCard = () => {
+/**
+ * Props for {@link ImportInfoCard}.
+ *
+ * @public
+ */
+export interface ImportInfoCardProps {
+  exampleLocationUrl?: string;
+  exampleRepositoryUrl?: string;
+}
+
+/**
+ * Shows information about the import process.
+ *
+ * @public
+ */
+export const ImportInfoCard = (props: ImportInfoCardProps) => {
+  const {
+    exampleLocationUrl = 'https://github.com/backstage/backstage/blob/master/catalog-info.yaml',
+    exampleRepositoryUrl = 'https://github.com/backstage/backstage',
+  } = props;
+
   const configApi = useApi(configApiRef);
-  const appTitle = configApi.getOptional('app.title') || 'Backstage';
+  const appTitle = configApi.getOptionalString('app.title') || 'Backstage';
   const catalogImportApi = useApi(catalogImportApiRef);
 
-  const integrations = configApi.getConfig('integrations');
-  const hasGithubIntegration = integrations.has('github');
+  const hasGithubIntegration = configApi.has('integrations.github');
+
+  const catalogFilename = useCatalogFilename();
 
   return (
     <InfoCard
       title="Register an existing component"
+      titleTypographyProps={{ component: 'h3' }}
       deepLink={{
         title: 'Learn more about the Software Catalog',
-        link: 'https://backstage.io/docs/features/software-catalog/software-catalog-overview',
+        link: 'https://backstage.io/docs/features/software-catalog/',
       }}
     >
       <Typography variant="body2" paragraph>
         Enter the URL to your source code repository to add it to {appTitle}.
       </Typography>
-      <Typography variant="h6">Link to an existing entity file</Typography>
+      <Typography component="h4" variant="h6">
+        Link to an existing entity file
+      </Typography>
       <Typography variant="subtitle2" color="textSecondary" paragraph>
-        Example:{' '}
-        <code>
-          https://github.com/backstage/backstage/blob/master/catalog-info.yaml
-        </code>
+        Example: <code>{exampleLocationUrl}</code>
       </Typography>
       <Typography variant="body2" paragraph>
         The wizard analyzes the file, previews the entities, and adds them to
@@ -52,22 +75,22 @@ export const ImportInfoCard = () => {
       </Typography>
       {hasGithubIntegration && (
         <>
-          <Typography variant="h6">
+          <Typography component="h4" variant="h6">
             Link to a repository{' '}
             <Chip label="GitHub only" variant="outlined" size="small" />
           </Typography>
           <Typography variant="subtitle2" color="textSecondary" paragraph>
-            Example: <code>https://github.com/backstage/backstage</code>
+            Example: <code>{exampleRepositoryUrl}</code>
           </Typography>
           <Typography variant="body2" paragraph>
-            The wizard discovers all <code>catalog-info.yaml</code> files in the
+            The wizard discovers all <code>{catalogFilename}</code> files in the
             repository, previews the entities, and adds them to the {appTitle}{' '}
             catalog.
           </Typography>
           {catalogImportApi.preparePullRequest && (
             <Typography variant="body2" paragraph>
               If no entities are found, the wizard will prepare a Pull Request
-              that adds an example <code>catalog-info.yaml</code> and prepares
+              that adds an example <code>{catalogFilename}</code> and prepares
               the {appTitle} catalog to load all entities as soon as the Pull
               Request is merged.
             </Typography>

@@ -15,46 +15,208 @@
  */
 
 import express from 'express';
-import Router from 'express-promise-router';
-import { Logger } from 'winston';
-import { SearchQuery, SearchResultSet } from '@backstage/search-common';
+import { z } from 'zod';
+import { createLegacyAuthAdapters } from '@backstage/backend-common';
+import { InputError } from '@backstage/errors';
+import { Config } from '@backstage/config';
+import { JsonObject, JsonValue } from '@backstage/types';
+import {
+  PermissionAuthorizer,
+  PermissionEvaluator,
+  toPermissionEvaluator,
+} from '@backstage/plugin-permission-common';
+import {
+  DocumentTypeInfo,
+  IndexableResultSet,
+  SearchResultSet,
+} from '@backstage/plugin-search-common';
 import { SearchEngine } from '@backstage/plugin-search-backend-node';
+import { AuthorizedSearchEngine } from './AuthorizedSearchEngine';
+import { createOpenApiRouter } from '../schema/openapi.generated';
+import {
+  AuthService,
+  DiscoveryService,
+  HttpAuthService,
+  LoggerService,
+} from '@backstage/backend-plugin-api';
+import { HostDiscovery } from '@backstage/backend-defaults/discovery';
 
+const jsonObjectSchema: z.ZodSchema<JsonObject> = z.lazy(() => {
+  const jsonValueSchema: z.ZodSchema<JsonValue> = z.lazy(() =>
+    z.union([
+      z.string(),
+      z.number(),
+      z.boolean(),
+      z.null(),
+      z.array(jsonValueSchema),
+      jsonObjectSchema,
+    ]),
+  );
+
+  return z.record(jsonValueSchema);
+});
+
+/**
+ * @public
+ * @deprecated Please migrate to the new backend system as this will be removed in the future.
+ */
 export type RouterOptions = {
   engine: SearchEngine;
-  logger: Logger;
+  types: Record<string, DocumentTypeInfo>;
+  discovery?: DiscoveryService;
+  permissions: PermissionEvaluator | PermissionAuthorizer;
+  config: Config;
+  logger: LoggerService;
+  // TODO: Make "auth" and "httpAuth" required once we remove the usage of "tokenManager"
+  auth?: AuthService;
+  httpAuth?: HttpAuthService;
 };
 
+const defaultMaxPageLimit = 100;
+const defaultMaxTermLength = 100;
+const allowedLocationProtocols = ['http:', 'https:'];
+
+/**
+ * @public
+ * @deprecated Please migrate to the new backend system as this will be removed in the future.
+ */
 export async function createRouter(
   options: RouterOptions,
 ): Promise<express.Router> {
-  const { engine, logger } = options;
-  const router = Router();
-  router.get(
-    '/query',
-    async (
-      req: express.Request<any, unknown, unknown, SearchQuery>,
-      res: express.Response<SearchResultSet>,
-    ) => {
-      const { term, filters = {}, types, pageCursor } = req.query;
-      logger.info(
-        `Search request received: term="${term}", filters=${JSON.stringify(
-          filters,
-        )}, types=${types ? types.join(',') : ''}, pageCursor=${
-          pageCursor ?? ''
-        }`,
-      );
+  const router = await createOpenApiRouter();
+  const {
+    engine: inputEngine,
+    types,
+    permissions,
+    config,
+    logger,
+    discovery = HostDiscovery.fromConfig(config),
+  } = options;
 
-      try {
-        const results = await engine?.query(req.query);
-        res.send(results);
-      } catch (err) {
-        throw new Error(
-          `There was a problem performing the search query. ${err}`,
+  // TODO: stop using this adapter when the "tokenManager" is removed
+  const { auth, httpAuth } = createLegacyAuthAdapters({
+    ...options,
+    discovery,
+  });
+
+  const maxPageLimit =
+    config.getOptionalNumber('search.maxPageLimit') ?? defaultMaxPageLimit;
+
+  const maxTermLength =
+    config.getOptionalNumber('search.maxTermLength') ?? defaultMaxTermLength;
+
+  const requestSchema = z.object({
+    term: z
+      .string()
+      .refine(
+        term => term.length <= maxTermLength,
+        term => ({
+          message: `The term length "${term.length}" is greater than "${maxTermLength}"`,
+        }),
+      )
+      .default(''),
+    filters: jsonObjectSchema.optional(),
+    types: z
+      .array(z.string().refine(type => Object.keys(types).includes(type)))
+      .optional(),
+    pageCursor: z.string().optional(),
+    pageLimit: z
+      .number()
+      .refine(
+        pageLimit => pageLimit <= maxPageLimit,
+        pageLimit => ({
+          message: `The page limit "${pageLimit}" is greater than "${maxPageLimit}"`,
+        }),
+      )
+      .optional(),
+  });
+
+  let permissionEvaluator: PermissionEvaluator;
+  if ('authorizeConditional' in permissions) {
+    permissionEvaluator = permissions as PermissionEvaluator;
+  } else {
+    logger.warn(
+      'PermissionAuthorizer is deprecated. Please use an instance of PermissionEvaluator instead of PermissionAuthorizer in PluginEnvironment#permissions',
+    );
+    permissionEvaluator = toPermissionEvaluator(permissions);
+  }
+
+  const engine = config.getOptionalBoolean('permission.enabled')
+    ? new AuthorizedSearchEngine(
+        inputEngine,
+        types,
+        permissionEvaluator,
+        auth,
+        config,
+      )
+    : inputEngine;
+
+  const filterResultSet = ({ results, ...resultSet }: SearchResultSet) => ({
+    ...resultSet,
+    results: results.filter(result => {
+      const protocol = new URL(result.document.location, 'https://example.com')
+        .protocol;
+      const isAllowed = allowedLocationProtocols.includes(protocol);
+      if (!isAllowed) {
+        logger.info(
+          `Rejected search result for "${result.document.title}" as location protocol "${protocol}" is unsafe`,
         );
       }
-    },
-  );
+      return isAllowed;
+    }),
+  });
+
+  const toSearchResults = (resultSet: IndexableResultSet): SearchResultSet => ({
+    ...resultSet,
+    results: resultSet.results.map(result => ({
+      ...result,
+      document: {
+        ...result.document,
+        authorization: undefined,
+      },
+    })),
+  });
+
+  router.get('/query', async (req, res) => {
+    const parseResult = requestSchema.passthrough().safeParse(req.query);
+
+    if (!parseResult.success) {
+      throw new InputError(`Invalid query string: ${parseResult.error}`);
+    }
+
+    const query = parseResult.data;
+
+    logger.info(
+      `Search request received: term="${query.term}", filters=${JSON.stringify(
+        query.filters,
+      )}, types=${query.types ? query.types.join(',') : ''}, pageCursor=${
+        query.pageCursor ?? ''
+      }`,
+    );
+
+    try {
+      const credentials = await httpAuth.credentials(req);
+      const { token } = await auth.getPluginRequestToken({
+        onBehalfOf: credentials,
+        targetPluginId: 'search',
+      });
+      const resultSet = await engine?.query(query, {
+        token,
+        credentials,
+      });
+
+      res.json(filterResultSet(toSearchResults(resultSet)));
+    } catch (error) {
+      if (error.name === 'MissingIndexError') {
+        // re-throw and let the default error handler middleware captures it and serializes it with the right response code on the standard form
+        throw error;
+      }
+
+      throw new Error(
+        `There was a problem performing the search query: ${error.message}`,
+      );
+    }
+  });
 
   return router;
 }

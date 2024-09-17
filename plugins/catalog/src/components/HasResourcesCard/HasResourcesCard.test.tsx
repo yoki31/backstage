@@ -22,17 +22,19 @@ import {
   entityRouteRef,
 } from '@backstage/plugin-catalog-react';
 import { renderInTestApp, TestApiProvider } from '@backstage/test-utils';
-import { waitFor } from '@testing-library/react';
+import { waitFor, screen } from '@testing-library/react';
 import React from 'react';
 import { HasResourcesCard } from './HasResourcesCard';
 
 describe('<HasResourcesCard />', () => {
-  const getEntities: jest.MockedFunction<CatalogApi['getEntities']> = jest.fn();
-  let Wrapper: React.ComponentType;
+  const getEntitiesByRefs: jest.MockedFunction<
+    CatalogApi['getEntitiesByRefs']
+  > = jest.fn();
+  let Wrapper: React.ComponentType<React.PropsWithChildren<{}>>;
 
   beforeEach(() => {
     Wrapper = ({ children }: { children?: React.ReactNode }) => (
-      <TestApiProvider apis={[[catalogApiRef, { getEntities }]]}>
+      <TestApiProvider apis={[[catalogApiRef, { getEntitiesByRefs }]]}>
         {children}
       </TestApiProvider>
     );
@@ -51,7 +53,7 @@ describe('<HasResourcesCard />', () => {
       relations: [],
     };
 
-    const { getByText } = await renderInTestApp(
+    await renderInTestApp(
       <Wrapper>
         <EntityProvider entity={entity}>
           <HasResourcesCard />
@@ -59,9 +61,9 @@ describe('<HasResourcesCard />', () => {
       </Wrapper>,
     );
 
-    expect(getByText('Has resources')).toBeInTheDocument();
+    expect(screen.getByText('Has resources')).toBeInTheDocument();
     expect(
-      getByText(/No resource is part of this system/i),
+      screen.getByText(/No resource is part of this system/i),
     ).toBeInTheDocument();
   });
 
@@ -75,16 +77,12 @@ describe('<HasResourcesCard />', () => {
       },
       relations: [
         {
-          target: {
-            kind: 'Resource',
-            namespace: 'my-namespace',
-            name: 'target-name',
-          },
+          targetRef: 'resource:my-namespace/target-name',
           type: RELATION_HAS_PART,
         },
       ],
     };
-    getEntities.mockResolvedValue({
+    getEntitiesByRefs.mockResolvedValue({
       items: [
         {
           apiVersion: 'v1',
@@ -98,7 +96,7 @@ describe('<HasResourcesCard />', () => {
       ],
     });
 
-    const { getByText } = await renderInTestApp(
+    await renderInTestApp(
       <Wrapper>
         <EntityProvider entity={entity}>
           <HasResourcesCard />
@@ -112,8 +110,8 @@ describe('<HasResourcesCard />', () => {
     );
 
     await waitFor(() => {
-      expect(getByText('Has resources')).toBeInTheDocument();
-      expect(getByText(/target-name/i)).toBeInTheDocument();
+      expect(screen.getByText('Has resources')).toBeInTheDocument();
+      expect(screen.getByText(/target-name/i)).toBeInTheDocument();
     });
   });
 });

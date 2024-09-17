@@ -14,167 +14,46 @@
  * limitations under the License.
  */
 
-import { Strategy as OneLoginStrategy } from 'passport-onelogin-oauth';
-import express from 'express';
+import { oneLoginAuthenticator } from '@backstage/plugin-auth-backend-module-onelogin-provider';
 import {
-  OAuthAdapter,
-  OAuthProviderOptions,
-  OAuthHandlers,
-  OAuthResponse,
-  OAuthEnvironmentHandler,
-  OAuthStartRequest,
-  encodeState,
-  OAuthRefreshRequest,
-  OAuthResult,
-} from '../../lib/oauth';
-import passport from 'passport';
+  SignInResolver,
+  createOAuthProviderFactory,
+} from '@backstage/plugin-auth-node';
 import {
-  executeFrameHandlerStrategy,
-  executeRedirectStrategy,
-  executeRefreshTokenStrategy,
-  makeProfileInfo,
-  executeFetchUserProfileStrategy,
-  PassportDoneCallback,
-} from '../../lib/passport';
-import { RedirectInfo, AuthProviderFactory } from '../types';
+  adaptLegacyOAuthHandler,
+  adaptLegacyOAuthSignInResolver,
+} from '../../lib/legacy';
+import { OAuthResult } from '../../lib/oauth';
+import { createAuthProviderIntegration } from '../createAuthProviderIntegration';
+import { AuthHandler } from '../types';
 
-type PrivateInfo = {
-  refreshToken: string;
-};
+/**
+ * Auth provider integration for OneLogin auth
+ *
+ * @public
+ */
+export const onelogin = createAuthProviderIntegration({
+  create(options?: {
+    /**
+     * The profile transformation function used to verify and convert the auth response
+     * into the profile that will be presented to the user.
+     */
+    authHandler?: AuthHandler<OAuthResult>;
 
-export type Options = OAuthProviderOptions & {
-  issuer: string;
-};
-
-export class OneLoginProvider implements OAuthHandlers {
-  private readonly _strategy: any;
-
-  constructor(options: Options) {
-    this._strategy = new OneLoginStrategy(
-      {
-        issuer: options.issuer,
-        clientID: options.clientId,
-        clientSecret: options.clientSecret,
-        callbackURL: options.callbackUrl,
-        passReqToCallback: false as true,
-      },
-      (
-        accessToken: any,
-        refreshToken: any,
-        params: any,
-        fullProfile: passport.Profile,
-        done: PassportDoneCallback<OAuthResult, PrivateInfo>,
-      ) => {
-        done(
-          undefined,
-          {
-            accessToken,
-            refreshToken,
-            params,
-            fullProfile,
-          },
-          {
-            refreshToken,
-          },
-        );
-      },
-    );
-  }
-  async start(req: OAuthStartRequest): Promise<RedirectInfo> {
-    return await executeRedirectStrategy(req, this._strategy, {
-      accessType: 'offline',
-      prompt: 'consent',
-      scope: 'openid',
-      state: encodeState(req.state),
-    });
-  }
-
-  async handler(
-    req: express.Request,
-  ): Promise<{ response: OAuthResponse; refreshToken: string }> {
-    const { result, privateInfo } = await executeFrameHandlerStrategy<
-      OAuthResult,
-      PrivateInfo
-    >(req, this._strategy);
-
-    const profile = makeProfileInfo(result.fullProfile, result.params.id_token);
-
-    return {
-      response: await this.populateIdentity({
-        profile,
-        providerInfo: {
-          idToken: result.params.id_token,
-          accessToken: result.accessToken,
-          scope: result.params.scope,
-          expiresInSeconds: result.params.expires_in,
-        },
-      }),
-      refreshToken: privateInfo.refreshToken,
+    /**
+     * Configure sign-in for this provider, without it the provider can not be used to sign users in.
+     */
+    signIn?: {
+      /**
+       * Maps an auth result to a Backstage identity for the user.
+       */
+      resolver: SignInResolver<OAuthResult>;
     };
-  }
-
-  async refresh(req: OAuthRefreshRequest): Promise<OAuthResponse> {
-    const { accessToken, params } = await executeRefreshTokenStrategy(
-      this._strategy,
-      req.refreshToken,
-      req.scope,
-    );
-
-    const fullProfile = await executeFetchUserProfileStrategy(
-      this._strategy,
-      accessToken,
-    );
-    const profile = makeProfileInfo(fullProfile, params.id_token);
-
-    return this.populateIdentity({
-      providerInfo: {
-        accessToken,
-        idToken: params.id_token,
-        expiresInSeconds: params.expires_in,
-        scope: params.scope,
-      },
-      profile,
+  }) {
+    return createOAuthProviderFactory({
+      authenticator: oneLoginAuthenticator,
+      profileTransform: adaptLegacyOAuthHandler(options?.authHandler),
+      signInResolver: adaptLegacyOAuthSignInResolver(options?.signIn?.resolver),
     });
-  }
-
-  private async populateIdentity(
-    response: OAuthResponse,
-  ): Promise<OAuthResponse> {
-    const { profile } = response;
-
-    if (!profile.email) {
-      throw new Error('OIDC profile contained no email');
-    }
-
-    const id = profile.email.split('@')[0];
-
-    return { ...response, backstageIdentity: { id, token: '' } };
-  }
-}
-
-export type OneLoginProviderOptions = {};
-
-export const createOneLoginProvider = (
-  _options?: OneLoginProviderOptions,
-): AuthProviderFactory => {
-  return ({ providerId, globalConfig, config, tokenIssuer }) =>
-    OAuthEnvironmentHandler.mapConfig(config, envConfig => {
-      const clientId = envConfig.getString('clientId');
-      const clientSecret = envConfig.getString('clientSecret');
-      const issuer = envConfig.getString('issuer');
-      const callbackUrl = `${globalConfig.baseUrl}/${providerId}/handler/frame`;
-
-      const provider = new OneLoginProvider({
-        clientId,
-        clientSecret,
-        callbackUrl,
-        issuer,
-      });
-
-      return OAuthAdapter.fromConfig(globalConfig, provider, {
-        disableRefresh: false,
-        providerId,
-        tokenIssuer,
-      });
-    });
-};
+  },
+});

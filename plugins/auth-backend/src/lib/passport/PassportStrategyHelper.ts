@@ -16,11 +16,11 @@
 
 import express from 'express';
 import passport from 'passport';
-import jwtDecoder from 'jwt-decode';
+import { decodeJwt } from 'jose';
 import { InternalOAuthError } from 'passport-oauth2';
-
+import { ProfileInfo } from '@backstage/plugin-auth-node';
 import { PassportProfile } from './types';
-import { ProfileInfo, RedirectInfo } from '../../providers/types';
+import { OAuthStartResponse } from '../../providers/types';
 
 export type PassportDoneCallback<Res, Private = never> = (
   err?: Error,
@@ -51,7 +51,11 @@ export const makeProfileInfo = (
 
   if ((!email || !picture || !displayName) && idToken) {
     try {
-      const decoded: Record<string, string> = jwtDecoder(idToken);
+      const decoded = decodeJwt(idToken) as {
+        email?: string;
+        name?: string;
+        picture?: string;
+      };
       if (!email && decoded.email) {
         email = decoded.email;
       }
@@ -77,7 +81,7 @@ export const executeRedirectStrategy = async (
   req: express.Request,
   providerStrategy: passport.Strategy,
   options: Record<string, string>,
-): Promise<RedirectInfo> => {
+): Promise<OAuthStartResponse> => {
   return new Promise(resolve => {
     const strategy = Object.create(providerStrategy);
     strategy.redirect = (url: string, status?: number) => {
@@ -91,6 +95,7 @@ export const executeRedirectStrategy = async (
 export const executeFrameHandlerStrategy = async <Result, PrivateInfo = never>(
   req: express.Request,
   providerStrategy: passport.Strategy,
+  options?: Record<string, string>,
 ) => {
   return new Promise<{ result: Result; privateInfo: PrivateInfo }>(
     (resolve, reject) => {
@@ -124,7 +129,7 @@ export const executeFrameHandlerStrategy = async <Result, PrivateInfo = never>(
       strategy.redirect = () => {
         reject(new Error('Unexpected redirect'));
       };
-      strategy.authenticate(req, {});
+      strategy.authenticate(req, { ...(options ?? {}) });
     },
   );
 };

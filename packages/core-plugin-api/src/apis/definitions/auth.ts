@@ -222,30 +222,20 @@ export type BackstageUserIdentity = {
  */
 export type BackstageIdentityResponse = {
   /**
-   * The backstage user ID.
-   *
-   * @deprecated The identity is now provided via the `identity` field instead.
-   */
-  id: string;
-
-  /**
    * The token used to authenticate the user within Backstage.
    */
   token: string;
+
+  /**
+   * The time at which the token expires. If not set, it can be assumed that the token does not expire.
+   */
+  expiresAt?: Date;
 
   /**
    * Identity information derived from the token.
    */
   identity: BackstageUserIdentity;
 };
-
-/**
- * The old exported symbol for {@link BackstageIdentityResponse}.
- *
- * @public
- * @deprecated use {@link BackstageIdentityResponse} instead.
- */
-export type BackstageIdentity = BackstageIdentityResponse;
 
 /**
  * Profile information of the user.
@@ -310,8 +300,7 @@ export type SessionApi = {
 /**
  * Provides authentication towards Google APIs and identities.
  *
- * @alpha This API is **EXPERIMENTAL** and might change in the future.
- *
+ * @public
  * @remarks
  *
  * See {@link https://developers.google.com/identity/protocols/googlescopes} for a full list of supported scopes.
@@ -332,8 +321,7 @@ export const googleAuthApiRef: ApiRef<
 /**
  * Provides authentication towards GitHub APIs.
  *
- * @alpha This API is **EXPERIMENTAL** and might change in the future.
- *
+ * @public
  * @remarks
  *
  * See {@link https://developer.github.com/apps/building-oauth-apps/understanding-scopes-for-oauth-apps/}
@@ -348,8 +336,7 @@ export const githubAuthApiRef: ApiRef<
 /**
  * Provides authentication towards Okta APIs.
  *
- * @alpha This API is **EXPERIMENTAL** and might change in the future.
- *
+ * @public
  * @remarks
  *
  * See {@link https://developer.okta.com/docs/guides/implement-oauth-for-okta/scopes/}
@@ -368,41 +355,26 @@ export const oktaAuthApiRef: ApiRef<
 /**
  * Provides authentication towards GitLab APIs.
  *
- * @alpha This API is **EXPERIMENTAL** and might change in the future.
- *
+ * @public
  * @remarks
  *
  * See {@link https://docs.gitlab.com/ee/user/profile/personal_access_tokens.html#limiting-scopes-of-a-personal-access-token}
  * for a full list of supported scopes.
  */
 export const gitlabAuthApiRef: ApiRef<
-  OAuthApi & ProfileInfoApi & BackstageIdentityApi & SessionApi
+  OAuthApi &
+    OpenIdConnectApi &
+    ProfileInfoApi &
+    BackstageIdentityApi &
+    SessionApi
 > = createApiRef({
   id: 'core.auth.gitlab',
 });
 
 /**
- * Provides authentication towards Auth0 APIs.
- *
- * @remarks
- *
- * See {@link https://auth0.com/docs/scopes/current/oidc-scopes}
- * for a full list of supported scopes.
- *
- * @public
- * @deprecated See https://backstage.io/docs/api/deprecations#generic-auth-api-refs
- */
-export const auth0AuthApiRef: ApiRef<
-  OpenIdConnectApi & ProfileInfoApi & BackstageIdentityApi & SessionApi
-> = createApiRef({
-  id: 'core.auth.auth0',
-});
-
-/**
  * Provides authentication towards Microsoft APIs and identities.
  *
- * @alpha This API is **EXPERIMENTAL** and might change in the future.
- *
+ * @public
  * @remarks
  *
  * For more info and a full list of supported scopes, see:
@@ -420,53 +392,9 @@ export const microsoftAuthApiRef: ApiRef<
 });
 
 /**
- * Provides authentication for custom identity providers.
- *
- * @public
- * @deprecated See https://backstage.io/docs/api/deprecations#generic-auth-api-refs
- */
-export const oauth2ApiRef: ApiRef<
-  OAuthApi &
-    OpenIdConnectApi &
-    ProfileInfoApi &
-    BackstageIdentityApi &
-    SessionApi
-> = createApiRef({
-  id: 'core.auth.oauth2',
-});
-
-/**
- * Provides authentication for custom OpenID Connect identity providers.
- *
- * @public
- * @deprecated See https://backstage.io/docs/api/deprecations#generic-auth-api-refs
- */
-export const oidcAuthApiRef: ApiRef<
-  OAuthApi &
-    OpenIdConnectApi &
-    ProfileInfoApi &
-    BackstageIdentityApi &
-    SessionApi
-> = createApiRef({
-  id: 'core.auth.oidc',
-});
-
-/**
- * Provides authentication for SAML-based identity providers.
- *
- * @public
- * @deprecated See https://backstage.io/docs/api/deprecations#generic-auth-api-refs
- */
-export const samlAuthApiRef: ApiRef<
-  ProfileInfoApi & BackstageIdentityApi & SessionApi
-> = createApiRef({
-  id: 'core.auth.saml',
-});
-
-/**
  * Provides authentication towards OneLogin APIs.
  *
- * @alpha This API is **EXPERIMENTAL** and might change in the future.
+ * @public
  */
 export const oneloginAuthApiRef: ApiRef<
   OAuthApi &
@@ -481,7 +409,7 @@ export const oneloginAuthApiRef: ApiRef<
 /**
  * Provides authentication towards Bitbucket APIs.
  *
- * @alpha This API is **EXPERIMENTAL** and might change in the future.
+ * @public
  * @remarks
  *
  * See {@link https://support.atlassian.com/bitbucket-cloud/docs/use-oauth-on-bitbucket-cloud/}
@@ -494,9 +422,24 @@ export const bitbucketAuthApiRef: ApiRef<
 });
 
 /**
+ * Provides authentication towards Bitbucket Server APIs.
+ *
+ * @public
+ * @remarks
+ *
+ * See {@link https://confluence.atlassian.com/bitbucketserver/bitbucket-oauth-2-0-provider-api-1108483661.html#BitbucketOAuth2.0providerAPI-scopes}
+ * for a full list of supported scopes.
+ */
+export const bitbucketServerAuthApiRef: ApiRef<
+  OAuthApi & ProfileInfoApi & BackstageIdentityApi & SessionApi
+> = createApiRef({
+  id: 'core.auth.bitbucket-server',
+});
+
+/**
  * Provides authentication towards Atlassian APIs.
  *
- * @alpha This API is **EXPERIMENTAL** and might change in the future.
+ * @public
  * @remarks
  *
  * See {@link https://developer.atlassian.com/cloud/jira/platform/scopes-for-connect-and-oauth-2-3LO-apps/}
@@ -506,4 +449,23 @@ export const atlassianAuthApiRef: ApiRef<
   OAuthApi & ProfileInfoApi & BackstageIdentityApi & SessionApi
 > = createApiRef({
   id: 'core.auth.atlassian',
+});
+
+/**
+ * Provides authentication towards VMware Cloud APIs and identities.
+ *
+ * @public
+ * @remarks
+ *
+ * For more info about VMware Cloud identity and access management:
+ * - {@link https://docs.vmware.com/en/VMware-Cloud-services/services/Using-VMware-Cloud-Services/GUID-53D39337-D93A-4B84-BD18-DDF43C21479A.html}
+ */
+export const vmwareCloudAuthApiRef: ApiRef<
+  OAuthApi &
+    OpenIdConnectApi &
+    ProfileInfoApi &
+    BackstageIdentityApi &
+    SessionApi
+> = createApiRef({
+  id: 'core.auth.vmware-cloud',
 });

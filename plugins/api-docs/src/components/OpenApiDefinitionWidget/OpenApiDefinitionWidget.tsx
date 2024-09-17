@@ -25,16 +25,26 @@ const LazyOpenApiDefinition = React.lazy(() =>
   })),
 );
 
+/** @public */
 export type OpenApiDefinitionWidgetProps = {
   definition: string;
+  requestInterceptor?: (req: any) => any | Promise<any>;
+  supportedSubmitMethods?: string[];
 };
 
+/** @public */
 export const OpenApiDefinitionWidget = (
   props: OpenApiDefinitionWidgetProps,
 ) => {
+  const validSubmitMethods = props.supportedSubmitMethods?.map(method =>
+    method.toLocaleLowerCase(),
+  );
   return (
     <Suspense fallback={<Progress />}>
-      <LazyOpenApiDefinition {...props} />
+      <LazyOpenApiDefinition
+        {...props}
+        supportedSubmitMethods={validSubmitMethods}
+      />
     </Suspense>
   );
 };

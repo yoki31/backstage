@@ -14,22 +14,24 @@
  * limitations under the License.
  */
 
-import React, { FC } from 'react';
+import React from 'react';
 import { render } from '@testing-library/react';
 import { usePermission } from './usePermission';
-import { AuthorizeResult } from '@backstage/plugin-permission-common';
+import {
+  AuthorizeResult,
+  createPermission,
+} from '@backstage/plugin-permission-common';
 import { TestApiProvider } from '@backstage/test-utils';
-import { permissionApiRef } from '../apis';
+import { PermissionApi, permissionApiRef } from '../apis';
+import { SWRConfig } from 'swr';
 
-const mockAuthorize = jest.fn();
-
-const permission = {
+const permission = createPermission({
   name: 'access.something',
-  attributes: { action: 'read' as const },
-};
+  attributes: { action: 'read' },
+});
 
-const TestComponent: FC = () => {
-  const { loading, allowed, error } = usePermission(permission);
+const TestComponent = () => {
+  const { loading, allowed, error } = usePermission({ permission });
   return (
     <div>
       {loading && 'loading'}
@@ -39,49 +41,47 @@ const TestComponent: FC = () => {
   );
 };
 
-describe('usePermission', () => {
-  it('Returns loading when permissionApi has not yet responded.', () => {
-    mockAuthorize.mockReturnValueOnce(new Promise(() => {}));
-
-    const { getByText } = render(
-      <TestApiProvider
-        apis={[[permissionApiRef, { authorize: mockAuthorize }]]}
-      >
+function renderComponent(mockApi: PermissionApi) {
+  return render(
+    <SWRConfig value={{ provider: () => new Map() }}>
+      <TestApiProvider apis={[[permissionApiRef, mockApi]]}>
         <TestComponent />
-      </TestApiProvider>,
-    );
+      </TestApiProvider>
+    </SWRConfig>,
+  );
+}
 
-    expect(mockAuthorize).toHaveBeenCalledWith({ permission });
+describe('usePermission', () => {
+  const mockPermissionApi = { authorize: jest.fn() };
+
+  it('Returns loading when permissionApi has not yet responded.', () => {
+    mockPermissionApi.authorize.mockReturnValueOnce(new Promise(() => {}));
+
+    const { getByText } = renderComponent(mockPermissionApi);
+
+    expect(mockPermissionApi.authorize).toHaveBeenCalledWith({ permission });
     expect(getByText('loading')).toBeTruthy();
   });
 
   it('Returns allowed when permissionApi allows authorization.', async () => {
-    mockAuthorize.mockResolvedValueOnce({ result: AuthorizeResult.ALLOW });
+    mockPermissionApi.authorize.mockResolvedValueOnce({
+      result: AuthorizeResult.ALLOW,
+    });
 
-    const { findByText } = render(
-      <TestApiProvider
-        apis={[[permissionApiRef, { authorize: mockAuthorize }]]}
-      >
-        <TestComponent />
-      </TestApiProvider>,
-    );
+    const { findByText } = renderComponent(mockPermissionApi);
 
-    expect(mockAuthorize).toHaveBeenCalledWith({ permission });
+    expect(mockPermissionApi.authorize).toHaveBeenCalledWith({ permission });
     expect(await findByText('content')).toBeTruthy();
   });
 
   it('Returns not allowed when permissionApi denies authorization.', async () => {
-    mockAuthorize.mockResolvedValueOnce({ result: AuthorizeResult.DENY });
+    mockPermissionApi.authorize.mockResolvedValueOnce({
+      result: AuthorizeResult.DENY,
+    });
 
-    const { findByText } = render(
-      <TestApiProvider
-        apis={[[permissionApiRef, { authorize: mockAuthorize }]]}
-      >
-        <TestComponent />
-      </TestApiProvider>,
-    );
+    const { findByText } = renderComponent(mockPermissionApi);
 
-    expect(mockAuthorize).toHaveBeenCalledWith({ permission });
-    await expect(findByText('content')).rejects.toThrowError();
+    expect(mockPermissionApi.authorize).toHaveBeenCalledWith({ permission });
+    await expect(findByText('content')).rejects.toThrow();
   });
 });

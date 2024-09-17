@@ -4,6 +4,21 @@
 
 ```ts
 // @public
+export function durationToMilliseconds(duration: HumanDuration): number;
+
+// @public
+export type HumanDuration = {
+  years?: number;
+  months?: number;
+  weeks?: number;
+  days?: number;
+  hours?: number;
+  minutes?: number;
+  seconds?: number;
+  milliseconds?: number;
+};
+
+// @public
 export interface JsonArray extends Array<JsonValue> {}
 
 // @public

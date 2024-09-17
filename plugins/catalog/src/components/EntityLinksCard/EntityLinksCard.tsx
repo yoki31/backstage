@@ -14,27 +14,28 @@
  * limitations under the License.
  */
 
-import { Entity } from '@backstage/catalog-model';
 import { useEntity } from '@backstage/plugin-catalog-react';
 import LanguageIcon from '@material-ui/icons/Language';
 import React from 'react';
 import { EntityLinksEmptyState } from './EntityLinksEmptyState';
 import { LinksGridList } from './LinksGridList';
 import { ColumnBreakpoints } from './types';
-
 import { IconComponent, useApp } from '@backstage/core-plugin-api';
-import { InfoCard } from '@backstage/core-components';
+import { InfoCard, InfoCardVariants } from '@backstage/core-components';
+import { useTranslationRef } from '@backstage/core-plugin-api/alpha';
+import { catalogTranslationRef } from '../../alpha/translation';
 
-type Props = {
-  /** @deprecated The entity is now grabbed from context instead */
-  entity?: Entity;
+/** @public */
+export interface EntityLinksCardProps {
   cols?: ColumnBreakpoints | number;
-  variant?: 'gridItem';
-};
+  variant?: InfoCardVariants;
+}
 
-export const EntityLinksCard = ({ cols = undefined, variant }: Props) => {
+export const EntityLinksCard = (props: EntityLinksCardProps) => {
+  const { cols = undefined, variant } = props;
   const { entity } = useEntity();
   const app = useApp();
+  const { t } = useTranslationRef(catalogTranslationRef);
 
   const iconResolver = (key?: string): IconComponent =>
     key ? app.getSystemIcon(key) ?? LanguageIcon : LanguageIcon;
@@ -42,7 +43,7 @@ export const EntityLinksCard = ({ cols = undefined, variant }: Props) => {
   const links = entity?.metadata?.links;
 
   return (
-    <InfoCard title="Links" variant={variant}>
+    <InfoCard title={t('entityLinksCard.title')} variant={variant}>
       {!links || links.length === 0 ? (
         <EntityLinksEmptyState />
       ) : (

@@ -16,8 +16,10 @@
 import {
   RemoteProtocol,
   ParsedLocationAnnotation,
-} from '@backstage/techdocs-common';
+} from '@backstage/plugin-techdocs-node';
 import * as winston from 'winston';
+import { Writable } from 'stream';
+import { stdout } from 'process';
 
 export const convertTechDocsRefToLocationAnnotation = (
   techdocsRef: string,
@@ -51,4 +53,18 @@ export const createLogger = ({
   });
 
   return logger;
+};
+
+export const getLogStream = (logger: winston.Logger): Writable => {
+  if (process.env.LOG_LEVEL === 'debug') {
+    return stdout;
+  }
+
+  return new Writable({
+    defaultEncoding: 'utf8',
+    write(chunk, _encoding, next) {
+      logger.verbose(chunk.toString().trim());
+      next();
+    },
+  });
 };

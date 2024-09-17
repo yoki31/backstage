@@ -1,5 +1,2404 @@
 # @backstage/plugin-catalog-import
 
+## 0.12.3-next.2
+
+### Patch Changes
+
+- f3c90da: Support button title should be contained in a single menu item
+- 836127c: Updated dependency `@testing-library/react` to `^16.0.0`.
+- Updated dependencies
+  - @backstage/core-components@0.14.11-next.1
+  - @backstage/plugin-catalog-react@1.13.0-next.2
+  - @backstage/integration-react@1.1.31-next.0
+  - @backstage/catalog-client@1.7.0-next.1
+  - @backstage/integration@1.15.0-next.0
+  - @backstage/core-compat-api@0.3.0-next.2
+  - @backstage/core-plugin-api@1.9.4-next.0
+  - @backstage/frontend-plugin-api@0.8.0-next.2
+  - @backstage/catalog-model@1.6.0
+  - @backstage/config@1.2.0
+  - @backstage/errors@1.2.4
+  - @backstage/plugin-catalog-common@1.0.26
+
+## 0.12.3-next.1
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/frontend-plugin-api@0.8.0-next.1
+  - @backstage/core-compat-api@0.3.0-next.1
+  - @backstage/catalog-client@1.6.7-next.0
+  - @backstage/core-components@0.14.11-next.0
+  - @backstage/plugin-catalog-react@1.12.4-next.1
+  - @backstage/catalog-model@1.6.0
+  - @backstage/config@1.2.0
+  - @backstage/core-plugin-api@1.9.3
+  - @backstage/errors@1.2.4
+  - @backstage/integration@1.14.0
+  - @backstage/integration-react@1.1.30
+  - @backstage/plugin-catalog-common@1.0.26
+
+## 0.12.3-next.0
+
+### Patch Changes
+
+- fec8b57: Updated exports to use the new type parameters for extensions and extension blueprints.
+- Updated dependencies
+  - @backstage/frontend-plugin-api@0.8.0-next.0
+  - @backstage/core-compat-api@0.2.9-next.0
+  - @backstage/plugin-catalog-react@1.12.4-next.0
+  - @backstage/catalog-client@1.6.6
+  - @backstage/catalog-model@1.6.0
+  - @backstage/config@1.2.0
+  - @backstage/core-components@0.14.10
+  - @backstage/core-plugin-api@1.9.3
+  - @backstage/errors@1.2.4
+  - @backstage/integration@1.14.0
+  - @backstage/integration-react@1.1.30
+  - @backstage/plugin-catalog-common@1.0.26
+
+## 0.12.2
+
+### Patch Changes
+
+- c7603e8: Deprecate the old pattern of `create*Extension`, and replace it with the equivalent Blueprint implementation instead
+- Updated dependencies
+  - @backstage/frontend-plugin-api@0.7.0
+  - @backstage/plugin-catalog-react@1.12.3
+  - @backstage/core-components@0.14.10
+  - @backstage/core-compat-api@0.2.8
+  - @backstage/integration@1.14.0
+  - @backstage/catalog-model@1.6.0
+  - @backstage/catalog-client@1.6.6
+  - @backstage/config@1.2.0
+  - @backstage/core-plugin-api@1.9.3
+  - @backstage/errors@1.2.4
+  - @backstage/integration-react@1.1.30
+  - @backstage/plugin-catalog-common@1.0.26
+
+## 0.12.2-next.3
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/frontend-plugin-api@0.7.0-next.3
+  - @backstage/catalog-model@1.6.0-next.0
+  - @backstage/core-compat-api@0.2.8-next.3
+  - @backstage/plugin-catalog-react@1.12.3-next.3
+  - @backstage/catalog-client@1.6.6-next.0
+  - @backstage/config@1.2.0
+  - @backstage/core-components@0.14.10-next.0
+  - @backstage/core-plugin-api@1.9.3
+  - @backstage/errors@1.2.4
+  - @backstage/integration@1.14.0-next.0
+  - @backstage/integration-react@1.1.30-next.0
+  - @backstage/plugin-catalog-common@1.0.26-next.2
+
+## 0.12.2-next.2
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/frontend-plugin-api@0.7.0-next.2
+  - @backstage/core-compat-api@0.2.8-next.2
+  - @backstage/plugin-catalog-react@1.12.3-next.2
+  - @backstage/plugin-catalog-common@1.0.26-next.1
+  - @backstage/integration@1.14.0-next.0
+  - @backstage/catalog-client@1.6.5
+  - @backstage/catalog-model@1.5.0
+  - @backstage/config@1.2.0
+  - @backstage/core-components@0.14.10-next.0
+  - @backstage/core-plugin-api@1.9.3
+  - @backstage/errors@1.2.4
+  - @backstage/integration-react@1.1.30-next.0
+
+## 0.12.2-next.1
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/plugin-catalog-react@1.12.3-next.1
+  - @backstage/frontend-plugin-api@0.6.8-next.1
+  - @backstage/core-compat-api@0.2.8-next.1
+  - @backstage/integration@1.14.0-next.0
+  - @backstage/plugin-catalog-common@1.0.26-next.0
+  - @backstage/catalog-client@1.6.5
+  - @backstage/catalog-model@1.5.0
+  - @backstage/config@1.2.0
+  - @backstage/core-components@0.14.10-next.0
+  - @backstage/core-plugin-api@1.9.3
+  - @backstage/errors@1.2.4
+  - @backstage/integration-react@1.1.30-next.0
+
+## 0.12.2-next.0
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/frontend-plugin-api@0.6.8-next.0
+  - @backstage/plugin-catalog-react@1.12.3-next.0
+  - @backstage/core-components@0.14.10-next.0
+  - @backstage/integration@1.14.0-next.0
+  - @backstage/catalog-client@1.6.5
+  - @backstage/catalog-model@1.5.0
+  - @backstage/config@1.2.0
+  - @backstage/core-compat-api@0.2.8-next.0
+  - @backstage/core-plugin-api@1.9.3
+  - @backstage/errors@1.2.4
+  - @backstage/integration-react@1.1.30-next.0
+  - @backstage/plugin-catalog-common@1.0.25
+
+## 0.12.1
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/core-components@0.14.9
+  - @backstage/integration@1.13.0
+  - @backstage/plugin-catalog-react@1.12.2
+  - @backstage/plugin-catalog-common@1.0.25
+  - @backstage/frontend-plugin-api@0.6.7
+  - @backstage/integration-react@1.1.29
+  - @backstage/catalog-client@1.6.5
+  - @backstage/catalog-model@1.5.0
+  - @backstage/config@1.2.0
+  - @backstage/core-compat-api@0.2.7
+  - @backstage/core-plugin-api@1.9.3
+  - @backstage/errors@1.2.4
+
+## 0.12.1-next.2
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/core-components@0.14.9-next.1
+  - @backstage/frontend-plugin-api@0.6.7-next.1
+  - @backstage/integration-react@1.1.29-next.0
+  - @backstage/plugin-catalog-react@1.12.2-next.2
+  - @backstage/core-compat-api@0.2.7-next.1
+
+## 0.12.1-next.1
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/plugin-catalog-react@1.12.2-next.1
+  - @backstage/core-compat-api@0.2.7-next.0
+  - @backstage/core-components@0.14.9-next.0
+  - @backstage/core-plugin-api@1.9.3
+  - @backstage/catalog-client@1.6.5
+  - @backstage/catalog-model@1.5.0
+  - @backstage/config@1.2.0
+  - @backstage/errors@1.2.4
+  - @backstage/frontend-plugin-api@0.6.7-next.0
+  - @backstage/integration@1.13.0-next.0
+  - @backstage/integration-react@1.1.29-next.0
+  - @backstage/plugin-catalog-common@1.0.24
+
+## 0.12.1-next.0
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/core-components@0.14.9-next.0
+  - @backstage/integration@1.13.0-next.0
+  - @backstage/plugin-catalog-react@1.12.2-next.0
+  - @backstage/frontend-plugin-api@0.6.7-next.0
+  - @backstage/integration-react@1.1.29-next.0
+  - @backstage/core-compat-api@0.2.7-next.0
+  - @backstage/core-plugin-api@1.9.3
+  - @backstage/catalog-client@1.6.5
+  - @backstage/catalog-model@1.5.0
+  - @backstage/config@1.2.0
+  - @backstage/errors@1.2.4
+  - @backstage/plugin-catalog-common@1.0.24
+
+## 0.12.0
+
+### Minor Changes
+
+- 4f92394: Migrate from identityApi to fetchApi in frontend plugins.
+
+### Patch Changes
+
+- d44a20a: Added additional plugin metadata to `package.json`.
+- 3daad61: Integrated Azure DevOps as a catalog import source. This enables Backstage to create Pull Requests to Azure DevOps repositories as it does with GitHub repositories
+- Updated dependencies
+  - @backstage/core-components@0.14.8
+  - @backstage/core-compat-api@0.2.6
+  - @backstage/integration@1.12.0
+  - @backstage/core-plugin-api@1.9.3
+  - @backstage/plugin-catalog-common@1.0.24
+  - @backstage/plugin-catalog-react@1.12.1
+  - @backstage/integration-react@1.1.28
+  - @backstage/frontend-plugin-api@0.6.6
+  - @backstage/catalog-client@1.6.5
+  - @backstage/catalog-model@1.5.0
+  - @backstage/config@1.2.0
+  - @backstage/errors@1.2.4
+
+## 0.12.0-next.3
+
+### Patch Changes
+
+- d44a20a: Added additional plugin metadata to `package.json`.
+- Updated dependencies
+  - @backstage/core-components@0.14.8-next.2
+  - @backstage/integration@1.12.0-next.1
+  - @backstage/plugin-catalog-common@1.0.24-next.0
+  - @backstage/plugin-catalog-react@1.12.1-next.2
+  - @backstage/integration-react@1.1.28-next.1
+  - @backstage/frontend-plugin-api@0.6.6-next.2
+  - @backstage/core-compat-api@0.2.6-next.2
+  - @backstage/catalog-client@1.6.5
+  - @backstage/catalog-model@1.5.0
+  - @backstage/config@1.2.0
+  - @backstage/core-plugin-api@1.9.3-next.0
+  - @backstage/errors@1.2.4
+
+## 0.12.0-next.2
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/core-components@0.14.8-next.1
+  - @backstage/core-compat-api@0.2.6-next.1
+  - @backstage/core-plugin-api@1.9.3-next.0
+  - @backstage/integration@1.12.0-next.0
+  - @backstage/frontend-plugin-api@0.6.6-next.1
+  - @backstage/integration-react@1.1.28-next.0
+  - @backstage/plugin-catalog-react@1.12.1-next.1
+  - @backstage/catalog-client@1.6.5
+  - @backstage/catalog-model@1.5.0
+  - @backstage/config@1.2.0
+  - @backstage/errors@1.2.4
+  - @backstage/plugin-catalog-common@1.0.23
+
+## 0.12.0-next.1
+
+### Minor Changes
+
+- 4f92394: Migrate from identityApi to fetchApi in frontend plugins.
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/plugin-catalog-react@1.12.1-next.0
+
+## 0.11.1-next.0
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/core-components@0.14.8-next.0
+  - @backstage/catalog-client@1.6.5
+  - @backstage/catalog-model@1.5.0
+  - @backstage/config@1.2.0
+  - @backstage/core-compat-api@0.2.6-next.0
+  - @backstage/core-plugin-api@1.9.2
+  - @backstage/errors@1.2.4
+  - @backstage/frontend-plugin-api@0.6.6-next.0
+  - @backstage/integration@1.11.0
+  - @backstage/integration-react@1.1.27
+  - @backstage/plugin-catalog-common@1.0.23
+  - @backstage/plugin-catalog-react@1.12.1-next.0
+
+## 0.11.0
+
+### Minor Changes
+
+- e1174b0: `EntityListComponent` uses `entityPresentationApi` instead of `humanizeEntityRef` to display Entity
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/core-compat-api@0.2.5
+  - @backstage/core-components@0.14.7
+  - @backstage/catalog-model@1.5.0
+  - @backstage/plugin-catalog-react@1.12.0
+  - @backstage/integration@1.11.0
+  - @backstage/catalog-client@1.6.5
+  - @backstage/frontend-plugin-api@0.6.5
+  - @backstage/integration-react@1.1.27
+  - @backstage/plugin-catalog-common@1.0.23
+
+## 0.10.11-next.2
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/plugin-catalog-react@1.12.0-next.2
+  - @backstage/core-components@0.14.7-next.2
+  - @backstage/integration@1.11.0-next.0
+  - @backstage/core-compat-api@0.2.5-next.1
+  - @backstage/frontend-plugin-api@0.6.5-next.1
+  - @backstage/integration-react@1.1.27-next.0
+
+## 0.10.11-next.1
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/core-components@0.14.6-next.1
+  - @backstage/plugin-catalog-react@1.11.4-next.1
+  - @backstage/frontend-plugin-api@0.6.5-next.1
+  - @backstage/integration-react@1.1.26
+  - @backstage/core-compat-api@0.2.5-next.1
+
+## 0.10.11-next.0
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/core-compat-api@0.2.5-next.0
+  - @backstage/catalog-model@1.5.0-next.0
+  - @backstage/core-components@0.14.5-next.0
+  - @backstage/catalog-client@1.6.5-next.0
+  - @backstage/plugin-catalog-common@1.0.23-next.0
+  - @backstage/plugin-catalog-react@1.11.4-next.0
+  - @backstage/config@1.2.0
+  - @backstage/core-plugin-api@1.9.2
+  - @backstage/errors@1.2.4
+  - @backstage/frontend-plugin-api@0.6.5-next.0
+  - @backstage/integration@1.10.0
+  - @backstage/integration-react@1.1.26
+
+## 0.10.10
+
+### Patch Changes
+
+- abfbcfc: Updated dependency `@testing-library/react` to `^15.0.0`.
+- cb1e3b0: Updated dependency `@testing-library/dom` to `^10.0.0`.
+- Updated dependencies
+  - @backstage/plugin-catalog-react@1.11.3
+  - @backstage/core-compat-api@0.2.4
+  - @backstage/core-components@0.14.4
+  - @backstage/core-plugin-api@1.9.2
+  - @backstage/frontend-plugin-api@0.6.4
+  - @backstage/integration-react@1.1.26
+  - @backstage/catalog-client@1.6.4
+  - @backstage/integration@1.10.0
+  - @backstage/catalog-model@1.4.5
+  - @backstage/config@1.2.0
+  - @backstage/errors@1.2.4
+  - @backstage/plugin-catalog-common@1.0.22
+
+## 0.10.10-next.1
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/catalog-client@1.6.4-next.0
+  - @backstage/frontend-plugin-api@0.6.4-next.1
+  - @backstage/core-compat-api@0.2.4-next.1
+  - @backstage/catalog-model@1.4.5
+  - @backstage/config@1.2.0
+  - @backstage/core-components@0.14.4-next.0
+  - @backstage/core-plugin-api@1.9.1
+  - @backstage/errors@1.2.4
+  - @backstage/integration@1.10.0-next.0
+  - @backstage/integration-react@1.1.26-next.0
+  - @backstage/plugin-catalog-common@1.0.22
+  - @backstage/plugin-catalog-react@1.11.3-next.1
+
+## 0.10.10-next.0
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/integration@1.10.0-next.0
+  - @backstage/core-components@0.14.4-next.0
+  - @backstage/catalog-client@1.6.3
+  - @backstage/catalog-model@1.4.5
+  - @backstage/config@1.2.0
+  - @backstage/core-compat-api@0.2.4-next.0
+  - @backstage/core-plugin-api@1.9.1
+  - @backstage/errors@1.2.4
+  - @backstage/frontend-plugin-api@0.6.4-next.0
+  - @backstage/integration-react@1.1.26-next.0
+  - @backstage/plugin-catalog-common@1.0.22
+  - @backstage/plugin-catalog-react@1.11.3-next.0
+
+## 0.10.9
+
+### Patch Changes
+
+- e8f026a: Use ESM exports of react-use library
+- Updated dependencies
+  - @backstage/catalog-client@1.6.3
+  - @backstage/core-components@0.14.3
+  - @backstage/plugin-catalog-react@1.11.2
+  - @backstage/frontend-plugin-api@0.6.3
+  - @backstage/integration-react@1.1.25
+  - @backstage/core-compat-api@0.2.3
+  - @backstage/core-plugin-api@1.9.1
+  - @backstage/catalog-model@1.4.5
+  - @backstage/config@1.2.0
+  - @backstage/errors@1.2.4
+  - @backstage/integration@1.9.1
+  - @backstage/plugin-catalog-common@1.0.22
+
+## 0.10.8
+
+### Patch Changes
+
+- e8f026a: Use ESM exports of react-use library
+- Updated dependencies
+  - @backstage/catalog-client@1.6.2
+  - @backstage/core-components@0.14.2
+  - @backstage/plugin-catalog-react@1.11.1
+  - @backstage/frontend-plugin-api@0.6.2
+  - @backstage/integration-react@1.1.25
+  - @backstage/core-compat-api@0.2.2
+  - @backstage/core-plugin-api@1.9.1
+  - @backstage/catalog-model@1.4.5
+  - @backstage/config@1.2.0
+  - @backstage/errors@1.2.4
+  - @backstage/integration@1.9.1
+  - @backstage/plugin-catalog-common@1.0.22
+
+## 0.10.7
+
+### Patch Changes
+
+- b91a8d2: Added the `no-top-level-material-ui-4-imports` ESLint rule to aid with the migration to Material UI v5
+- 75f686b: Fixed an issue generating a wrong entity link at the end of the import process
+- adc0414: fix related to component name not adhering to kubernetes valid object name.
+- Updated dependencies
+  - @backstage/integration@1.9.1
+  - @backstage/config@1.2.0
+  - @backstage/core-components@0.14.1
+  - @backstage/errors@1.2.4
+  - @backstage/integration-react@1.1.25
+  - @backstage/plugin-catalog-react@1.11.0
+  - @backstage/catalog-client@1.6.1
+  - @backstage/catalog-model@1.4.5
+  - @backstage/core-compat-api@0.2.1
+  - @backstage/core-plugin-api@1.9.1
+  - @backstage/frontend-plugin-api@0.6.1
+  - @backstage/plugin-catalog-common@1.0.22
+
+## 0.10.7-next.2
+
+### Patch Changes
+
+- adc0414: fix related to component name not adhering to kubernetes valid object name.
+- Updated dependencies
+  - @backstage/integration@1.9.1-next.2
+  - @backstage/core-components@0.14.1-next.2
+  - @backstage/plugin-catalog-react@1.11.0-next.2
+  - @backstage/catalog-client@1.6.1-next.1
+  - @backstage/integration-react@1.1.25-next.2
+  - @backstage/frontend-plugin-api@0.6.1-next.2
+  - @backstage/core-compat-api@0.2.1-next.2
+  - @backstage/catalog-model@1.4.5-next.0
+  - @backstage/config@1.2.0-next.1
+  - @backstage/core-plugin-api@1.9.1-next.1
+  - @backstage/errors@1.2.4-next.0
+  - @backstage/plugin-catalog-common@1.0.22-next.1
+
+## 0.10.7-next.1
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/config@1.2.0-next.1
+  - @backstage/core-components@0.14.1-next.1
+  - @backstage/plugin-catalog-react@1.10.1-next.1
+  - @backstage/core-plugin-api@1.9.1-next.1
+  - @backstage/integration@1.9.1-next.1
+  - @backstage/integration-react@1.1.25-next.1
+  - @backstage/frontend-plugin-api@0.6.1-next.1
+  - @backstage/catalog-client@1.6.1-next.0
+  - @backstage/catalog-model@1.4.5-next.0
+  - @backstage/core-compat-api@0.2.1-next.1
+  - @backstage/errors@1.2.4-next.0
+  - @backstage/plugin-catalog-common@1.0.22-next.1
+
+## 0.10.7-next.0
+
+### Patch Changes
+
+- 75f686b: Fixed an issue generating a wrong entity link at the end of the import process
+- Updated dependencies
+  - @backstage/errors@1.2.4-next.0
+  - @backstage/core-components@0.14.1-next.0
+  - @backstage/integration-react@1.1.25-next.0
+  - @backstage/plugin-catalog-react@1.10.1-next.0
+  - @backstage/catalog-client@1.6.1-next.0
+  - @backstage/catalog-model@1.4.5-next.0
+  - @backstage/config@1.1.2-next.0
+  - @backstage/core-plugin-api@1.9.1-next.0
+  - @backstage/integration@1.9.1-next.0
+  - @backstage/frontend-plugin-api@0.6.1-next.0
+  - @backstage/core-compat-api@0.2.1-next.0
+  - @backstage/plugin-catalog-common@1.0.22-next.0
+
+## 0.10.6
+
+### Patch Changes
+
+- 916da47: Change default icon for unknown entities to nothing instead of the help icon.
+- 9aac2b0: Use `--cwd` as the first `yarn` argument
+- 8fe56a8: Widen `@types/react` dependency range to include version 18.
+- 1cae748: Updated dependency `git-url-parse` to `^14.0.0`.
+- Updated dependencies
+  - @backstage/frontend-plugin-api@0.6.0
+  - @backstage/core-compat-api@0.2.0
+  - @backstage/plugin-catalog-react@1.10.0
+  - @backstage/core-components@0.14.0
+  - @backstage/catalog-model@1.4.4
+  - @backstage/integration@1.9.0
+  - @backstage/core-plugin-api@1.9.0
+  - @backstage/catalog-client@1.6.0
+  - @backstage/config@1.1.1
+  - @backstage/errors@1.2.3
+  - @backstage/integration-react@1.1.24
+  - @backstage/plugin-catalog-common@1.0.21
+
+## 0.10.6-next.3
+
+### Patch Changes
+
+- 1cae748: Updated dependency `git-url-parse` to `^14.0.0`.
+- Updated dependencies
+  - @backstage/integration@1.9.0-next.1
+  - @backstage/core-components@0.14.0-next.2
+  - @backstage/plugin-catalog-react@1.10.0-next.3
+  - @backstage/catalog-client@1.6.0-next.1
+  - @backstage/catalog-model@1.4.4-next.0
+  - @backstage/config@1.1.1
+  - @backstage/core-compat-api@0.2.0-next.3
+  - @backstage/core-plugin-api@1.9.0-next.1
+  - @backstage/errors@1.2.3
+  - @backstage/frontend-plugin-api@0.6.0-next.3
+  - @backstage/integration-react@1.1.24-next.2
+  - @backstage/plugin-catalog-common@1.0.21-next.0
+
+## 0.10.6-next.2
+
+### Patch Changes
+
+- 9aac2b0: Use `--cwd` as the first `yarn` argument
+- 8fe56a8: Widen `@types/react` dependency range to include version 18.
+- Updated dependencies
+  - @backstage/core-components@0.14.0-next.1
+  - @backstage/core-plugin-api@1.9.0-next.1
+  - @backstage/frontend-plugin-api@0.6.0-next.2
+  - @backstage/plugin-catalog-react@1.10.0-next.2
+  - @backstage/integration-react@1.1.24-next.1
+  - @backstage/core-compat-api@0.2.0-next.2
+  - @backstage/config@1.1.1
+  - @backstage/catalog-client@1.6.0-next.1
+  - @backstage/catalog-model@1.4.4-next.0
+  - @backstage/errors@1.2.3
+  - @backstage/integration@1.9.0-next.0
+  - @backstage/plugin-catalog-common@1.0.21-next.0
+
+## 0.10.6-next.1
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/frontend-plugin-api@0.6.0-next.1
+  - @backstage/core-compat-api@0.2.0-next.1
+  - @backstage/core-components@0.14.0-next.0
+  - @backstage/catalog-model@1.4.4-next.0
+  - @backstage/catalog-client@1.6.0-next.1
+  - @backstage/core-plugin-api@1.8.3-next.0
+  - @backstage/integration@1.9.0-next.0
+  - @backstage/plugin-catalog-react@1.9.4-next.1
+  - @backstage/integration-react@1.1.24-next.0
+  - @backstage/config@1.1.1
+  - @backstage/errors@1.2.3
+  - @backstage/plugin-catalog-common@1.0.21-next.0
+
+## 0.10.6-next.0
+
+### Patch Changes
+
+- 916da47: Change default icon for unknown entities to nothing instead of the help icon.
+- Updated dependencies
+  - @backstage/core-compat-api@0.1.2-next.0
+  - @backstage/plugin-catalog-react@1.9.4-next.0
+  - @backstage/frontend-plugin-api@0.5.1-next.0
+  - @backstage/catalog-client@1.6.0-next.0
+  - @backstage/core-components@0.13.10
+  - @backstage/catalog-model@1.4.3
+  - @backstage/config@1.1.1
+  - @backstage/core-plugin-api@1.8.2
+  - @backstage/errors@1.2.3
+  - @backstage/integration@1.8.0
+  - @backstage/integration-react@1.1.23
+  - @backstage/plugin-catalog-common@1.0.20
+
+## 0.10.5
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/core-compat-api@0.1.1
+  - @backstage/frontend-plugin-api@0.5.0
+  - @backstage/core-components@0.13.10
+  - @backstage/core-plugin-api@1.8.2
+  - @backstage/catalog-client@1.5.2
+  - @backstage/plugin-catalog-react@1.9.3
+  - @backstage/integration-react@1.1.23
+  - @backstage/catalog-model@1.4.3
+  - @backstage/config@1.1.1
+  - @backstage/errors@1.2.3
+  - @backstage/integration@1.8.0
+  - @backstage/plugin-catalog-common@1.0.20
+
+## 0.10.5-next.2
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/core-compat-api@0.1.1-next.2
+  - @backstage/frontend-plugin-api@0.4.1-next.2
+  - @backstage/plugin-catalog-react@1.9.3-next.2
+  - @backstage/integration-react@1.1.23-next.0
+
+## 0.10.5-next.1
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/core-plugin-api@1.8.2-next.0
+  - @backstage/core-components@0.13.10-next.1
+  - @backstage/core-compat-api@0.1.1-next.1
+  - @backstage/frontend-plugin-api@0.4.1-next.1
+  - @backstage/integration-react@1.1.23-next.0
+  - @backstage/plugin-catalog-react@1.9.3-next.1
+  - @backstage/integration@1.8.0
+  - @backstage/config@1.1.1
+  - @backstage/catalog-client@1.5.2-next.0
+  - @backstage/catalog-model@1.4.3
+  - @backstage/errors@1.2.3
+  - @backstage/plugin-catalog-common@1.0.19
+
+## 0.10.5-next.0
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/core-components@0.13.10-next.0
+  - @backstage/catalog-client@1.5.2-next.0
+  - @backstage/frontend-plugin-api@0.4.1-next.0
+  - @backstage/plugin-catalog-react@1.9.3-next.0
+  - @backstage/integration-react@1.1.22
+  - @backstage/catalog-model@1.4.3
+  - @backstage/config@1.1.1
+  - @backstage/core-compat-api@0.1.1-next.0
+  - @backstage/core-plugin-api@1.8.1
+  - @backstage/errors@1.2.3
+  - @backstage/integration@1.8.0
+  - @backstage/plugin-catalog-common@1.0.19
+
+## 0.10.4
+
+### Patch Changes
+
+- 03d0b6d: The `convertLegacyRouteRef` utility used by the alpha exports is now imported from `@backstage/core-compat-api`.
+- a1227cc: Wrap `/alpha` export extension elements in backwards compatibility wrapper.
+- 5814122: Updated `/alpha` exports to fit new naming patterns.
+- 36c94b8: Refactor of the alpha exports due to API change in how extension IDs are constructed.
+- Updated dependencies
+  - @backstage/core-compat-api@0.1.0
+  - @backstage/core-plugin-api@1.8.1
+  - @backstage/frontend-plugin-api@0.4.0
+  - @backstage/plugin-catalog-react@1.9.2
+  - @backstage/core-components@0.13.9
+  - @backstage/catalog-client@1.5.0
+  - @backstage/integration@1.8.0
+  - @backstage/integration-react@1.1.22
+  - @backstage/catalog-model@1.4.3
+  - @backstage/config@1.1.1
+  - @backstage/errors@1.2.3
+  - @backstage/plugin-catalog-common@1.0.19
+
+## 0.10.4-next.4
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/core-components@0.13.9-next.3
+  - @backstage/catalog-client@1.5.0-next.1
+  - @backstage/catalog-model@1.4.3
+  - @backstage/config@1.1.1
+  - @backstage/core-compat-api@0.1.0-next.3
+  - @backstage/core-plugin-api@1.8.1-next.1
+  - @backstage/errors@1.2.3
+  - @backstage/frontend-plugin-api@0.4.0-next.3
+  - @backstage/integration@1.8.0-next.1
+  - @backstage/integration-react@1.1.22-next.1
+  - @backstage/plugin-catalog-common@1.0.18
+  - @backstage/plugin-catalog-react@1.9.2-next.3
+
+## 0.10.4-next.3
+
+### Patch Changes
+
+- a1227cc: Wrap `/alpha` export extension elements in backwards compatibility wrapper.
+- 36c94b8: Refactor of the alpha exports due to API change in how extension IDs are constructed.
+- Updated dependencies
+  - @backstage/frontend-plugin-api@0.4.0-next.2
+  - @backstage/core-compat-api@0.1.0-next.2
+  - @backstage/plugin-catalog-react@1.9.2-next.2
+  - @backstage/catalog-client@1.5.0-next.1
+  - @backstage/catalog-model@1.4.3
+  - @backstage/config@1.1.1
+  - @backstage/core-components@0.13.9-next.2
+  - @backstage/core-plugin-api@1.8.1-next.1
+  - @backstage/errors@1.2.3
+  - @backstage/integration@1.8.0-next.1
+  - @backstage/integration-react@1.1.22-next.1
+  - @backstage/plugin-catalog-common@1.0.18
+
+## 0.10.4-next.2
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/frontend-plugin-api@0.4.0-next.1
+  - @backstage/core-components@0.13.9-next.1
+  - @backstage/core-plugin-api@1.8.1-next.1
+  - @backstage/plugin-catalog-react@1.9.2-next.1
+  - @backstage/catalog-client@1.5.0-next.0
+  - @backstage/integration@1.8.0-next.1
+  - @backstage/core-compat-api@0.0.1-next.1
+  - @backstage/integration-react@1.1.22-next.1
+  - @backstage/catalog-model@1.4.3
+  - @backstage/config@1.1.1
+  - @backstage/errors@1.2.3
+  - @backstage/plugin-catalog-common@1.0.18
+
+## 0.10.4-next.1
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/core-compat-api@0.0.1-next.0
+
+## 0.10.4-next.0
+
+### Patch Changes
+
+- 03d0b6dcdc: The `convertLegacyRouteRef` utility used by the alpha exports is now imported from `@backstage/core-compat-api`.
+- Updated dependencies
+  - @backstage/core-compat-api@0.0.2-next.0
+  - @backstage/core-plugin-api@1.8.1-next.0
+  - @backstage/plugin-catalog-react@1.9.2-next.0
+  - @backstage/core-components@0.13.9-next.0
+  - @backstage/integration@1.8.0-next.0
+  - @backstage/frontend-plugin-api@0.3.1-next.0
+  - @backstage/integration-react@1.1.22-next.0
+  - @backstage/catalog-client@1.4.6
+  - @backstage/catalog-model@1.4.3
+  - @backstage/config@1.1.1
+  - @backstage/errors@1.2.3
+  - @backstage/plugin-catalog-common@1.0.18
+
+## 0.10.2
+
+### Patch Changes
+
+- 6db75b900a: Create an experimental plugin that is compatible with the declarative integration system, it is exported from the `/alpha` subpath.
+- 6c2b872153: Add official support for React 18.
+- dee1f39fcc: Fix missing children key warning on the default catalog import page.
+- 71c97e7d73: The `app.title` configuration is now properly required to be a string.
+- Updated dependencies
+  - @backstage/plugin-catalog-react@1.9.0
+  - @backstage/core-components@0.13.8
+  - @backstage/frontend-plugin-api@0.3.0
+  - @backstage/integration@1.7.2
+  - @backstage/integration-react@1.1.21
+  - @backstage/core-plugin-api@1.8.0
+  - @backstage/catalog-client@1.4.6
+  - @backstage/catalog-model@1.4.3
+  - @backstage/config@1.1.1
+  - @backstage/errors@1.2.3
+  - @backstage/plugin-catalog-common@1.0.18
+
+## 0.10.2-next.2
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/core-components@0.13.8-next.2
+  - @backstage/frontend-plugin-api@0.3.0-next.2
+  - @backstage/plugin-catalog-react@1.9.0-next.2
+  - @backstage/integration-react@1.1.21-next.1
+
+## 0.10.2-next.1
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/integration@1.7.2-next.0
+  - @backstage/frontend-plugin-api@0.3.0-next.1
+  - @backstage/plugin-catalog-react@1.9.0-next.1
+  - @backstage/integration-react@1.1.21-next.1
+  - @backstage/core-components@0.13.8-next.1
+  - @backstage/catalog-client@1.4.5
+  - @backstage/catalog-model@1.4.3
+  - @backstage/config@1.1.1
+  - @backstage/core-plugin-api@1.8.0-next.0
+  - @backstage/errors@1.2.3
+  - @backstage/plugin-catalog-common@1.0.17
+
+## 0.10.2-next.0
+
+### Patch Changes
+
+- 6db75b900a: Create an experimental plugin that is compatible with the declarative integration system, it is exported from the `/alpha` subpath.
+- 6c2b872153: Add official support for React 18.
+- 71c97e7d73: The `app.title` configuration is now properly required to be a string.
+- Updated dependencies
+  - @backstage/core-components@0.13.7-next.0
+  - @backstage/frontend-plugin-api@0.3.0-next.0
+  - @backstage/plugin-catalog-react@1.9.0-next.0
+  - @backstage/integration-react@1.1.21-next.0
+  - @backstage/core-plugin-api@1.8.0-next.0
+  - @backstage/integration@1.7.1
+  - @backstage/catalog-client@1.4.5
+  - @backstage/catalog-model@1.4.3
+  - @backstage/config@1.1.1
+  - @backstage/errors@1.2.3
+  - @backstage/plugin-catalog-common@1.0.17
+
+## 0.10.1
+
+### Patch Changes
+
+- 9a1fce352e: Updated dependency `@testing-library/jest-dom` to `^6.0.0`.
+- f95af4e540: Updated dependency `@testing-library/dom` to `^9.0.0`.
+- 0296f272b4: The `app.title` configuration is now properly required to be a string.
+- Updated dependencies
+  - @backstage/integration@1.7.1
+  - @backstage/plugin-catalog-react@1.8.5
+  - @backstage/core-plugin-api@1.7.0
+  - @backstage/core-components@0.13.6
+  - @backstage/integration-react@1.1.20
+  - @backstage/catalog-model@1.4.3
+  - @backstage/errors@1.2.3
+  - @backstage/catalog-client@1.4.5
+  - @backstage/config@1.1.1
+  - @backstage/plugin-catalog-common@1.0.17
+
+## 0.10.1-next.2
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/integration-react@1.1.20-next.2
+  - @backstage/core-components@0.13.6-next.2
+  - @backstage/core-plugin-api@1.7.0-next.1
+  - @backstage/catalog-model@1.4.3-next.0
+  - @backstage/plugin-catalog-react@1.8.5-next.2
+  - @backstage/integration@1.7.1-next.1
+  - @backstage/errors@1.2.3-next.0
+  - @backstage/catalog-client@1.4.5-next.0
+  - @backstage/config@1.1.1-next.0
+  - @backstage/plugin-catalog-common@1.0.17-next.0
+
+## 0.10.1-next.1
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/core-components@0.13.6-next.1
+  - @backstage/integration-react@1.1.20-next.1
+  - @backstage/plugin-catalog-react@1.8.5-next.1
+  - @backstage/core-plugin-api@1.7.0-next.0
+  - @backstage/config@1.1.0
+  - @backstage/catalog-client@1.4.4
+  - @backstage/catalog-model@1.4.2
+  - @backstage/errors@1.2.2
+  - @backstage/integration@1.7.1-next.0
+  - @backstage/plugin-catalog-common@1.0.16
+
+## 0.10.1-next.0
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/integration@1.7.1-next.0
+  - @backstage/plugin-catalog-react@1.8.5-next.0
+  - @backstage/core-plugin-api@1.7.0-next.0
+  - @backstage/core-components@0.13.6-next.0
+  - @backstage/integration-react@1.1.20-next.0
+  - @backstage/config@1.1.0
+  - @backstage/catalog-client@1.4.4
+  - @backstage/catalog-model@1.4.2
+  - @backstage/errors@1.2.2
+  - @backstage/plugin-catalog-common@1.0.16
+
+## 0.10.0
+
+### Minor Changes
+
+- c3c1fd3a1765: Slight change to the `PreparePullRequestFormProps`, because of an update to `react-hook-form`.
+
+### Patch Changes
+
+- 406b786a2a2c: Mark package as being free of side effects, allowing more optimized Webpack builds.
+- Updated dependencies
+  - @backstage/integration-react@1.1.19
+  - @backstage/plugin-catalog-react@1.8.4
+  - @backstage/core-components@0.13.5
+  - @backstage/config@1.1.0
+  - @backstage/catalog-client@1.4.4
+  - @backstage/catalog-model@1.4.2
+  - @backstage/core-plugin-api@1.6.0
+  - @backstage/errors@1.2.2
+  - @backstage/integration@1.7.0
+  - @backstage/plugin-catalog-common@1.0.16
+
+## 0.9.14-next.3
+
+### Patch Changes
+
+- 406b786a2a2c: Mark package as being free of side effects, allowing more optimized Webpack builds.
+- Updated dependencies
+  - @backstage/catalog-client@1.4.4-next.2
+  - @backstage/catalog-model@1.4.2-next.2
+  - @backstage/config@1.1.0-next.2
+  - @backstage/core-components@0.13.5-next.3
+  - @backstage/core-plugin-api@1.6.0-next.3
+  - @backstage/errors@1.2.2-next.0
+  - @backstage/integration@1.7.0-next.3
+  - @backstage/integration-react@1.1.19-next.3
+  - @backstage/plugin-catalog-common@1.0.16-next.2
+  - @backstage/plugin-catalog-react@1.8.4-next.3
+
+## 0.9.14-next.2
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/integration-react@1.1.19-next.2
+  - @backstage/core-components@0.13.5-next.2
+  - @backstage/core-plugin-api@1.6.0-next.2
+  - @backstage/config@1.1.0-next.1
+  - @backstage/plugin-catalog-react@1.8.4-next.2
+  - @backstage/integration@1.7.0-next.2
+  - @backstage/catalog-model@1.4.2-next.1
+  - @backstage/catalog-client@1.4.4-next.1
+  - @backstage/errors@1.2.1
+  - @backstage/plugin-catalog-common@1.0.16-next.1
+
+## 0.9.14-next.1
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/plugin-catalog-react@1.8.4-next.1
+  - @backstage/core-components@0.13.5-next.1
+  - @backstage/config@1.1.0-next.0
+  - @backstage/integration@1.7.0-next.1
+  - @backstage/integration-react@1.1.19-next.1
+  - @backstage/catalog-model@1.4.2-next.0
+  - @backstage/core-plugin-api@1.6.0-next.1
+  - @backstage/catalog-client@1.4.4-next.0
+  - @backstage/plugin-catalog-common@1.0.16-next.0
+  - @backstage/errors@1.2.1
+
+## 0.9.13-next.0
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/integration-react@1.1.18-next.0
+  - @backstage/integration@1.7.0-next.0
+  - @backstage/core-plugin-api@1.6.0-next.0
+  - @backstage/core-components@0.13.5-next.0
+  - @backstage/catalog-client@1.4.3
+  - @backstage/catalog-model@1.4.1
+  - @backstage/config@1.0.8
+  - @backstage/errors@1.2.1
+  - @backstage/plugin-catalog-common@1.0.15
+  - @backstage/plugin-catalog-react@1.8.3-next.0
+
+## 0.9.11
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/integration-react@1.1.16
+  - @backstage/integration@1.6.0
+  - @backstage/core-components@0.13.4
+  - @backstage/plugin-catalog-react@1.8.1
+  - @backstage/core-plugin-api@1.5.3
+  - @backstage/catalog-client@1.4.3
+  - @backstage/catalog-model@1.4.1
+  - @backstage/config@1.0.8
+  - @backstage/errors@1.2.1
+  - @backstage/plugin-catalog-common@1.0.15
+
+## 0.9.11-next.2
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/plugin-catalog-react@1.8.1-next.1
+  - @backstage/integration-react@1.1.16-next.1
+
+## 0.9.11-next.1
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/integration-react@1.1.16-next.1
+  - @backstage/integration@1.5.1
+  - @backstage/catalog-client@1.4.3
+  - @backstage/catalog-model@1.4.1
+  - @backstage/config@1.0.8
+  - @backstage/core-components@0.13.4-next.0
+  - @backstage/core-plugin-api@1.5.3
+  - @backstage/errors@1.2.1
+  - @backstage/plugin-catalog-common@1.0.15
+  - @backstage/plugin-catalog-react@1.8.1-next.0
+
+## 0.9.11-next.0
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/core-components@0.13.4-next.0
+  - @backstage/core-plugin-api@1.5.3
+  - @backstage/plugin-catalog-react@1.8.1-next.0
+  - @backstage/catalog-client@1.4.3
+  - @backstage/catalog-model@1.4.1
+  - @backstage/config@1.0.8
+  - @backstage/errors@1.2.1
+  - @backstage/integration@1.5.1
+  - @backstage/integration-react@1.1.16-next.0
+  - @backstage/plugin-catalog-common@1.0.15
+
+## 0.9.10
+
+### Patch Changes
+
+- 36b7edf39585: Add a "View Component" button as the primary CTA after registering a new component using a link to catalog-info.yaml
+- Updated dependencies
+  - @backstage/errors@1.2.1
+  - @backstage/plugin-catalog-react@1.8.0
+  - @backstage/core-components@0.13.3
+  - @backstage/core-plugin-api@1.5.3
+  - @backstage/catalog-client@1.4.3
+  - @backstage/catalog-model@1.4.1
+  - @backstage/config@1.0.8
+  - @backstage/integration@1.5.1
+  - @backstage/integration-react@1.1.15
+  - @backstage/plugin-catalog-common@1.0.15
+
+## 0.9.10-next.2
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/plugin-catalog-react@1.8.0-next.2
+  - @backstage/core-plugin-api@1.5.3-next.1
+  - @backstage/core-components@0.13.3-next.2
+  - @backstage/catalog-client@1.4.3-next.0
+  - @backstage/catalog-model@1.4.1-next.0
+  - @backstage/config@1.0.8
+  - @backstage/errors@1.2.1-next.0
+  - @backstage/integration@1.5.1-next.0
+  - @backstage/integration-react@1.1.15-next.2
+  - @backstage/plugin-catalog-common@1.0.15-next.0
+
+## 0.9.10-next.1
+
+### Patch Changes
+
+- 36b7edf39585: Add a "View Component" button as the primary CTA after registering a new component using a link to catalog-info.yaml
+- Updated dependencies
+  - @backstage/core-components@0.13.3-next.1
+  - @backstage/core-plugin-api@1.5.3-next.0
+  - @backstage/integration-react@1.1.15-next.1
+  - @backstage/plugin-catalog-react@1.7.1-next.1
+  - @backstage/config@1.0.8
+
+## 0.9.10-next.0
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/errors@1.2.1-next.0
+  - @backstage/core-components@0.13.3-next.0
+  - @backstage/catalog-client@1.4.3-next.0
+  - @backstage/catalog-model@1.4.1-next.0
+  - @backstage/config@1.0.8
+  - @backstage/core-plugin-api@1.5.2
+  - @backstage/integration@1.5.1-next.0
+  - @backstage/integration-react@1.1.15-next.0
+  - @backstage/plugin-catalog-common@1.0.15-next.0
+  - @backstage/plugin-catalog-react@1.7.1-next.0
+
+## 0.9.9
+
+### Patch Changes
+
+- 2ef84c05aee7: Added analytics event for import entity button
+- 309d2973adb4: Swap `ImportStepper` and `InfoCard` order to fix tab order in `catalog-import`.
+- Updated dependencies
+  - @backstage/core-plugin-api@1.5.2
+  - @backstage/catalog-client@1.4.2
+  - @backstage/core-components@0.13.2
+  - @backstage/integration@1.5.0
+  - @backstage/plugin-catalog-react@1.7.0
+  - @backstage/catalog-model@1.4.0
+  - @backstage/errors@1.2.0
+  - @backstage/integration-react@1.1.14
+  - @backstage/config@1.0.8
+  - @backstage/plugin-catalog-common@1.0.14
+
+## 0.9.9-next.3
+
+### Patch Changes
+
+- 309d2973adb4: Swap `ImportStepper` and `InfoCard` order to fix tab order in `catalog-import`.
+- Updated dependencies
+  - @backstage/core-components@0.13.2-next.3
+  - @backstage/catalog-model@1.4.0-next.1
+  - @backstage/catalog-client@1.4.2-next.2
+  - @backstage/config@1.0.7
+  - @backstage/core-plugin-api@1.5.2-next.0
+  - @backstage/errors@1.2.0-next.0
+  - @backstage/integration@1.5.0-next.0
+  - @backstage/integration-react@1.1.14-next.3
+  - @backstage/plugin-catalog-common@1.0.14-next.1
+  - @backstage/plugin-catalog-react@1.7.0-next.3
+
+## 0.9.9-next.2
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/plugin-catalog-react@1.7.0-next.2
+  - @backstage/core-components@0.13.2-next.2
+  - @backstage/integration-react@1.1.14-next.2
+  - @backstage/config@1.0.7
+  - @backstage/core-plugin-api@1.5.2-next.0
+
+## 0.9.9-next.1
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/integration@1.5.0-next.0
+  - @backstage/errors@1.2.0-next.0
+  - @backstage/core-components@0.13.2-next.1
+  - @backstage/plugin-catalog-react@1.7.0-next.1
+  - @backstage/catalog-model@1.4.0-next.0
+  - @backstage/core-plugin-api@1.5.2-next.0
+  - @backstage/integration-react@1.1.14-next.1
+  - @backstage/catalog-client@1.4.2-next.1
+  - @backstage/plugin-catalog-common@1.0.14-next.0
+  - @backstage/config@1.0.7
+
+## 0.9.9-next.0
+
+### Patch Changes
+
+- 2ef84c05aee7: Added analytics event for import entity button
+- Updated dependencies
+  - @backstage/catalog-client@1.4.2-next.0
+  - @backstage/plugin-catalog-react@1.7.0-next.0
+  - @backstage/integration@1.4.5
+  - @backstage/config@1.0.7
+  - @backstage/core-components@0.13.2-next.0
+  - @backstage/core-plugin-api@1.5.1
+  - @backstage/integration-react@1.1.14-next.0
+  - @backstage/catalog-model@1.3.0
+  - @backstage/errors@1.1.5
+  - @backstage/plugin-catalog-common@1.0.13
+
+## 0.9.8
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/plugin-catalog-react@1.6.0
+  - @backstage/integration@1.4.5
+  - @backstage/core-components@0.13.1
+  - @backstage/integration-react@1.1.13
+  - @backstage/catalog-client@1.4.1
+  - @backstage/catalog-model@1.3.0
+  - @backstage/config@1.0.7
+  - @backstage/core-plugin-api@1.5.1
+  - @backstage/errors@1.1.5
+  - @backstage/plugin-catalog-common@1.0.13
+
+## 0.9.8-next.2
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/core-components@0.13.1-next.1
+  - @backstage/integration-react@1.1.13-next.2
+  - @backstage/plugin-catalog-react@1.6.0-next.2
+  - @backstage/config@1.0.7
+  - @backstage/core-plugin-api@1.5.1
+
+## 0.9.8-next.1
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/core-components@0.13.1-next.0
+  - @backstage/core-plugin-api@1.5.1
+  - @backstage/plugin-catalog-react@1.6.0-next.1
+  - @backstage/integration-react@1.1.13-next.1
+  - @backstage/config@1.0.7
+
+## 0.9.8-next.0
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/plugin-catalog-react@1.6.0-next.0
+  - @backstage/integration@1.4.5-next.0
+  - @backstage/integration-react@1.1.13-next.0
+  - @backstage/core-components@0.13.0
+  - @backstage/core-plugin-api@1.5.1
+  - @backstage/catalog-client@1.4.1
+  - @backstage/catalog-model@1.3.0
+  - @backstage/config@1.0.7
+  - @backstage/errors@1.1.5
+  - @backstage/plugin-catalog-common@1.0.13
+
+## 0.9.7
+
+### Patch Changes
+
+- 8e00acb28db: Small tweaks to remove warnings in the console during development (mainly focusing on techdocs)
+- e0c6e8b9c3c: Update peer dependencies
+- Updated dependencies
+  - @backstage/core-components@0.13.0
+  - @backstage/catalog-client@1.4.1
+  - @backstage/plugin-catalog-react@1.5.0
+  - @backstage/integration-react@1.1.12
+  - @backstage/core-plugin-api@1.5.1
+  - @backstage/catalog-model@1.3.0
+  - @backstage/integration@1.4.4
+  - @backstage/config@1.0.7
+  - @backstage/errors@1.1.5
+  - @backstage/plugin-catalog-common@1.0.13
+
+## 0.9.7-next.3
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/plugin-catalog-react@1.5.0-next.3
+  - @backstage/catalog-model@1.3.0-next.0
+  - @backstage/core-components@0.13.0-next.3
+  - @backstage/catalog-client@1.4.1-next.1
+  - @backstage/config@1.0.7
+  - @backstage/core-plugin-api@1.5.1-next.1
+  - @backstage/errors@1.1.5
+  - @backstage/integration@1.4.4-next.0
+  - @backstage/integration-react@1.1.12-next.3
+  - @backstage/plugin-catalog-common@1.0.13-next.1
+
+## 0.9.7-next.2
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/catalog-client@1.4.1-next.0
+  - @backstage/core-components@0.12.6-next.2
+  - @backstage/plugin-catalog-react@1.4.1-next.2
+  - @backstage/core-plugin-api@1.5.1-next.1
+  - @backstage/catalog-model@1.2.1
+  - @backstage/config@1.0.7
+  - @backstage/errors@1.1.5
+  - @backstage/integration@1.4.4-next.0
+  - @backstage/integration-react@1.1.12-next.2
+  - @backstage/plugin-catalog-common@1.0.13-next.0
+
+## 0.9.7-next.1
+
+### Patch Changes
+
+- e0c6e8b9c3c: Update peer dependencies
+- Updated dependencies
+  - @backstage/core-components@0.12.6-next.1
+  - @backstage/integration-react@1.1.12-next.1
+  - @backstage/core-plugin-api@1.5.1-next.0
+  - @backstage/plugin-catalog-react@1.4.1-next.1
+  - @backstage/integration@1.4.4-next.0
+  - @backstage/catalog-client@1.4.0
+  - @backstage/catalog-model@1.2.1
+  - @backstage/config@1.0.7
+  - @backstage/errors@1.1.5
+  - @backstage/plugin-catalog-common@1.0.13-next.0
+
+## 0.9.7-next.0
+
+### Patch Changes
+
+- 8e00acb28db: Small tweaks to remove warnings in the console during development (mainly focusing on techdocs)
+- Updated dependencies
+  - @backstage/core-components@0.12.6-next.0
+  - @backstage/plugin-catalog-react@1.4.1-next.0
+  - @backstage/integration-react@1.1.12-next.0
+  - @backstage/core-plugin-api@1.5.0
+  - @backstage/config@1.0.7
+  - @backstage/integration@1.4.3
+  - @backstage/catalog-client@1.4.0
+  - @backstage/catalog-model@1.2.1
+  - @backstage/errors@1.1.5
+  - @backstage/plugin-catalog-common@1.0.12
+
+## 0.9.6
+
+### Patch Changes
+
+- 52b0022dab7: Updated dependency `msw` to `^1.0.0`.
+- Updated dependencies
+  - @backstage/catalog-client@1.4.0
+  - @backstage/core-components@0.12.5
+  - @backstage/plugin-catalog-react@1.4.0
+  - @backstage/errors@1.1.5
+  - @backstage/core-plugin-api@1.5.0
+  - @backstage/catalog-model@1.2.1
+  - @backstage/plugin-catalog-common@1.0.12
+  - @backstage/integration-react@1.1.11
+  - @backstage/integration@1.4.3
+  - @backstage/config@1.0.7
+
+## 0.9.6-next.2
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/core-components@0.12.5-next.2
+  - @backstage/plugin-catalog-react@1.4.0-next.2
+  - @backstage/core-plugin-api@1.5.0-next.2
+  - @backstage/integration-react@1.1.11-next.2
+  - @backstage/config@1.0.7-next.0
+  - @backstage/integration@1.4.3-next.0
+
+## 0.9.6-next.1
+
+### Patch Changes
+
+- 52b0022dab7: Updated dependency `msw` to `^1.0.0`.
+- Updated dependencies
+  - @backstage/core-components@0.12.5-next.1
+  - @backstage/errors@1.1.5-next.0
+  - @backstage/catalog-client@1.4.0-next.1
+  - @backstage/core-plugin-api@1.4.1-next.1
+  - @backstage/integration-react@1.1.11-next.1
+  - @backstage/integration@1.4.3-next.0
+  - @backstage/config@1.0.7-next.0
+  - @backstage/plugin-catalog-react@1.4.0-next.1
+  - @backstage/catalog-model@1.2.1-next.1
+  - @backstage/plugin-catalog-common@1.0.12-next.1
+
+## 0.9.6-next.0
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/catalog-client@1.4.0-next.0
+  - @backstage/plugin-catalog-react@1.4.0-next.0
+  - @backstage/core-plugin-api@1.4.1-next.0
+  - @backstage/catalog-model@1.2.1-next.0
+  - @backstage/plugin-catalog-common@1.0.12-next.0
+  - @backstage/config@1.0.6
+  - @backstage/core-components@0.12.5-next.0
+  - @backstage/errors@1.1.4
+  - @backstage/integration@1.4.2
+  - @backstage/integration-react@1.1.11-next.0
+
+## 0.9.5
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/core-components@0.12.4
+  - @backstage/catalog-model@1.2.0
+  - @backstage/core-plugin-api@1.4.0
+  - @backstage/plugin-catalog-react@1.3.0
+  - @backstage/catalog-client@1.3.1
+  - @backstage/config@1.0.6
+  - @backstage/errors@1.1.4
+  - @backstage/integration@1.4.2
+  - @backstage/integration-react@1.1.10
+  - @backstage/plugin-catalog-common@1.0.11
+
+## 0.9.5-next.2
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/catalog-model@1.2.0-next.1
+  - @backstage/core-components@0.12.4-next.1
+  - @backstage/catalog-client@1.3.1-next.1
+  - @backstage/config@1.0.6
+  - @backstage/core-plugin-api@1.3.0
+  - @backstage/errors@1.1.4
+  - @backstage/integration@1.4.2
+  - @backstage/integration-react@1.1.10-next.1
+  - @backstage/plugin-catalog-common@1.0.11-next.1
+  - @backstage/plugin-catalog-react@1.3.0-next.2
+
+## 0.9.5-next.1
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/core-components@0.12.4-next.0
+  - @backstage/plugin-catalog-react@1.3.0-next.1
+  - @backstage/catalog-client@1.3.1-next.0
+  - @backstage/catalog-model@1.1.6-next.0
+  - @backstage/config@1.0.6
+  - @backstage/core-plugin-api@1.3.0
+  - @backstage/errors@1.1.4
+  - @backstage/integration@1.4.2
+  - @backstage/integration-react@1.1.10-next.0
+  - @backstage/plugin-catalog-common@1.0.11-next.0
+
+## 0.9.5-next.0
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/plugin-catalog-react@1.3.0-next.0
+  - @backstage/catalog-model@1.1.6-next.0
+  - @backstage/catalog-client@1.3.1-next.0
+  - @backstage/plugin-catalog-common@1.0.11-next.0
+  - @backstage/integration-react@1.1.9
+
+## 0.9.4
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/catalog-model@1.1.5
+  - @backstage/catalog-client@1.3.0
+  - @backstage/plugin-catalog-react@1.2.4
+  - @backstage/core-components@0.12.3
+  - @backstage/core-plugin-api@1.3.0
+  - @backstage/config@1.0.6
+  - @backstage/errors@1.1.4
+  - @backstage/integration@1.4.2
+  - @backstage/integration-react@1.1.9
+  - @backstage/plugin-catalog-common@1.0.10
+
+## 0.9.4-next.2
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/core-plugin-api@1.3.0-next.1
+  - @backstage/catalog-client@1.3.0-next.2
+  - @backstage/plugin-catalog-react@1.2.4-next.2
+  - @backstage/catalog-model@1.1.5-next.1
+  - @backstage/config@1.0.6-next.0
+  - @backstage/core-components@0.12.3-next.2
+  - @backstage/errors@1.1.4
+  - @backstage/integration@1.4.2-next.0
+  - @backstage/integration-react@1.1.9-next.2
+  - @backstage/plugin-catalog-common@1.0.10-next.1
+
+## 0.9.4-next.1
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/config@1.0.6-next.0
+  - @backstage/catalog-client@1.3.0-next.1
+  - @backstage/catalog-model@1.1.5-next.1
+  - @backstage/core-components@0.12.3-next.1
+  - @backstage/core-plugin-api@1.2.1-next.0
+  - @backstage/errors@1.1.4
+  - @backstage/integration@1.4.2-next.0
+  - @backstage/integration-react@1.1.9-next.1
+  - @backstage/plugin-catalog-common@1.0.10-next.1
+  - @backstage/plugin-catalog-react@1.2.4-next.1
+
+## 0.9.4-next.0
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/catalog-model@1.1.5-next.0
+  - @backstage/catalog-client@1.3.0-next.0
+  - @backstage/plugin-catalog-react@1.2.4-next.0
+  - @backstage/core-components@0.12.3-next.0
+  - @backstage/config@1.0.5
+  - @backstage/core-plugin-api@1.2.0
+  - @backstage/errors@1.1.4
+  - @backstage/integration@1.4.1
+  - @backstage/integration-react@1.1.9-next.0
+  - @backstage/plugin-catalog-common@1.0.10-next.0
+
+## 0.9.3
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/core-components@0.12.2
+  - @backstage/integration-react@1.1.8
+  - @backstage/plugin-catalog-react@1.2.3
+
+## 0.9.2
+
+### Patch Changes
+
+- 2e701b3796: Internal refactor to use `react-router-dom` rather than `react-router`.
+- 3280711113: Updated dependency `msw` to `^0.49.0`.
+- Updated dependencies
+  - @backstage/core-plugin-api@1.2.0
+  - @backstage/catalog-client@1.2.0
+  - @backstage/core-components@0.12.1
+  - @backstage/errors@1.1.4
+  - @backstage/plugin-catalog-react@1.2.2
+  - @backstage/integration-react@1.1.7
+  - @backstage/integration@1.4.1
+  - @backstage/catalog-model@1.1.4
+  - @backstage/config@1.0.5
+  - @backstage/plugin-catalog-common@1.0.9
+
+## 0.9.2-next.4
+
+### Patch Changes
+
+- 2e701b3796: Internal refactor to use `react-router-dom` rather than `react-router`.
+- Updated dependencies
+  - @backstage/core-components@0.12.1-next.4
+  - @backstage/plugin-catalog-react@1.2.2-next.4
+  - @backstage/catalog-client@1.2.0-next.1
+  - @backstage/catalog-model@1.1.4-next.1
+  - @backstage/config@1.0.5-next.1
+  - @backstage/core-plugin-api@1.2.0-next.2
+  - @backstage/errors@1.1.4-next.1
+  - @backstage/integration@1.4.1-next.1
+  - @backstage/integration-react@1.1.7-next.4
+  - @backstage/plugin-catalog-common@1.0.9-next.3
+
+## 0.9.2-next.3
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/core-components@0.12.1-next.3
+  - @backstage/catalog-client@1.2.0-next.1
+  - @backstage/catalog-model@1.1.4-next.1
+  - @backstage/config@1.0.5-next.1
+  - @backstage/core-plugin-api@1.2.0-next.2
+  - @backstage/errors@1.1.4-next.1
+  - @backstage/integration@1.4.1-next.1
+  - @backstage/integration-react@1.1.7-next.3
+  - @backstage/plugin-catalog-common@1.0.9-next.2
+  - @backstage/plugin-catalog-react@1.2.2-next.3
+
+## 0.9.2-next.2
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/core-plugin-api@1.2.0-next.2
+  - @backstage/core-components@0.12.1-next.2
+  - @backstage/plugin-catalog-react@1.2.2-next.2
+  - @backstage/integration-react@1.1.7-next.2
+  - @backstage/catalog-client@1.2.0-next.1
+  - @backstage/catalog-model@1.1.4-next.1
+  - @backstage/config@1.0.5-next.1
+  - @backstage/errors@1.1.4-next.1
+  - @backstage/integration@1.4.1-next.1
+  - @backstage/plugin-catalog-common@1.0.9-next.2
+
+## 0.9.2-next.1
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/core-components@0.12.1-next.1
+  - @backstage/core-plugin-api@1.1.1-next.1
+  - @backstage/plugin-catalog-react@1.2.2-next.1
+  - @backstage/integration-react@1.1.7-next.1
+  - @backstage/config@1.0.5-next.1
+  - @backstage/integration@1.4.1-next.1
+  - @backstage/catalog-client@1.2.0-next.1
+  - @backstage/catalog-model@1.1.4-next.1
+  - @backstage/errors@1.1.4-next.1
+  - @backstage/plugin-catalog-common@1.0.9-next.1
+
+## 0.9.2-next.0
+
+### Patch Changes
+
+- 3280711113: Updated dependency `msw` to `^0.49.0`.
+- Updated dependencies
+  - @backstage/catalog-client@1.2.0-next.0
+  - @backstage/core-components@0.12.1-next.0
+  - @backstage/core-plugin-api@1.1.1-next.0
+  - @backstage/integration-react@1.1.7-next.0
+  - @backstage/integration@1.4.1-next.0
+  - @backstage/plugin-catalog-react@1.2.2-next.0
+  - @backstage/catalog-model@1.1.4-next.0
+  - @backstage/config@1.0.5-next.0
+  - @backstage/errors@1.1.4-next.0
+  - @backstage/plugin-catalog-common@1.0.9-next.0
+
+## 0.9.1
+
+### Patch Changes
+
+- 1e7b640518: Get rid of `this-is-undefined-in-esm` warning
+- c1784a4980: Replaces in-code uses of `GitHub` with `Github` and deprecates old versions.
+- Updated dependencies
+  - @backstage/plugin-catalog-react@1.2.1
+  - @backstage/core-components@0.12.0
+  - @backstage/core-plugin-api@1.1.0
+  - @backstage/integration@1.4.0
+  - @backstage/catalog-model@1.1.3
+  - @backstage/integration-react@1.1.6
+  - @backstage/catalog-client@1.1.2
+  - @backstage/config@1.0.4
+  - @backstage/errors@1.1.3
+  - @backstage/plugin-catalog-common@1.0.8
+
+## 0.9.1-next.1
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/core-components@0.12.0-next.1
+  - @backstage/catalog-client@1.1.2-next.0
+  - @backstage/catalog-model@1.1.3-next.0
+  - @backstage/config@1.0.4-next.0
+  - @backstage/core-plugin-api@1.1.0-next.0
+  - @backstage/errors@1.1.3-next.0
+  - @backstage/integration@1.4.0-next.0
+  - @backstage/integration-react@1.1.6-next.1
+  - @backstage/plugin-catalog-common@1.0.8-next.0
+  - @backstage/plugin-catalog-react@1.2.1-next.1
+
+## 0.9.1-next.0
+
+### Patch Changes
+
+- 1e7b640518: Get rid of `this-is-undefined-in-esm` warning
+- c1784a4980: Replaces in-code uses of `GitHub` with `Github` and deprecates old versions.
+- Updated dependencies
+  - @backstage/plugin-catalog-react@1.2.1-next.0
+  - @backstage/core-components@0.12.0-next.0
+  - @backstage/core-plugin-api@1.1.0-next.0
+  - @backstage/integration@1.4.0-next.0
+  - @backstage/catalog-model@1.1.3-next.0
+  - @backstage/integration-react@1.1.6-next.0
+  - @backstage/catalog-client@1.1.2-next.0
+  - @backstage/config@1.0.4-next.0
+  - @backstage/errors@1.1.3-next.0
+  - @backstage/plugin-catalog-common@1.0.8-next.0
+
+## 0.9.0
+
+### Minor Changes
+
+- b2e6cb6acf: **Breaking**
+  Moved the code search for the existing catalog-info.yaml files to the backend from the frontend. It means it will use the configured GitHub integration's credentials.
+
+  Add the following to your `CatalogBuilder` to have the repo URL ingestion working again.
+
+  ```ts
+  // catalog.ts
+  import { GithubLocationAnalyzer } from '@backstage/plugin-catalog-backend-module-github';
+  ...
+    builder.addLocationAnalyzers(
+      new GithubLocationAnalyzer({
+        discovery: env.discovery,
+        config: env.config,
+      }),
+    );
+  ...
+  ```
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/catalog-model@1.1.2
+  - @backstage/plugin-catalog-react@1.2.0
+  - @backstage/core-components@0.11.2
+  - @backstage/plugin-catalog-common@1.0.7
+  - @backstage/catalog-client@1.1.1
+  - @backstage/integration-react@1.1.5
+  - @backstage/core-plugin-api@1.0.7
+  - @backstage/config@1.0.3
+  - @backstage/errors@1.1.2
+  - @backstage/integration@1.3.2
+
+## 0.9.0-next.2
+
+### Minor Changes
+
+- b2e6cb6acf: **Breaking**
+  Moved the code search for the existing catalog-info.yaml files to the backend from the frontend. It means it will use the configured GitHub integration's credentials.
+
+  Add the following to your `CatalogBuilder` to have the repo URL ingestion working again.
+
+  ```ts
+  // catalog.ts
+  import { GitHubLocationAnalyzer } from '@backstage/plugin-catalog-backend-module-github';
+  ...
+    builder.addLocationAnalyzers(
+      new GitHubLocationAnalyzer({
+        discovery: env.discovery,
+        config: env.config,
+      }),
+    );
+  ...
+  ```
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/plugin-catalog-common@1.0.7-next.2
+  - @backstage/plugin-catalog-react@1.2.0-next.2
+  - @backstage/catalog-client@1.1.1-next.2
+  - @backstage/catalog-model@1.1.2-next.2
+  - @backstage/config@1.0.3-next.2
+  - @backstage/core-components@0.11.2-next.2
+  - @backstage/core-plugin-api@1.0.7-next.2
+  - @backstage/errors@1.1.2-next.2
+  - @backstage/integration@1.3.2-next.2
+  - @backstage/integration-react@1.1.5-next.2
+
+## 0.8.13-next.1
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/plugin-catalog-react@1.2.0-next.1
+  - @backstage/catalog-client@1.1.1-next.1
+  - @backstage/core-components@0.11.2-next.1
+  - @backstage/core-plugin-api@1.0.7-next.1
+  - @backstage/catalog-model@1.1.2-next.1
+  - @backstage/config@1.0.3-next.1
+  - @backstage/errors@1.1.2-next.1
+  - @backstage/integration@1.3.2-next.1
+  - @backstage/integration-react@1.1.5-next.1
+
+## 0.8.13-next.0
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/catalog-model@1.1.2-next.0
+  - @backstage/core-components@0.11.2-next.0
+  - @backstage/catalog-client@1.1.1-next.0
+  - @backstage/plugin-catalog-react@1.1.5-next.0
+  - @backstage/integration-react@1.1.5-next.0
+  - @backstage/config@1.0.3-next.0
+  - @backstage/core-plugin-api@1.0.7-next.0
+  - @backstage/errors@1.1.2-next.0
+  - @backstage/integration@1.3.2-next.0
+
+## 0.8.12
+
+### Patch Changes
+
+- 817f3196f6: Updated React Router dependencies to be peer dependencies.
+- eadf56bbbf: Bump `git-url-parse` version to `^13.0.0`
+- 7d47def9c4: Removed dependency on `@types/jest`.
+- 667d917488: Updated dependency `msw` to `^0.47.0`.
+- 87ec2ba4d6: Updated dependency `msw` to `^0.46.0`.
+- bf5e9030eb: Updated dependency `msw` to `^0.45.0`.
+- Updated dependencies
+  - @backstage/core-components@0.11.1
+  - @backstage/core-plugin-api@1.0.6
+  - @backstage/plugin-catalog-react@1.1.4
+  - @backstage/integration@1.3.1
+  - @backstage/catalog-client@1.1.0
+  - @backstage/catalog-model@1.1.1
+  - @backstage/config@1.0.2
+  - @backstage/errors@1.1.1
+  - @backstage/integration-react@1.1.4
+
+## 0.8.12-next.3
+
+### Patch Changes
+
+- 7d47def9c4: Removed dependency on `@types/jest`.
+- Updated dependencies
+  - @backstage/plugin-catalog-react@1.1.4-next.2
+  - @backstage/catalog-client@1.1.0-next.2
+  - @backstage/catalog-model@1.1.1-next.0
+  - @backstage/config@1.0.2-next.0
+  - @backstage/core-components@0.11.1-next.3
+  - @backstage/core-plugin-api@1.0.6-next.3
+  - @backstage/errors@1.1.1-next.0
+  - @backstage/integration@1.3.1-next.2
+  - @backstage/integration-react@1.1.4-next.2
+
+## 0.8.12-next.2
+
+### Patch Changes
+
+- eadf56bbbf: Bump `git-url-parse` version to `^13.0.0`
+- 667d917488: Updated dependency `msw` to `^0.47.0`.
+- 87ec2ba4d6: Updated dependency `msw` to `^0.46.0`.
+- Updated dependencies
+  - @backstage/integration@1.3.1-next.1
+  - @backstage/catalog-client@1.0.5-next.1
+  - @backstage/core-components@0.11.1-next.2
+  - @backstage/core-plugin-api@1.0.6-next.2
+  - @backstage/integration-react@1.1.4-next.1
+
+## 0.8.12-next.1
+
+### Patch Changes
+
+- 817f3196f6: Updated React Router dependencies to be peer dependencies.
+- Updated dependencies
+  - @backstage/core-components@0.11.1-next.1
+  - @backstage/core-plugin-api@1.0.6-next.1
+  - @backstage/plugin-catalog-react@1.1.4-next.1
+
+## 0.8.12-next.0
+
+### Patch Changes
+
+- bf5e9030eb: Updated dependency `msw` to `^0.45.0`.
+- Updated dependencies
+  - @backstage/core-plugin-api@1.0.6-next.0
+  - @backstage/core-components@0.11.1-next.0
+  - @backstage/catalog-client@1.0.5-next.0
+  - @backstage/integration-react@1.1.4-next.0
+  - @backstage/integration@1.3.1-next.0
+  - @backstage/plugin-catalog-react@1.1.4-next.0
+
+## 0.8.11
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/integration@1.3.0
+  - @backstage/core-components@0.11.0
+  - @backstage/core-plugin-api@1.0.5
+  - @backstage/plugin-catalog-react@1.1.3
+  - @backstage/integration-react@1.1.3
+
+## 0.8.11-next.1
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/plugin-catalog-react@1.1.3-next.2
+  - @backstage/core-components@0.11.0-next.2
+  - @backstage/integration-react@1.1.3-next.1
+
+## 0.8.11-next.0
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/integration@1.3.0-next.0
+  - @backstage/core-plugin-api@1.0.5-next.0
+  - @backstage/integration-react@1.1.3-next.0
+  - @backstage/plugin-catalog-react@1.1.3-next.0
+  - @backstage/core-components@0.10.1-next.0
+
+## 0.8.10
+
+### Patch Changes
+
+- 9de15a41d7: Upgrade @octokit/rest to 19.0.3
+- a70869e775: Updated dependency `msw` to `^0.43.0`.
+- 72622d9143: Updated dependency `yaml` to `^2.0.0`.
+- 8006d0f9bf: Updated dependency `msw` to `^0.44.0`.
+- e2d7b76f43: Upgrade git-url-parse to 12.0.0.
+
+  Motivation for upgrade is transitively upgrading parse-url which is vulnerable
+  to several CVEs detected by Snyk.
+
+  - SNYK-JS-PARSEURL-2935944
+  - SNYK-JS-PARSEURL-2935947
+  - SNYK-JS-PARSEURL-2936249
+
+- 272106fdad: Support use without `integrations` or only integrations without frontend visible properties (e.g., `bitbucketCloud`) being configured by checking `integrations.github` directly without attempting to load `integrations`.
+- Updated dependencies
+  - @backstage/core-components@0.10.0
+  - @backstage/catalog-model@1.1.0
+  - @backstage/core-plugin-api@1.0.4
+  - @backstage/integration@1.2.2
+  - @backstage/catalog-client@1.0.4
+  - @backstage/integration-react@1.1.2
+  - @backstage/plugin-catalog-react@1.1.2
+  - @backstage/errors@1.1.0
+
+## 0.8.10-next.3
+
+### Patch Changes
+
+- a70869e775: Updated dependency `msw` to `^0.43.0`.
+- 72622d9143: Updated dependency `yaml` to `^2.0.0`.
+- Updated dependencies
+  - @backstage/core-plugin-api@1.0.4-next.0
+  - @backstage/core-components@0.10.0-next.3
+  - @backstage/catalog-client@1.0.4-next.2
+  - @backstage/integration-react@1.1.2-next.3
+  - @backstage/integration@1.2.2-next.3
+  - @backstage/catalog-model@1.1.0-next.3
+  - @backstage/plugin-catalog-react@1.1.2-next.3
+
+## 0.8.10-next.2
+
+### Patch Changes
+
+- e2d7b76f43: Upgrade git-url-parse to 12.0.0.
+
+  Motivation for upgrade is transitively upgrading parse-url which is vulnerable
+  to several CVEs detected by Snyk.
+
+  - SNYK-JS-PARSEURL-2935944
+  - SNYK-JS-PARSEURL-2935947
+  - SNYK-JS-PARSEURL-2936249
+
+- Updated dependencies
+  - @backstage/core-components@0.10.0-next.2
+  - @backstage/catalog-model@1.1.0-next.2
+  - @backstage/integration@1.2.2-next.2
+  - @backstage/plugin-catalog-react@1.1.2-next.2
+  - @backstage/integration-react@1.1.2-next.2
+
+## 0.8.10-next.1
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/core-components@0.9.6-next.1
+  - @backstage/catalog-model@1.1.0-next.1
+  - @backstage/errors@1.1.0-next.0
+  - @backstage/catalog-client@1.0.4-next.1
+  - @backstage/integration@1.2.2-next.1
+  - @backstage/integration-react@1.1.2-next.1
+  - @backstage/plugin-catalog-react@1.1.2-next.1
+
+## 0.8.10-next.0
+
+### Patch Changes
+
+- 272106fdad: Support use without `integrations` or only integrations without frontend visible properties (e.g., `bitbucketCloud`) being configured by checking `integrations.github` directly without attempting to load `integrations`.
+- Updated dependencies
+  - @backstage/catalog-model@1.1.0-next.0
+  - @backstage/core-components@0.9.6-next.0
+  - @backstage/integration@1.2.2-next.0
+  - @backstage/catalog-client@1.0.4-next.0
+  - @backstage/plugin-catalog-react@1.1.2-next.0
+  - @backstage/integration-react@1.1.2-next.0
+
+## 0.8.9
+
+### Patch Changes
+
+- 8f7b1835df: Updated dependency `msw` to `^0.41.0`.
+- 05be420971: Updated catalog import page text so they go in the correct hierarchy order
+- Updated dependencies
+  - @backstage/plugin-catalog-react@1.1.1
+  - @backstage/core-components@0.9.5
+  - @backstage/integration@1.2.1
+  - @backstage/catalog-client@1.0.3
+  - @backstage/core-plugin-api@1.0.3
+  - @backstage/integration-react@1.1.1
+  - @backstage/catalog-model@1.0.3
+
+## 0.8.9-next.1
+
+### Patch Changes
+
+- 8f7b1835df: Updated dependency `msw` to `^0.41.0`.
+- 05be420971: Updated catalog import page text so they go in the correct hierarchy order
+- Updated dependencies
+  - @backstage/core-components@0.9.5-next.1
+  - @backstage/catalog-client@1.0.3-next.0
+  - @backstage/core-plugin-api@1.0.3-next.0
+  - @backstage/integration-react@1.1.1-next.1
+  - @backstage/integration@1.2.1-next.1
+  - @backstage/catalog-model@1.0.3-next.0
+  - @backstage/plugin-catalog-react@1.1.1-next.1
+
+## 0.8.9-next.0
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/plugin-catalog-react@1.1.1-next.0
+  - @backstage/core-components@0.9.5-next.0
+  - @backstage/integration@1.2.1-next.0
+  - @backstage/integration-react@1.1.1-next.0
+
+## 0.8.8
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/core-components@0.9.4
+  - @backstage/integration@1.2.0
+  - @backstage/core-plugin-api@1.0.2
+  - @backstage/plugin-catalog-react@1.1.0
+  - @backstage/integration-react@1.1.0
+  - @backstage/config@1.0.1
+  - @backstage/catalog-client@1.0.2
+  - @backstage/catalog-model@1.0.2
+
+## 0.8.8-next.2
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/core-components@0.9.4-next.1
+  - @backstage/config@1.0.1-next.0
+  - @backstage/plugin-catalog-react@1.1.0-next.2
+  - @backstage/catalog-model@1.0.2-next.0
+  - @backstage/core-plugin-api@1.0.2-next.1
+  - @backstage/integration@1.2.0-next.1
+  - @backstage/integration-react@1.1.0-next.2
+  - @backstage/catalog-client@1.0.2-next.0
+
+## 0.8.8-next.1
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/core-components@0.9.4-next.0
+  - @backstage/core-plugin-api@1.0.2-next.0
+  - @backstage/plugin-catalog-react@1.1.0-next.1
+  - @backstage/integration-react@1.1.0-next.1
+
+## 0.8.8-next.0
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/integration@1.2.0-next.0
+  - @backstage/plugin-catalog-react@1.1.0-next.0
+  - @backstage/integration-react@1.1.0-next.0
+
+## 0.8.7
+
+### Patch Changes
+
+- 7c7919777e: build(deps-dev): bump `@testing-library/react-hooks` from 7.0.2 to 8.0.0
+- 24254fd433: build(deps): bump `@testing-library/user-event` from 13.5.0 to 14.0.0
+- Updated dependencies
+  - @backstage/integration@1.1.0
+  - @backstage/plugin-catalog-react@1.0.1
+  - @backstage/catalog-model@1.0.1
+  - @backstage/core-components@0.9.3
+  - @backstage/core-plugin-api@1.0.1
+  - @backstage/integration-react@1.0.1
+  - @backstage/catalog-client@1.0.1
+
+## 0.8.7-next.2
+
+### Patch Changes
+
+- 24254fd433: build(deps): bump `@testing-library/user-event` from 13.5.0 to 14.0.0
+- Updated dependencies
+  - @backstage/core-components@0.9.3-next.2
+  - @backstage/core-plugin-api@1.0.1-next.0
+  - @backstage/integration-react@1.0.1-next.2
+  - @backstage/plugin-catalog-react@1.0.1-next.3
+  - @backstage/integration@1.1.0-next.2
+
+## 0.8.7-next.1
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/integration@1.1.0-next.1
+  - @backstage/plugin-catalog-react@1.0.1-next.1
+  - @backstage/integration-react@1.0.1-next.1
+
+## 0.8.7-next.0
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/catalog-model@1.0.1-next.0
+  - @backstage/integration@1.0.1-next.0
+  - @backstage/plugin-catalog-react@1.0.1-next.0
+  - @backstage/core-components@0.9.3-next.0
+  - @backstage/catalog-client@1.0.1-next.0
+  - @backstage/integration-react@1.0.1-next.0
+
+## 0.8.6
+
+### Patch Changes
+
+- a422d7ce5e: chore(deps): bump `@testing-library/react` from 11.2.6 to 12.1.3
+- 9d98865cb1: No longer attempt to register locations as optional, since it's ignored.
+- Updated dependencies
+  - @backstage/core-components@0.9.2
+  - @backstage/core-plugin-api@1.0.0
+  - @backstage/integration-react@1.0.0
+  - @backstage/plugin-catalog-react@1.0.0
+  - @backstage/catalog-model@1.0.0
+  - @backstage/integration@1.0.0
+  - @backstage/catalog-client@1.0.0
+  - @backstage/config@1.0.0
+  - @backstage/errors@1.0.0
+
+## 0.8.5
+
+### Patch Changes
+
+- bf95bb806c: Remove usages of now-removed `CatalogApi.getEntityByName`
+- Updated dependencies
+  - @backstage/plugin-catalog-react@0.9.0
+  - @backstage/core-components@0.9.1
+  - @backstage/catalog-model@0.13.0
+  - @backstage/catalog-client@0.9.0
+  - @backstage/integration-react@0.1.25
+
+## 0.8.5-next.0
+
+### Patch Changes
+
+- bf95bb806c: Remove usages of now-removed `CatalogApi.getEntityByName`
+- Updated dependencies
+  - @backstage/plugin-catalog-react@0.9.0-next.0
+  - @backstage/core-components@0.9.1-next.0
+  - @backstage/catalog-model@0.13.0-next.0
+  - @backstage/catalog-client@0.9.0-next.0
+  - @backstage/integration-react@0.1.25-next.0
+
+## 0.8.4
+
+### Patch Changes
+
+- 899f196af5: Use `getEntityByRef` instead of `getEntityByName` in the catalog client
+- f41a293231: - **DEPRECATION**: Deprecated `formatEntityRefTitle` in favor of the new `humanizeEntityRef` method instead. Please migrate to using the new method instead.
+- 36aa63022b: Use `CompoundEntityRef` instead of `EntityName`, and `getCompoundEntityRef` instead of `getEntityName`, from `@backstage/catalog-model`.
+- Updated dependencies
+  - @backstage/catalog-model@0.12.0
+  - @backstage/catalog-client@0.8.0
+  - @backstage/core-components@0.9.0
+  - @backstage/plugin-catalog-react@0.8.0
+  - @backstage/integration@0.8.0
+  - @backstage/core-plugin-api@0.8.0
+  - @backstage/integration-react@0.1.24
+
+## 0.8.3
+
+### Patch Changes
+
+- 6e1cbc12a6: Updated according to the new `getEntityFacets` catalog API method
+- Updated dependencies
+  - @backstage/core-components@0.8.10
+  - @backstage/plugin-catalog-react@0.7.0
+  - @backstage/catalog-model@0.11.0
+  - @backstage/catalog-client@0.7.2
+  - @backstage/core-plugin-api@0.7.0
+  - @backstage/integration@0.7.5
+  - @backstage/integration-react@0.1.23
+
+## 0.8.2
+
+### Patch Changes
+
+- 1ed305728b: Bump `node-fetch` to version 2.6.7 and `cross-fetch` to version 3.1.5
+- c77c5c7eb6: Added `backstage.role` to `package.json`
+- deaf6065db: Adapt to the new `CatalogApi.getLocationByRef`
+- Updated dependencies
+  - @backstage/catalog-client@0.7.0
+  - @backstage/core-components@0.8.9
+  - @backstage/core-plugin-api@0.6.1
+  - @backstage/errors@0.2.1
+  - @backstage/integration@0.7.3
+  - @backstage/integration-react@0.1.22
+  - @backstage/plugin-catalog-react@0.6.15
+  - @backstage/catalog-model@0.10.0
+  - @backstage/config@0.1.14
+
+## 0.8.1
+
+### Patch Changes
+
+- 7bb1bde7f6: Minor API cleanups
+- Updated dependencies
+  - @backstage/catalog-client@0.6.0
+  - @backstage/core-components@0.8.8
+  - @backstage/plugin-catalog-react@0.6.14
+  - @backstage/integration-react@0.1.21
+
+## 0.8.1-next.0
+
+### Patch Changes
+
+- 7bb1bde7f6: Minor API cleanups
+- Updated dependencies
+  - @backstage/core-components@0.8.8-next.0
+  - @backstage/plugin-catalog-react@0.6.14-next.0
+  - @backstage/integration-react@0.1.21-next.0
+
+## 0.8.0
+
+### Minor Changes
+
+- 2e8764b95f: Make filename, branch name and examples URLs used in catalog import customizable.
+
+  Catalog backend ingestion loop can be already configured to fetch targets with custom catalog filename (other than `catalog-info.yaml`). It's now possible to customize said filename and branch name used in pull requests created by catalog import flow too. This allows organizations to further customize Backstage experience and to better reflect their branding.
+
+  Filename (default: `catalog-info.yaml`) and branch name (default: `backstage-integration`) used in pull requests can be configured in `app-config.yaml` as follows:
+
+  ```yaml
+  // app-config.yaml
+
+  catalog:
+    import:
+      entityFilename: anvil.yaml
+      pullRequestBranchName: anvil-integration
+  ```
+
+  Following React components have also been updated to accept optional props for providing example entity and repository paths:
+
+  ```tsx
+  <StepInitAnalyzeUrl
+    ...
+    exampleLocationUrl="https://github.com/acme-corp/our-awesome-api/blob/main/anvil.yaml"
+  />
+  ```
+
+  ```tsx
+  <ImportInfoCard
+    exampleLocationUrl="https://github.com/acme-corp/our-awesome-api/blob/main/anvil.yaml"
+    exampleRepositoryUrl="https://github.com/acme-corp/our-awesome-api"
+  />
+  ```
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/core-components@0.8.7
+  - @backstage/plugin-catalog-react@0.6.13
+  - @backstage/integration-react@0.1.20
+
+## 0.8.0-next.0
+
+### Minor Changes
+
+- 2e8764b95f: Make filename, branch name and examples URLs used in catalog import customizable.
+
+  Catalog backend ingestion loop can be already configured to fetch targets with custom catalog filename (other than `catalog-info.yaml`). It's now possible to customize said filename and branch name used in pull requests created by catalog import flow too. This allows organizations to further customize Backstage experience and to better reflect their branding.
+
+  Filename (default: `catalog-info.yaml`) and branch name (default: `backstage-integration`) used in pull requests can be configured in `app-config.yaml` as follows:
+
+  ```yaml
+  // app-config.yaml
+
+  catalog:
+    import:
+      entityFilename: anvil.yaml
+      pullRequestBranchName: anvil-integration
+  ```
+
+  Following React components have also been updated to accept optional props for providing example entity and repository paths:
+
+  ```tsx
+  <StepInitAnalyzeUrl
+    ...
+    exampleLocationUrl="https://github.com/acme-corp/our-awesome-api/blob/main/anvil.yaml"
+  />
+  ```
+
+  ```tsx
+  <ImportInfoCard
+    exampleLocationUrl="https://github.com/acme-corp/our-awesome-api/blob/main/anvil.yaml"
+    exampleRepositoryUrl="https://github.com/acme-corp/our-awesome-api"
+  />
+  ```
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/core-components@0.8.7-next.0
+  - @backstage/integration-react@0.1.20-next.0
+  - @backstage/plugin-catalog-react@0.6.13-next.0
+
+## 0.7.10
+
+### Patch Changes
+
+- 51fbedc445: Migrated usage of deprecated `IdentityApi` methods.
+- Updated dependencies
+  - @backstage/core-components@0.8.5
+  - @backstage/integration@0.7.2
+  - @backstage/core-plugin-api@0.6.0
+  - @backstage/plugin-catalog-react@0.6.12
+  - @backstage/catalog-model@0.9.10
+  - @backstage/catalog-client@0.5.5
+  - @backstage/integration-react@0.1.19
+
+## 0.7.10-next.0
+
+### Patch Changes
+
+- 51fbedc445: Migrated usage of deprecated `IdentityApi` methods.
+- Updated dependencies
+  - @backstage/core-components@0.8.5-next.0
+  - @backstage/core-plugin-api@0.6.0-next.0
+  - @backstage/plugin-catalog-react@0.6.12-next.0
+  - @backstage/catalog-model@0.9.10-next.0
+  - @backstage/integration-react@0.1.19-next.0
+  - @backstage/catalog-client@0.5.5-next.0
+  - @backstage/integration@0.7.2-next.0
+
+## 0.7.9
+
+### Patch Changes
+
+- 5333451def: Cleaned up API exports
+- Updated dependencies
+  - @backstage/integration@0.7.1
+  - @backstage/core-components@0.8.4
+  - @backstage/core-plugin-api@0.5.0
+  - @backstage/plugin-catalog-react@0.6.11
+  - @backstage/errors@0.2.0
+  - @backstage/catalog-client@0.5.4
+  - @backstage/catalog-model@0.9.9
+  - @backstage/integration-react@0.1.18
+
+## 0.7.8
+
+### Patch Changes
+
+- 4ce51ab0f1: Internal refactor of the `react-use` imports to use `react-use/lib/*` instead.
+- Updated dependencies
+  - @backstage/core-plugin-api@0.4.1
+  - @backstage/plugin-catalog-react@0.6.10
+  - @backstage/core-components@0.8.3
+
+## 0.7.7
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/plugin-catalog-react@0.6.9
+  - @backstage/integration@0.7.0
+  - @backstage/integration-react@0.1.17
+
+## 0.7.6
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/core-plugin-api@0.4.0
+  - @backstage/plugin-catalog-react@0.6.8
+  - @backstage/core-components@0.8.2
+  - @backstage/catalog-client@0.5.3
+  - @backstage/integration-react@0.1.16
+
 ## 0.7.5
 
 ### Patch Changes

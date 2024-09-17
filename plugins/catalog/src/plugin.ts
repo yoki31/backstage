@@ -15,65 +15,99 @@
  */
 
 import { CatalogClient } from '@backstage/catalog-client';
+import { Entity } from '@backstage/catalog-model';
 import {
   catalogApiRef,
-  catalogRouteRef,
-  DefaultStarredEntitiesApi,
+  entityPresentationApiRef,
   entityRouteRef,
   starredEntitiesApiRef,
 } from '@backstage/plugin-catalog-react';
-import { CatalogClientWrapper } from './CatalogClientWrapper';
-import { createComponentRouteRef, viewTechDocRouteRef } from './routes';
+import {
+  createComponentRouteRef,
+  createFromTemplateRouteRef,
+  unregisterRedirectRouteRef,
+  viewTechDocRouteRef,
+} from './routes';
 import {
   createApiFactory,
   createComponentExtension,
   createPlugin,
   createRoutableExtension,
   discoveryApiRef,
-  identityApiRef,
+  fetchApiRef,
   storageApiRef,
 } from '@backstage/core-plugin-api';
+import {
+  createSearchResultListItemExtension,
+  SearchResultListItemExtensionProps,
+} from '@backstage/plugin-search-react';
+import { DefaultStarredEntitiesApi } from './apis';
+import { AboutCardProps } from './components/AboutCard';
+import { DefaultCatalogPageProps } from './components/CatalogPage';
+import { DependencyOfComponentsCardProps } from './components/DependencyOfComponentsCard';
+import { DependsOnComponentsCardProps } from './components/DependsOnComponentsCard';
+import { DependsOnResourcesCardProps } from './components/DependsOnResourcesCard';
+import { HasComponentsCardProps } from './components/HasComponentsCard';
+import { HasResourcesCardProps } from './components/HasResourcesCard';
+import { HasSubcomponentsCardProps } from './components/HasSubcomponentsCard';
+import { HasSubdomainsCardProps } from './components/HasSubdomainsCard';
+import { HasSystemsCardProps } from './components/HasSystemsCard';
+import { RelatedEntitiesCardProps } from './components/RelatedEntitiesCard';
+import { CatalogSearchResultListItemProps } from './components/CatalogSearchResultListItem';
+import { rootRouteRef } from './routes';
+import { DefaultEntityPresentationApi } from './apis/EntityPresentationApi';
 
+/** @public */
 export const catalogPlugin = createPlugin({
   id: 'catalog',
   apis: [
     createApiFactory({
       api: catalogApiRef,
-      deps: { discoveryApi: discoveryApiRef, identityApi: identityApiRef },
-      factory: ({ discoveryApi, identityApi }) =>
-        new CatalogClientWrapper({
-          client: new CatalogClient({ discoveryApi }),
-          identityApi,
-        }),
+      deps: {
+        discoveryApi: discoveryApiRef,
+        fetchApi: fetchApiRef,
+      },
+      factory: ({ discoveryApi, fetchApi }) =>
+        new CatalogClient({ discoveryApi, fetchApi }),
     }),
-
     createApiFactory({
       api: starredEntitiesApiRef,
       deps: { storageApi: storageApiRef },
       factory: ({ storageApi }) =>
         new DefaultStarredEntitiesApi({ storageApi }),
     }),
+    createApiFactory({
+      api: entityPresentationApiRef,
+      deps: { catalogApi: catalogApiRef },
+      factory: ({ catalogApi }) =>
+        DefaultEntityPresentationApi.create({ catalogApi }),
+    }),
   ],
   routes: {
-    catalogIndex: catalogRouteRef,
+    catalogIndex: rootRouteRef,
     catalogEntity: entityRouteRef,
   },
   externalRoutes: {
     createComponent: createComponentRouteRef,
     viewTechDoc: viewTechDocRouteRef,
+    createFromTemplate: createFromTemplateRouteRef,
+    unregisterRedirect: unregisterRedirectRouteRef,
   },
 });
 
-export const CatalogIndexPage = catalogPlugin.provide(
-  createRoutableExtension({
-    name: 'CatalogIndexPage',
-    component: () =>
-      import('./components/CatalogPage').then(m => m.CatalogPage),
-    mountPoint: catalogRouteRef,
-  }),
-);
+/** @public */
+export const CatalogIndexPage: (props: DefaultCatalogPageProps) => JSX.Element =
+  catalogPlugin.provide(
+    createRoutableExtension({
+      name: 'CatalogIndexPage',
+      component: () =>
+        import('./components/CatalogPage').then(m => m.CatalogPage),
+      mountPoint: rootRouteRef,
+    }),
+  );
 
-export const CatalogEntityPage = catalogPlugin.provide(
+/** @public */
+export const CatalogEntityPage: () => JSX.Element = catalogPlugin.provide(
   createRoutableExtension({
     name: 'CatalogEntityPage',
     component: () =>
@@ -82,15 +116,29 @@ export const CatalogEntityPage = catalogPlugin.provide(
   }),
 );
 
-export const EntityAboutCard = catalogPlugin.provide(
-  createComponentExtension({
-    name: 'EntityAboutCard',
-    component: {
-      lazy: () => import('./components/AboutCard').then(m => m.AboutCard),
-    },
-  }),
-);
+/**
+ * An example About card to show at the top of entity pages.
+ *
+ * @public
+ * @remarks
+ *
+ * This card collects some high level information about the entity, but is just
+ * an example component. Many organizations will want to replace it with a
+ * custom card that is more tailored to their specific needs. The card itself is
+ * not extremely customizable; feel free to make a copy of it as a starting
+ * point if you like.
+ */
+export const EntityAboutCard: (props: AboutCardProps) => JSX.Element =
+  catalogPlugin.provide(
+    createComponentExtension({
+      name: 'EntityAboutCard',
+      component: {
+        lazy: () => import('./components/AboutCard').then(m => m.AboutCard),
+      },
+    }),
+  );
 
+/** @public */
 export const EntityLinksCard = catalogPlugin.provide(
   createComponentExtension({
     name: 'EntityLinksCard',
@@ -101,17 +149,33 @@ export const EntityLinksCard = catalogPlugin.provide(
   }),
 );
 
-export const EntityHasSystemsCard = catalogPlugin.provide(
+/** @public */
+export const EntityLabelsCard = catalogPlugin.provide(
   createComponentExtension({
-    name: 'EntityHasSystemsCard',
+    name: 'EntityLabelsCard',
     component: {
       lazy: () =>
-        import('./components/HasSystemsCard').then(m => m.HasSystemsCard),
+        import('./components/EntityLabelsCard').then(m => m.EntityLabelsCard),
     },
   }),
 );
 
-export const EntityHasComponentsCard = catalogPlugin.provide(
+/** @public */
+export const EntityHasSystemsCard: (props: HasSystemsCardProps) => JSX.Element =
+  catalogPlugin.provide(
+    createComponentExtension({
+      name: 'EntityHasSystemsCard',
+      component: {
+        lazy: () =>
+          import('./components/HasSystemsCard').then(m => m.HasSystemsCard),
+      },
+    }),
+  );
+
+/** @public */
+export const EntityHasComponentsCard: (
+  props: HasComponentsCardProps,
+) => JSX.Element = catalogPlugin.provide(
   createComponentExtension({
     name: 'EntityHasComponentsCard',
     component: {
@@ -121,7 +185,10 @@ export const EntityHasComponentsCard = catalogPlugin.provide(
   }),
 );
 
-export const EntityHasSubcomponentsCard = catalogPlugin.provide(
+/** @public */
+export const EntityHasSubcomponentsCard: (
+  props: HasSubcomponentsCardProps,
+) => JSX.Element = catalogPlugin.provide(
   createComponentExtension({
     name: 'EntityHasSubcomponentsCard',
     component: {
@@ -133,7 +200,23 @@ export const EntityHasSubcomponentsCard = catalogPlugin.provide(
   }),
 );
 
-export const EntityHasResourcesCard = catalogPlugin.provide(
+/** @public */
+export const EntityHasSubdomainsCard: (
+  props: HasSubdomainsCardProps,
+) => JSX.Element = catalogPlugin.provide(
+  createComponentExtension({
+    name: 'EntityHasSubdomainsCard',
+    component: {
+      lazy: () =>
+        import('./components/HasSubdomainsCard').then(m => m.HasSubdomainsCard),
+    },
+  }),
+);
+
+/** @public */
+export const EntityHasResourcesCard: (
+  props: HasResourcesCardProps,
+) => JSX.Element = catalogPlugin.provide(
   createComponentExtension({
     name: 'EntityHasResourcesCard',
     component: {
@@ -143,7 +226,10 @@ export const EntityHasResourcesCard = catalogPlugin.provide(
   }),
 );
 
-export const EntityDependsOnComponentsCard = catalogPlugin.provide(
+/** @public */
+export const EntityDependsOnComponentsCard: (
+  props: DependsOnComponentsCardProps,
+) => JSX.Element = catalogPlugin.provide(
   createComponentExtension({
     name: 'EntityDependsOnComponentsCard',
     component: {
@@ -155,7 +241,10 @@ export const EntityDependsOnComponentsCard = catalogPlugin.provide(
   }),
 );
 
-export const EntityDependencyOfComponentsCard = catalogPlugin.provide(
+/** @public */
+export const EntityDependencyOfComponentsCard: (
+  props: DependencyOfComponentsCardProps,
+) => JSX.Element = catalogPlugin.provide(
   createComponentExtension({
     name: 'EntityDependencyOfComponentsCard',
     component: {
@@ -167,7 +256,10 @@ export const EntityDependencyOfComponentsCard = catalogPlugin.provide(
   }),
 );
 
-export const EntityDependsOnResourcesCard = catalogPlugin.provide(
+/** @public */
+export const EntityDependsOnResourcesCard: (
+  props: DependsOnResourcesCardProps,
+) => JSX.Element = catalogPlugin.provide(
   createComponentExtension({
     name: 'EntityDependsOnResourcesCard',
     component: {
@@ -179,12 +271,31 @@ export const EntityDependsOnResourcesCard = catalogPlugin.provide(
   }),
 );
 
-export const EntitySystemDiagramCard = catalogPlugin.provide(
+/** @public */
+export const RelatedEntitiesCard: <T extends Entity>(
+  props: RelatedEntitiesCardProps<T>,
+) => JSX.Element = catalogPlugin.provide(
   createComponentExtension({
-    name: 'EntitySystemDiagramCard',
+    name: 'RelatedEntitiesCard',
     component: {
       lazy: () =>
-        import('./components/SystemDiagramCard').then(m => m.SystemDiagramCard),
+        import('./components/RelatedEntitiesCard').then(
+          m => m.RelatedEntitiesCard,
+        ),
     },
+  }),
+);
+
+/** @public */
+export const CatalogSearchResultListItem: (
+  props: SearchResultListItemExtensionProps<CatalogSearchResultListItemProps>,
+) => JSX.Element | null = catalogPlugin.provide(
+  createSearchResultListItemExtension({
+    name: 'CatalogSearchResultListItem',
+    component: () =>
+      import('./components/CatalogSearchResultListItem').then(
+        m => m.CatalogSearchResultListItem,
+      ),
+    predicate: result => result.type === 'software-catalog',
   }),
 );

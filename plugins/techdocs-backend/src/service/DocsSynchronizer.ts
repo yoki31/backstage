@@ -14,8 +14,11 @@
  * limitations under the License.
  */
 
-import { PluginEndpointDiscovery } from '@backstage/backend-common';
-import { Entity, ENTITY_DEFAULT_NAMESPACE } from '@backstage/catalog-model';
+import {
+  DEFAULT_NAMESPACE,
+  Entity,
+  stringifyEntityRef,
+} from '@backstage/catalog-model';
 import { Config } from '@backstage/config';
 import { assertError, NotFoundError } from '@backstage/errors';
 import { ScmIntegrationRegistry } from '@backstage/integration';
@@ -23,8 +26,9 @@ import {
   GeneratorBuilder,
   PreparerBuilder,
   PublisherBase,
-} from '@backstage/techdocs-common';
-import fetch from 'cross-fetch';
+} from '@backstage/plugin-techdocs-node';
+import fetch from 'node-fetch';
+import pLimit, { Limit } from 'p-limit';
 import { PassThrough } from 'stream';
 import * as winston from 'winston';
 import { TechDocsCache } from '../cache';
@@ -33,6 +37,7 @@ import {
   DocsBuilder,
   shouldCheckForUpdate,
 } from '../DocsBuilder';
+import { DiscoveryService } from '@backstage/backend-plugin-api';
 
 export type DocsSynchronizerSyncOpts = {
   log: (message: string) => void;
@@ -43,28 +48,36 @@ export type DocsSynchronizerSyncOpts = {
 export class DocsSynchronizer {
   private readonly publisher: PublisherBase;
   private readonly logger: winston.Logger;
+  private readonly buildLogTransport?: winston.transport;
   private readonly config: Config;
   private readonly scmIntegrations: ScmIntegrationRegistry;
   private readonly cache: TechDocsCache | undefined;
+  private readonly buildLimiter: Limit;
 
   constructor({
     publisher,
     logger,
+    buildLogTransport,
     config,
     scmIntegrations,
     cache,
   }: {
     publisher: PublisherBase;
     logger: winston.Logger;
+    buildLogTransport?: winston.transport;
     config: Config;
     scmIntegrations: ScmIntegrationRegistry;
     cache: TechDocsCache | undefined;
   }) {
     this.config = config;
     this.logger = logger;
+    this.buildLogTransport = buildLogTransport;
     this.publisher = publisher;
     this.scmIntegrations = scmIntegrations;
     this.cache = cache;
+
+    // Single host/process: limit concurrent builds up to 10 at a time.
+    this.buildLimiter = pLimit(10);
   }
 
   async doSync({
@@ -96,6 +109,9 @@ export class DocsSynchronizer {
     });
 
     taskLogger.add(new winston.transports.Stream({ stream: logStream }));
+    if (this.buildLogTransport) {
+      taskLogger.add(this.buildLogTransport);
+    }
 
     // check if the last update check was too recent
     if (!shouldCheckForUpdate(entity.metadata.uid!)) {
@@ -118,7 +134,13 @@ export class DocsSynchronizer {
         cache: this.cache,
       });
 
-      const updated = await docsBuilder.build();
+      const interval = setInterval(() => {
+        taskLogger.info(
+          'The docs building process is taking a little bit longer to process this entity. Please bear with us.',
+        );
+      }, 10000);
+      const updated = await this.buildLimiter(() => docsBuilder.build());
+      clearInterval(interval);
 
       if (!updated) {
         finish({ updated: false });
@@ -126,7 +148,9 @@ export class DocsSynchronizer {
       }
     } catch (e) {
       assertError(e);
-      const msg = `Failed to build the docs page: ${e.message}`;
+      const msg = `Failed to build the docs page for entity ${stringifyEntityRef(
+        entity,
+      )}: ${e.message}`;
       taskLogger.error(msg);
       this.logger.error(msg, e);
       error(e);
@@ -149,7 +173,7 @@ export class DocsSynchronizer {
       );
       error(
         new NotFoundError(
-          'Sorry! It took too long for the generated docs to show up in storage. Check back later.',
+          'Sorry! It took too long for the generated docs to show up in storage. Are you sure the docs project is generating an `index.html` file? Otherwise, check back later.',
         ),
       );
       return;
@@ -165,7 +189,7 @@ export class DocsSynchronizer {
     entity,
   }: {
     responseHandler: DocsSynchronizerSyncOpts;
-    discovery: PluginEndpointDiscovery;
+    discovery: DiscoveryService;
     token: string | undefined;
     entity: Entity;
   }) {
@@ -177,7 +201,7 @@ export class DocsSynchronizer {
 
     // Fetch techdocs_metadata.json from the publisher and from cache.
     const baseUrl = await discovery.getBaseUrl('techdocs');
-    const namespace = entity.metadata?.namespace || ENTITY_DEFAULT_NAMESPACE;
+    const namespace = entity.metadata?.namespace || DEFAULT_NAMESPACE;
     const kind = entity.kind;
     const name = entity.metadata.name;
     const legacyPathCasing =

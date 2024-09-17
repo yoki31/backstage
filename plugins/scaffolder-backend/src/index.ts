@@ -22,5 +22,6 @@
 
 export * from './scaffolder';
 export * from './service/router';
-export * from './lib/catalog';
-export * from './processor';
+export * from './lib';
+
+export * from './deprecated';

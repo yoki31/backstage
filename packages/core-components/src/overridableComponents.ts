@@ -25,7 +25,6 @@ import {
   DismissableBannerClassKey,
   EmptyStateClassKey,
   EmptyStateImageClassKey,
-  MissingAnnotationEmptyStateClassKey,
   ErrorPanelClassKey,
   FeatureCalloutCircleClassKey,
   HeaderIconLinkRowClassKey,
@@ -60,10 +59,9 @@ import {
   TableToolbarClassKey,
   FiltersContainerClassKey,
   TableClassKey,
-  TabBarClassKey,
-  TabIconClassKey,
-  TabsClassKey,
   WarningPanelClassKey,
+  LinkClassKey,
+  FavoriteToggleIconClassKey,
 } from './components';
 
 import {
@@ -83,7 +81,9 @@ import {
   ItemCardHeaderClassKey,
   PageClassKey,
   SidebarClassKey,
-  SidebarIntroClassKey,
+  SidebarSpaceClassKey,
+  SidebarSpacerClassKey,
+  SidebarDividerClassKey,
   SidebarItemClassKey,
   SidebarPageClassKey,
   CustomProviderClassKey,
@@ -91,6 +91,10 @@ import {
   TabbedCardClassKey,
   BoldHeaderClassKey,
   CardTabClassKey,
+  SidebarSubmenuClassKey,
+  SidebarSubmenuItemClassKey,
+  StackDetailsClassKey,
+  BreadcrumbsCurrentPageClassKey,
 } from './layout';
 
 type BackstageComponentsNameToClassKey = {
@@ -102,7 +106,6 @@ type BackstageComponentsNameToClassKey = {
   BackstageDismissableBanner: DismissableBannerClassKey;
   BackstageEmptyState: EmptyStateClassKey;
   BackstageEmptyStateImage: EmptyStateImageClassKey;
-  BackstageMissingAnnotationEmptyState: MissingAnnotationEmptyStateClassKey;
   BackstageErrorPanel: ErrorPanelClassKey;
   BackstageFeatureCalloutCircular: FeatureCalloutCircleClassKey;
   BackstageHeaderIconLinkRow: HeaderIconLinkRowClassKey;
@@ -112,7 +115,7 @@ type BackstageComponentsNameToClassKey = {
   BackstageMarkdownContent: MarkdownContentClassKey;
   BackstageLoginRequestListItem: LoginRequestListItemClassKey;
   BackstageLogViewer: LogViewerClassKey;
-  OAuthRequestDialog: OAuthRequestDialogClassKey;
+  BackstageOAuthRequestDialog: OAuthRequestDialogClassKey;
   BackstageOverflowTooltip: OverflowTooltipClassKey;
   BackstageGauge: GaugeClassKey;
   BackstageGaugeCard: GaugeCardClassKey;
@@ -137,17 +140,16 @@ type BackstageComponentsNameToClassKey = {
   BackstageTableToolbar: TableToolbarClassKey;
   BackstageTableFiltersContainer: FiltersContainerClassKey;
   BackstageTable: TableClassKey;
-  BackstageTabBar: TabBarClassKey;
-  BackstageTabIcon: TabIconClassKey;
-  BackstageTabs: TabsClassKey;
   BackstageWarningPanel: WarningPanelClassKey;
   BackstageBottomLink: BottomLinkClassKey;
   BackstageBreadcrumbsClickableText: BreadcrumbsClickableTextClassKey;
   BackstageBreadcrumbsStyledBox: BreadcrumbsStyledBoxClassKey;
+  BreadcrumbsCurrentPage: BreadcrumbsCurrentPageClassKey;
   BackstageContent: BackstageContentClassKey;
   BackstageContentHeader: ContentHeaderClassKey;
   BackstageErrorPage: ErrorPageClassKey;
   BackstageErrorPageMicDrop: MicDropClassKey;
+  BackstageErrorPageStackDetails: StackDetailsClassKey;
   BackstageHeader: HeaderClassKey;
   BackstageHeaderLabel: HeaderLabelClassKey;
   BackstageHeaderTabs: HeaderTabsClassKey;
@@ -157,14 +159,20 @@ type BackstageComponentsNameToClassKey = {
   BackstageItemCardHeader: ItemCardHeaderClassKey;
   BackstagePage: PageClassKey;
   BackstageSidebar: SidebarClassKey;
-  BackstageSidebarIntro: SidebarIntroClassKey;
+  BackstageSidebarSpace: SidebarSpaceClassKey;
+  BackstageSidebarSpacer: SidebarSpacerClassKey;
+  BackstageSidebarDivider: SidebarDividerClassKey;
   BackstageSidebarItem: SidebarItemClassKey;
+  BackstageSidebarSubmenu: SidebarSubmenuClassKey;
+  BackstageSidebarSubmenuItem: SidebarSubmenuItemClassKey;
   BackstageSidebarPage: SidebarPageClassKey;
   BackstageCustomProvider: CustomProviderClassKey;
   BackstageSignInPage: SignInPageClassKey;
   BackstageTabbedCard: TabbedCardClassKey;
   BackstageTabbedCardBoldHeader: BoldHeaderClassKey;
   BackstageCardTab: CardTabClassKey;
+  BackstageLink: LinkClassKey;
+  BackstageFavoriteToggleIcon: FavoriteToggleIconClassKey;
 };
 
 /** @public */
@@ -173,3 +181,8 @@ export type BackstageOverrides = Overrides & {
     StyleRules<BackstageComponentsNameToClassKey[Name]>
   >;
 };
+
+declare module '@backstage/theme' {
+  interface OverrideComponentNameToClassKeys
+    extends BackstageComponentsNameToClassKey {}
+}

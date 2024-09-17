@@ -21,7 +21,7 @@ import CardContent from '@material-ui/core/CardContent';
 import CardMedia from '@material-ui/core/CardMedia';
 import Chip from '@material-ui/core/Chip';
 import React, { ReactNode } from 'react';
-import { Button } from '../../components';
+import { LinkButton } from '../../components/LinkButton/LinkButton';
 import { ItemCardHeader } from './ItemCardHeader';
 
 type ItemCardProps = {
@@ -37,11 +37,11 @@ type ItemCardProps = {
 };
 
 /**
- * This card type has been deprecated. Instead use plain MUI Card and helpers
+ * This card type has been deprecated. Instead use plain Material UI Card and helpers
  * where appropriate.
  *
- * <code>
- * <!--
+ *  @example
+ * ```
  *   <Card>
  *     <CardMedia>
  *       <ItemCardHeader title="My Card" subtitle="neat!" />
@@ -55,11 +55,10 @@ type ItemCardProps = {
  *       </Button>
  *     </CardActions>
  *   </Card>
- * -->
- * </code>
+ * ```
  *
- * @deprecated Use plain MUI <Card> and composable helpers instead.
- * @see https://material-ui.com/components/cards/
+ * @deprecated Use plain Material UI `<Card>` and composable helpers instead.
+ * @see https://v4.mui.com/components/cards/
  */
 export function ItemCard(props: ItemCardProps) {
   const { description, tags, title, type, subtitle, label, onClick, href } =
@@ -81,14 +80,14 @@ export function ItemCard(props: ItemCardProps) {
       </CardContent>
       <CardActions>
         {!href && (
-          <Button to="#" onClick={onClick} color="primary">
+          <LinkButton to="#" onClick={onClick} color="primary">
             {label}
-          </Button>
+          </LinkButton>
         )}
         {href && (
-          <Button to={href} color="primary">
+          <LinkButton to={href} color="primary">
             {label}
-          </Button>
+          </LinkButton>
         )}
       </CardActions>
     </Card>

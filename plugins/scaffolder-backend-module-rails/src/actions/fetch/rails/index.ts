@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Spotify AB
+ * Copyright 2021 The Backstage Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { ContainerRunner, UrlReader } from '@backstage/backend-common';
+import { ContainerRunner } from '@backstage/backend-common';
 import { JsonObject } from '@backstage/types';
 import { InputError } from '@backstage/errors';
 import { ScmIntegrations } from '@backstage/integration';
@@ -22,10 +22,13 @@ import fs from 'fs-extra';
 import {
   createTemplateAction,
   fetchContents,
-} from '@backstage/plugin-scaffolder-backend';
+} from '@backstage/plugin-scaffolder-node';
 
 import { resolve as resolvePath } from 'path';
 import { RailsNewRunner } from './railsNewRunner';
+import { PassThrough } from 'stream';
+import { examples } from './index.examples';
+import { UrlReaderService } from '@backstage/backend-plugin-api';
 
 /**
  * Creates the `fetch:rails` Scaffolder action.
@@ -38,9 +41,11 @@ import { RailsNewRunner } from './railsNewRunner';
  * @public
  */
 export function createFetchRailsAction(options: {
-  reader: UrlReader;
+  reader: UrlReaderService;
   integrations: ScmIntegrations;
-  containerRunner: ContainerRunner;
+  containerRunner?: ContainerRunner;
+  /** A list of image names that are allowed to be passed as imageName input */
+  allowedImageNames?: string[];
 }) {
   const { reader, integrations, containerRunner } = options;
 
@@ -52,7 +57,8 @@ export function createFetchRailsAction(options: {
   }>({
     id: 'fetch:rails',
     description:
-      'Downloads a template from the given URL into the workspace, and runs a rails new generator on it.',
+      'Downloads a template from the given `url` into the workspace, and runs a rails new generator on it.',
+    examples,
     schema: {
       input: {
         type: 'object',
@@ -94,6 +100,47 @@ export function createFetchRailsAction(options: {
                   skipWebpackInstall: {
                     title: 'skipWebpackInstall',
                     description: "Don't run Webpack install",
+                    type: 'boolean',
+                  },
+                  skipTest: {
+                    title: 'skipTest',
+                    description: 'Skip test files',
+                    type: 'boolean',
+                  },
+                  skipActionCable: {
+                    title: 'skipActionCable',
+                    description: 'Skip Action Cable files',
+                    type: 'boolean',
+                  },
+                  skipActionMailer: {
+                    title: 'skipActionMailer',
+                    description: 'Skip Action Mailer files',
+                    type: 'boolean',
+                  },
+                  skipActionMailbox: {
+                    title: 'skipActionMailbox',
+                    description: 'Skip Action Mailbox gem',
+                    type: 'boolean',
+                  },
+                  skipActiveStorage: {
+                    title: 'skipActiveStorage',
+                    description: 'Skip Active Storage files',
+                    type: 'boolean',
+                  },
+                  skipActionText: {
+                    title: 'skipActionText',
+                    description: 'Skip Action Text gem',
+                    type: 'boolean',
+                  },
+                  skipActiveRecord: {
+                    title: 'skipActiveRecord',
+                    description: 'Skip Active Record files',
+                    type: 'boolean',
+                  },
+
+                  force: {
+                    title: 'force',
+                    description: 'Overwrite files that already exist',
                     type: 'boolean',
                   },
                   api: {
@@ -160,23 +207,28 @@ export function createFetchRailsAction(options: {
       await fetchContents({
         reader,
         integrations,
-        baseUrl: ctx.baseUrl,
+        baseUrl: ctx.templateInfo?.baseUrl,
         fetchUrl: ctx.input.url,
         outputPath: workDir,
       });
 
       const templateRunner = new RailsNewRunner({ containerRunner });
 
-      const values = {
-        ...ctx.input.values,
-        imageName: ctx.input.imageName,
-      };
+      const { imageName } = ctx.input;
+      if (imageName && !options.allowedImageNames?.includes(imageName)) {
+        throw new Error(`Image ${imageName} is not allowed`);
+      }
+
+      const logStream = new PassThrough();
+      logStream.on('data', chunk => {
+        ctx.logger.info(chunk.toString());
+      });
 
       // Will execute the template in ./template and put the result in ./result
       await templateRunner.run({
         workspacePath: workDir,
-        logStream: ctx.logStream,
-        values,
+        logStream,
+        values: { ...ctx.input.values, imageName },
       });
 
       // Finally move the template result into the task workspace

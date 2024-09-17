@@ -15,7 +15,7 @@
  */
 
 import {
-  BackstageIdentity,
+  BackstageIdentityResponse,
   bitbucketAuthApiRef,
   ProfileInfo,
 } from '@backstage/core-plugin-api';
@@ -30,7 +30,7 @@ export type BitbucketAuthResponse = {
     expiresInSeconds: number;
   };
   profile: ProfileInfo;
-  backstageIdentity: BackstageIdentity;
+  backstageIdentity: BackstageIdentityResponse;
 };
 
 const DEFAULT_PROVIDER = {
@@ -47,14 +47,16 @@ const DEFAULT_PROVIDER = {
 export default class BitbucketAuth {
   static create(options: OAuthApiCreateOptions): typeof bitbucketAuthApiRef.T {
     const {
+      configApi,
       discoveryApi,
       environment = 'development',
       provider = DEFAULT_PROVIDER,
       oauthRequestApi,
-      defaultScopes = ['team'],
+      defaultScopes = ['account'],
     } = options;
 
     return OAuth2.create({
+      configApi,
       discoveryApi,
       oauthRequestApi,
       provider,

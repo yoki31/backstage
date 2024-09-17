@@ -19,9 +19,10 @@ import {
   EntityProvider,
   entityRouteRef,
 } from '@backstage/plugin-catalog-react';
-import { renderWithEffects, wrapInTestApp } from '@backstage/test-utils';
+import { renderInTestApp } from '@backstage/test-utils';
 import React from 'react';
 import { UserProfileCard } from './UserProfileCard';
+import { screen } from '@testing-library/react';
 
 describe('UserSummary Test', () => {
   const userEntity: UserEntity = {
@@ -29,6 +30,7 @@ describe('UserSummary Test', () => {
     kind: 'User',
     metadata: {
       name: 'calum.leavy',
+      description: 'Super awesome human',
     },
     spec: {
       profile: {
@@ -41,37 +43,215 @@ describe('UserSummary Test', () => {
     relations: [
       {
         type: 'memberOf',
-        target: {
-          kind: 'group',
-          name: 'ExampleGroup',
-          namespace: 'default',
-        },
+        targetRef: 'group:default/examplegroup',
       },
     ],
   };
 
   it('Display Profile Card', async () => {
-    const rendered = await renderWithEffects(
-      wrapInTestApp(
-        <EntityProvider entity={userEntity}>
-          <UserProfileCard entity={userEntity} variant="gridItem" />
-        </EntityProvider>,
-        {
-          mountedRoutes: {
-            '/catalog/:namespace/:kind/:name': entityRouteRef,
-          },
+    await renderInTestApp(
+      <EntityProvider entity={userEntity}>
+        <UserProfileCard variant="gridItem" />
+      </EntityProvider>,
+      {
+        mountedRoutes: {
+          '/catalog/:namespace/:kind/:name': entityRouteRef,
         },
-      ),
+      },
     );
 
-    expect(rendered.getByText('calum-leavy@example.com')).toBeInTheDocument();
-    expect(rendered.getByAltText('Calum Leavy')).toHaveAttribute(
+    expect(screen.getByText('calum-leavy@example.com')).toBeInTheDocument();
+    expect(screen.getByAltText('Calum Leavy')).toHaveAttribute(
       'src',
       'https://example.com/staff/calum.jpeg',
     );
-    expect(rendered.getByText('ExampleGroup')).toHaveAttribute(
+    expect(screen.getByText('examplegroup').closest('a')).toHaveAttribute(
       'href',
-      '/catalog/default/group/ExampleGroup',
+      '/catalog/default/group/examplegroup',
     );
+    expect(screen.getByText('Super awesome human')).toBeInTheDocument();
+  });
+});
+
+describe('Edit Button', () => {
+  it('Should not be present by default', async () => {
+    const userEntity: UserEntity = {
+      apiVersion: 'backstage.io/v1alpha1',
+      kind: 'User',
+      metadata: {
+        name: 'calum.leavy',
+        description: 'Super awesome human',
+      },
+      spec: {
+        profile: {
+          displayName: 'Calum Leavy',
+          email: 'calum-leavy@example.com',
+        },
+        memberOf: ['ExampleGroup'],
+      },
+      relations: [
+        {
+          type: 'memberOf',
+          targetRef: 'group:default/examplegroup',
+        },
+      ],
+    };
+
+    await renderInTestApp(
+      <EntityProvider entity={userEntity}>
+        <UserProfileCard variant="gridItem" />
+      </EntityProvider>,
+      {
+        mountedRoutes: {
+          '/catalog/:namespace/:kind/:name': entityRouteRef,
+        },
+      },
+    );
+
+    expect(screen.queryByTitle('Edit Metadata')).not.toBeInTheDocument();
+  });
+
+  it('Should be visible when edit URL annotation is present', async () => {
+    const annotations: Record<string, string> = {
+      'backstage.io/edit-url': 'https://example.com/user.yaml',
+    };
+    const userEntity: UserEntity = {
+      apiVersion: 'backstage.io/v1alpha1',
+      kind: 'User',
+      metadata: {
+        name: 'calum.leavy',
+        description: 'Super awesome human',
+        annotations,
+      },
+      spec: {
+        profile: {
+          displayName: 'Calum Leavy',
+          email: 'calum-leavy@example.com',
+        },
+        memberOf: ['ExampleGroup'],
+      },
+      relations: [
+        {
+          type: 'memberOf',
+          targetRef: 'group:default/examplegroup',
+        },
+      ],
+    };
+
+    await renderInTestApp(
+      <EntityProvider entity={userEntity}>
+        <UserProfileCard variant="gridItem" />
+      </EntityProvider>,
+      {
+        mountedRoutes: {
+          '/catalog/:namespace/:kind/:name': entityRouteRef,
+        },
+      },
+    );
+    expect(screen.getByRole('button')).toBeInTheDocument();
+  });
+
+  it('Should not show links by default', async () => {
+    const annotations: Record<string, string> = {
+      'backstage.io/edit-url': 'https://example.com/user.yaml',
+    };
+    const userEntity: UserEntity = {
+      apiVersion: 'backstage.io/v1alpha1',
+      kind: 'User',
+      metadata: {
+        name: 'calum.leavy',
+        description: 'Super awesome human',
+        annotations,
+        links: [
+          {
+            url: 'slack://user?team=T00000000&id=U00000000',
+            title: 'Slack',
+            icon: 'message',
+          },
+          {
+            url: 'https://www.google.com',
+            title: 'Google',
+          },
+        ],
+      },
+      spec: {
+        profile: {
+          displayName: 'Calum Leavy',
+          email: 'calum-leavy@example.com',
+        },
+        memberOf: ['ExampleGroup'],
+      },
+      relations: [
+        {
+          type: 'memberOf',
+          targetRef: 'group:default/examplegroup',
+        },
+      ],
+    };
+
+    await renderInTestApp(
+      <EntityProvider entity={userEntity}>
+        <UserProfileCard variant="gridItem" />
+      </EntityProvider>,
+      {
+        mountedRoutes: {
+          '/catalog/:namespace/:kind/:name': entityRouteRef,
+        },
+      },
+    );
+    expect(screen.queryByText('Slack')).toBeNull();
+    expect(screen.queryByText('Google')).toBeNull();
+  });
+
+  it('Should show the links if showLinks is set', async () => {
+    const annotations: Record<string, string> = {
+      'backstage.io/edit-url': 'https://example.com/user.yaml',
+    };
+    const userEntity: UserEntity = {
+      apiVersion: 'backstage.io/v1alpha1',
+      kind: 'User',
+      metadata: {
+        name: 'calum.leavy',
+        description: 'Super awesome human',
+        annotations,
+        links: [
+          {
+            url: 'slack://user?team=T00000000&id=U00000000',
+            title: 'Slack',
+            icon: 'message',
+          },
+          {
+            url: 'https://www.google.com',
+            title: 'Google',
+          },
+        ],
+      },
+      spec: {
+        profile: {
+          displayName: 'Calum Leavy',
+          email: 'calum-leavy@example.com',
+        },
+        memberOf: ['ExampleGroup'],
+      },
+      relations: [
+        {
+          type: 'memberOf',
+          targetRef: 'group:default/examplegroup',
+        },
+      ],
+    };
+
+    await renderInTestApp(
+      <EntityProvider entity={userEntity}>
+        <UserProfileCard showLinks variant="gridItem" />
+      </EntityProvider>,
+      {
+        mountedRoutes: {
+          '/catalog/:namespace/:kind/:name': entityRouteRef,
+        },
+      },
+    );
+    expect(screen.getByText('Slack')).toBeInTheDocument();
+    expect(screen.getByText('Google')).toBeInTheDocument();
   });
 });

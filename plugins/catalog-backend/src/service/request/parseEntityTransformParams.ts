@@ -17,38 +17,59 @@
 import { Entity } from '@backstage/catalog-model';
 import { InputError } from '@backstage/errors';
 import lodash from 'lodash';
-import { RecursivePartial } from '../../util';
+import { RecursivePartial } from '../../util/RecursivePartial';
 import { parseStringsParam } from './common';
+
+function getPathArrayAndValue(input: Entity, field: string) {
+  return field.split('.').reduce(
+    ([pathArray, inputSubset], pathPart, index, fieldParts) => {
+      if (lodash.hasIn(inputSubset, pathPart)) {
+        return [pathArray.concat(pathPart), inputSubset[pathPart]];
+      } else if (fieldParts[index + 1] !== undefined) {
+        fieldParts[index + 1] = `${pathPart}.${fieldParts[index + 1]}`;
+        return [pathArray, inputSubset];
+      }
+
+      return [pathArray, undefined];
+    },
+    [[] as string[], input as any],
+  );
+}
 
 export function parseEntityTransformParams(
   params: Record<string, unknown>,
+  extra?: string[],
 ): ((entity: Entity) => Entity) | undefined {
-  const fieldsStrings = parseStringsParam(params.fields, 'fields');
-  if (!fieldsStrings) {
-    return undefined;
-  }
+  const queryFields = parseStringsParam(params.fields, 'fields');
 
-  const fields = fieldsStrings
-    .map(s => s.split(','))
-    .flat()
-    .map(s => s.trim())
-    .filter(Boolean);
+  const fields = Array.from(
+    new Set(
+      [...(extra ?? []), ...(queryFields?.map(s => s.split(',')) ?? [])]
+        .flat()
+        .map(s => s.trim())
+        .filter(Boolean),
+    ),
+  );
 
   if (!fields.length) {
     return undefined;
   }
 
-  if (fields.some(f => f.includes('['))) {
-    throw new InputError('invalid fields, array type fields are not supported');
+  const arrayTypeField = fields.find(f => f.includes('['));
+  if (arrayTypeField) {
+    throw new InputError(
+      `Invalid field "${arrayTypeField}", array type fields are not supported`,
+    );
   }
 
   return input => {
     const output: RecursivePartial<Entity> = {};
 
     for (const field of fields) {
-      const value = lodash.get(input, field);
+      const [pathArray, value] = getPathArrayAndValue(input, field);
+
       if (value !== undefined) {
-        lodash.set(output, field, value);
+        lodash.set(output, pathArray, value);
       }
     }
 

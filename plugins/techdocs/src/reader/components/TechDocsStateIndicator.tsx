@@ -15,15 +15,19 @@
  */
 
 import React from 'react';
-import { Progress } from '@backstage/core-components';
-import { CircularProgress, Button, makeStyles } from '@material-ui/core';
-import { Alert } from '@material-ui/lab';
+import CircularProgress from '@material-ui/core/CircularProgress';
+import Button from '@material-ui/core/Button';
+import { makeStyles } from '@material-ui/core/styles';
+import Alert from '@material-ui/lab/Alert';
 
 import { TechDocsBuildLogs } from './TechDocsBuildLogs';
 import { TechDocsNotFound } from './TechDocsNotFound';
-import { useTechDocsReader } from './Reader';
+import { useTechDocsReader } from './TechDocsReaderProvider';
 
-const useStyles = makeStyles(() => ({
+const useStyles = makeStyles(theme => ({
+  root: {
+    marginBottom: theme.spacing(2),
+  },
   message: {
     // `word-break: break-word` is deprecated, but gives legacy support to browsers not supporting `overflow-wrap` yet
     // https://developer.mozilla.org/en-US/docs/Web/CSS/word-break
@@ -32,15 +36,6 @@ const useStyles = makeStyles(() => ({
   },
 }));
 
-/**
- * Note: this component is currently being exported so that we can rapidly
- * iterate on alternative <Reader /> implementations that extend core
- * functionality. There is no guarantee that this component will continue to be
- * exported by the package in the future!
- *
- * todo: Make public or stop exporting (ctrl+f "altReaderExperiments")
- * @internal
- */
 export const TechDocsStateIndicator = () => {
   let StateAlert: JSX.Element | null = null;
   const classes = useStyles();
@@ -53,11 +48,10 @@ export const TechDocsStateIndicator = () => {
     buildLog,
   } = useTechDocsReader();
 
-  const ReaderProgress = state === 'CHECKING' ? <Progress /> : null;
-
   if (state === 'INITIAL_BUILD') {
     StateAlert = (
       <Alert
+        classes={{ root: classes.root }}
         variant="outlined"
         severity="info"
         icon={<CircularProgress size="24px" />}
@@ -76,6 +70,7 @@ export const TechDocsStateIndicator = () => {
         severity="info"
         icon={<CircularProgress size="24px" />}
         action={<TechDocsBuildLogs buildLog={buildLog} />}
+        classes={{ root: classes.root }}
       >
         A newer version of this documentation is being prepared and will be
         available shortly.
@@ -93,6 +88,7 @@ export const TechDocsStateIndicator = () => {
             Refresh
           </Button>
         }
+        classes={{ root: classes.root }}
       >
         A newer version of this documentation is now available, please refresh
         to view.
@@ -106,7 +102,7 @@ export const TechDocsStateIndicator = () => {
         variant="outlined"
         severity="error"
         action={<TechDocsBuildLogs buildLog={buildLog} />}
-        classes={{ message: classes.message }}
+        classes={{ root: classes.root, message: classes.message }}
       >
         Building a newer version of this documentation failed.{' '}
         {syncErrorMessage}
@@ -122,7 +118,7 @@ export const TechDocsStateIndicator = () => {
             variant="outlined"
             severity="error"
             action={<TechDocsBuildLogs buildLog={buildLog} />}
-            classes={{ message: classes.message }}
+            classes={{ root: classes.root, message: classes.message }}
           >
             Building a newer version of this documentation failed.{' '}
             {syncErrorMessage}
@@ -133,10 +129,5 @@ export const TechDocsStateIndicator = () => {
     );
   }
 
-  return (
-    <>
-      {ReaderProgress}
-      {StateAlert}
-    </>
-  );
+  return StateAlert;
 };

@@ -50,7 +50,6 @@ describe('oauth helpers', () => {
             email: 'foo@bar.com',
           },
           backstageIdentity: {
-            id: 'a',
             token: 'a.b.c',
             identity: {
               type: 'user',
@@ -63,9 +62,11 @@ describe('oauth helpers', () => {
       const encoded = safelyEncodeURIComponent(JSON.stringify(data));
 
       postMessageResponse(mockResponse, appOrigin, data);
-      expect(mockResponse.setHeader).toBeCalledTimes(3);
-      expect(mockResponse.end).toBeCalledTimes(1);
-      expect(mockResponse.end).toBeCalledWith(expect.stringContaining(encoded));
+      expect(mockResponse.setHeader).toHaveBeenCalledTimes(3);
+      expect(mockResponse.end).toHaveBeenCalledTimes(1);
+      expect(mockResponse.end).toHaveBeenCalledWith(
+        expect.stringContaining(encoded),
+      );
     });
 
     it('should post a message back with payload error', () => {
@@ -81,9 +82,11 @@ describe('oauth helpers', () => {
       const encoded = safelyEncodeURIComponent(JSON.stringify(data));
 
       postMessageResponse(mockResponse, appOrigin, data);
-      expect(mockResponse.setHeader).toBeCalledTimes(3);
-      expect(mockResponse.end).toBeCalledTimes(1);
-      expect(mockResponse.end).toBeCalledWith(expect.stringContaining(encoded));
+      expect(mockResponse.setHeader).toHaveBeenCalledTimes(3);
+      expect(mockResponse.end).toHaveBeenCalledTimes(1);
+      expect(mockResponse.end).toHaveBeenCalledWith(
+        expect.stringContaining(encoded),
+      );
     });
 
     it('should call postMessage twice but only one of them with target *', () => {
@@ -110,7 +113,6 @@ describe('oauth helpers', () => {
             email: 'foo@bar.com',
           },
           backstageIdentity: {
-            id: 'a',
             token: 'a.b.c',
             identity: {
               type: 'user',
@@ -123,7 +125,7 @@ describe('oauth helpers', () => {
       postMessageResponse(mockResponse, appOrigin, data);
       expect(responseBody.match(/.postMessage\(/g)).toHaveLength(2);
       expect(
-        responseBody.match(/.postMessage\([a-zA-z.()]*, \'\*\'\)/g),
+        responseBody.match(/.postMessage\([a-zA-Z.()]*, \'\*\'\)/g),
       ).toHaveLength(1);
 
       const errData: WebMessageResponse = {
@@ -133,7 +135,7 @@ describe('oauth helpers', () => {
       postMessageResponse(mockResponse, appOrigin, errData);
       expect(responseBody.match(/.postMessage\(/g)).toHaveLength(2);
       expect(
-        responseBody.match(/.postMessage\([a-zA-z.()]*, \'\*\'\)/g),
+        responseBody.match(/.postMessage\([a-zA-Z.()]*, \'\*\'\)/g),
       ).toHaveLength(1);
     });
 
@@ -157,7 +159,6 @@ describe('oauth helpers', () => {
             displayName: "Adam l'Hôpital",
           },
           backstageIdentity: {
-            id: 'a',
             token: 'a.b.c',
             identity: {
               type: 'user',
@@ -169,9 +170,9 @@ describe('oauth helpers', () => {
       };
 
       postMessageResponse(mockResponse, appOrigin, data);
-      expect(mockResponse.setHeader).toBeCalledTimes(3);
-      expect(mockResponse.end).toBeCalledTimes(1);
-      expect(mockResponse.end).toBeCalledWith(
+      expect(mockResponse.setHeader).toHaveBeenCalledTimes(3);
+      expect(mockResponse.end).toHaveBeenCalledTimes(1);
+      expect(mockResponse.end).toHaveBeenCalledWith(
         expect.stringContaining('Adam%20l%27H%C3%B4pital'),
       );
     });

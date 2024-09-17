@@ -19,13 +19,20 @@ declare namespace NodeJS {
     readonly NODE_ENV: 'development' | 'production' | 'test';
   }
 }
-
+declare module 'fs' {
+  export interface StatSyncFn {}
+}
 declare module 'rollup-plugin-image-files' {
   export default function image(options?: any): any;
 }
 
 declare module '@svgr/rollup' {
   export default function svgr(options?: any): any;
+}
+
+declare module 'rollup/parseAst' {
+  export function parseAst(code: string): any;
+  export function parseAstAsync(code: string): any;
 }
 
 declare module '@rollup/plugin-yaml';
@@ -256,3 +263,5 @@ declare module 'webpack-node-externals' {
     }
   }
 }
+
+declare module '@esbuild-kit/cjs-loader' {}

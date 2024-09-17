@@ -22,17 +22,19 @@ import {
   entityRouteRef,
 } from '@backstage/plugin-catalog-react';
 import { renderInTestApp, TestApiProvider } from '@backstage/test-utils';
-import { waitFor } from '@testing-library/react';
+import { waitFor, screen } from '@testing-library/react';
 import React from 'react';
 import { HasSubcomponentsCard } from './HasSubcomponentsCard';
 
 describe('<HasSubcomponentsCard />', () => {
-  const getEntities: jest.MockedFunction<CatalogApi['getEntities']> = jest.fn();
-  let Wrapper: React.ComponentType;
+  const getEntitiesByRefs: jest.MockedFunction<
+    CatalogApi['getEntitiesByRefs']
+  > = jest.fn();
+  let Wrapper: React.ComponentType<React.PropsWithChildren<{}>>;
 
   beforeEach(() => {
     Wrapper = ({ children }: { children?: React.ReactNode }) => (
-      <TestApiProvider apis={[[catalogApiRef, { getEntities }]]}>
+      <TestApiProvider apis={[[catalogApiRef, { getEntitiesByRefs }]]}>
         {children}
       </TestApiProvider>
     );
@@ -51,7 +53,7 @@ describe('<HasSubcomponentsCard />', () => {
       relations: [],
     };
 
-    const { getByText } = await renderInTestApp(
+    await renderInTestApp(
       <Wrapper>
         <EntityProvider entity={entity}>
           <HasSubcomponentsCard />
@@ -64,9 +66,9 @@ describe('<HasSubcomponentsCard />', () => {
       },
     );
 
-    expect(getByText('Has subcomponents')).toBeInTheDocument();
+    expect(screen.getByText('Has subcomponents')).toBeInTheDocument();
     expect(
-      getByText(/No subcomponent is part of this component/i),
+      screen.getByText(/No subcomponent is part of this component/i),
     ).toBeInTheDocument();
   });
 
@@ -80,16 +82,12 @@ describe('<HasSubcomponentsCard />', () => {
       },
       relations: [
         {
-          target: {
-            kind: 'Component',
-            namespace: 'my-namespace',
-            name: 'target-name',
-          },
+          targetRef: 'component:my-namespace/target-name',
           type: RELATION_HAS_PART,
         },
       ],
     };
-    getEntities.mockResolvedValue({
+    getEntitiesByRefs.mockResolvedValue({
       items: [
         {
           apiVersion: 'v1',
@@ -103,7 +101,7 @@ describe('<HasSubcomponentsCard />', () => {
       ],
     });
 
-    const { getByText } = await renderInTestApp(
+    await renderInTestApp(
       <Wrapper>
         <EntityProvider entity={entity}>
           <HasSubcomponentsCard />
@@ -117,8 +115,8 @@ describe('<HasSubcomponentsCard />', () => {
     );
 
     await waitFor(() => {
-      expect(getByText('Has subcomponents')).toBeInTheDocument();
-      expect(getByText(/target-name/i)).toBeInTheDocument();
+      expect(screen.getByText('Has subcomponents')).toBeInTheDocument();
+      expect(screen.getByText(/target-name/i)).toBeInTheDocument();
     });
   });
 });

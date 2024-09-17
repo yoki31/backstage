@@ -37,7 +37,7 @@ type ForwardFileImportsOptions = {
  * path `dist/MyComponent/my-image.png`. The import itself will stay, but be resolved,
  * resulting in something like `import ImageUrl from './MyComponent/my-image.png'`
  */
-export function forwardFileImports(options: ForwardFileImportsOptions): Plugin {
+export function forwardFileImports(options: ForwardFileImportsOptions) {
   const filter = createFilter(options.include, options.exclude);
 
   // We collect the absolute paths to all files we want to bundle into the
@@ -114,7 +114,7 @@ export function forwardFileImports(options: ForwardFileImportsOptions): Plugin {
           return false;
         }
 
-        // Sanity check, dunno if this can happen
+        // Confidence check, dunno if this can happen
         if (!importer) {
           throw new Error(`Unknown importer of file module ${id}`);
         }
@@ -131,5 +131,5 @@ export function forwardFileImports(options: ForwardFileImportsOptions): Plugin {
 
       return { ...inputOptions, external };
     },
-  };
+  } satisfies Plugin;
 }

@@ -16,11 +16,13 @@
 
 import React from 'react';
 import { Entity } from '@backstage/catalog-model';
-import { useEntity } from '@backstage/plugin-catalog-react';
+import {
+  useEntity,
+  MissingAnnotationEmptyState,
+} from '@backstage/plugin-catalog-react';
 import { Route, Routes } from 'react-router-dom';
-import { KubernetesContent } from './components/KubernetesContent';
-import { Button } from '@material-ui/core';
-import { MissingAnnotationEmptyState } from '@backstage/core-components';
+import { KubernetesContent } from './KubernetesContent';
+import Button from '@material-ui/core/Button';
 
 const KUBERNETES_ANNOTATION = 'backstage.io/kubernetes-id';
 const KUBERNETES_LABEL_SELECTOR_QUERY_ANNOTATION =
@@ -32,12 +34,7 @@ export const isKubernetesAvailable = (entity: Entity) =>
     entity.metadata.annotations?.[KUBERNETES_LABEL_SELECTOR_QUERY_ANNOTATION],
   );
 
-type Props = {
-  /** @deprecated The entity is now grabbed from context instead */
-  entity?: Entity;
-};
-
-export const Router = (_props: Props) => {
+export const Router = (props: { refreshIntervalMs?: number }) => {
   const { entity } = useEntity();
 
   const kubernetesAnnotationValue =
@@ -52,7 +49,15 @@ export const Router = (_props: Props) => {
   ) {
     return (
       <Routes>
-        <Route path="/" element={<KubernetesContent entity={entity} />} />
+        <Route
+          path="/"
+          element={
+            <KubernetesContent
+              entity={entity}
+              refreshIntervalMs={props.refreshIntervalMs}
+            />
+          }
+        />
       </Routes>
     );
   }

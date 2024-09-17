@@ -14,22 +14,112 @@
  * limitations under the License.
  */
 
-import { TokenIssuer, TokenParams, KeyStore, AnyJWK } from './types';
-import { JSONWebKey, JWK, JWS } from 'jose';
-import { Logger } from 'winston';
-import { v4 as uuid } from 'uuid';
+import { parseEntityRef } from '@backstage/catalog-model';
+import { AuthenticationError } from '@backstage/errors';
+import {
+  exportJWK,
+  generateKeyPair,
+  importJWK,
+  JWK,
+  SignJWT,
+  GeneralSign,
+  KeyLike,
+} from 'jose';
+import { omit } from 'lodash';
 import { DateTime } from 'luxon';
+import { v4 as uuid } from 'uuid';
+import { LoggerService } from '@backstage/backend-plugin-api';
+import { TokenParams, tokenTypes } from '@backstage/plugin-auth-node';
+import { AnyJWK, KeyStore, TokenIssuer } from './types';
+import { JsonValue } from '@backstage/types';
+import { UserInfoDatabaseHandler } from './UserInfoDatabaseHandler';
 
 const MS_IN_S = 1000;
+const MAX_TOKEN_LENGTH = 32768; // At 64 bytes per entity ref this still leaves room for about 500 entities
+
+/**
+ * The payload contents of a valid Backstage JWT token
+ */
+export interface BackstageTokenPayload {
+  /**
+   * The issuer of the token, currently the discovery URL of the auth backend
+   */
+  iss: string;
+
+  /**
+   * The entity ref of the user
+   */
+  sub: string;
+
+  /**
+   * The entity refs that the user claims ownership througg
+   */
+  ent: string[];
+
+  /**
+   * A hard coded audience string
+   */
+  aud: typeof tokenTypes.user.audClaim;
+
+  /**
+   * Standard expiry in epoch seconds
+   */
+  exp: number;
+
+  /**
+   * Standard issue time in epoch seconds
+   */
+  iat: number;
+
+  /**
+   * A separate user identity proof that the auth service can convert to a limited user token
+   */
+  uip: string;
+
+  /**
+   * Any other custom claims that the adopter may have added
+   */
+  [claim: string]: JsonValue;
+}
+
+/**
+ * The payload contents of a valid Backstage user identity claim token
+ *
+ * @internal
+ */
+interface BackstageUserIdentityProofPayload {
+  /**
+   * The entity ref of the user
+   */
+  sub: string;
+
+  /**
+   * Standard expiry in epoch seconds
+   */
+  exp: number;
+
+  /**
+   * Standard issue time in epoch seconds
+   */
+  iat: number;
+}
 
 type Options = {
-  logger: Logger;
+  logger: LoggerService;
   /** Value of the issuer claim in issued tokens */
   issuer: string;
   /** Key store used for storing signing keys */
   keyStore: KeyStore;
   /** Expiration time of signing keys in seconds */
   keyDurationSeconds: number;
+  /** JWS "alg" (Algorithm) Header Parameter value. Defaults to ES256.
+   * Must match one of the algorithms defined for IdentityClient.
+   * When setting a different algorithm, check if the `key` field
+   * of the `signing_keys` table can fit the length of the generated keys.
+   * If not, add a knex migration file in the migrations folder.
+   * More info on supported algorithms: https://github.com/panva/jose */
+  algorithm?: string;
+  userInfoDatabaseHandler: UserInfoDatabaseHandler;
 };
 
 /**
@@ -48,36 +138,94 @@ type Options = {
  */
 export class TokenFactory implements TokenIssuer {
   private readonly issuer: string;
-  private readonly logger: Logger;
+  private readonly logger: LoggerService;
   private readonly keyStore: KeyStore;
   private readonly keyDurationSeconds: number;
+  private readonly algorithm: string;
+  private readonly userInfoDatabaseHandler: UserInfoDatabaseHandler;
 
   private keyExpiry?: Date;
-  private privateKeyPromise?: Promise<JSONWebKey>;
+  private privateKeyPromise?: Promise<JWK>;
 
   constructor(options: Options) {
     this.issuer = options.issuer;
     this.logger = options.logger;
     this.keyStore = options.keyStore;
     this.keyDurationSeconds = options.keyDurationSeconds;
+    this.algorithm = options.algorithm ?? 'ES256';
+    this.userInfoDatabaseHandler = options.userInfoDatabaseHandler;
   }
 
   async issueToken(params: TokenParams): Promise<string> {
     const key = await this.getKey();
 
     const iss = this.issuer;
-    const sub = params.claims.sub;
-    const ent = params.claims.ent;
-    const aud = 'backstage';
+    const { sub, ent = [sub], ...additionalClaims } = params.claims;
+    const aud = tokenTypes.user.audClaim;
     const iat = Math.floor(Date.now() / MS_IN_S);
     const exp = iat + this.keyDurationSeconds;
 
-    this.logger.info(`Issuing token for ${sub}, with entities ${ent ?? []}`);
+    try {
+      // The subject must be a valid entity ref
+      parseEntityRef(sub);
+    } catch (error) {
+      throw new Error(
+        '"sub" claim provided by the auth resolver is not a valid EntityRef.',
+      );
+    }
 
-    return JWS.sign({ iss, sub, aud, iat, exp, ent }, key, {
-      alg: key.alg,
-      kid: key.kid,
+    if (!key.alg) {
+      throw new AuthenticationError('No algorithm was provided in the key');
+    }
+
+    this.logger.info(`Issuing token for ${sub}, with entities ${ent}`);
+
+    const signingKey = await importJWK(key);
+
+    const uip = await this.createUserIdentityClaim({
+      header: {
+        typ: tokenTypes.limitedUser.typParam,
+        alg: key.alg,
+        kid: key.kid,
+      },
+      payload: { sub, iat, exp },
+      key: signingKey,
     });
+
+    const claims: BackstageTokenPayload = {
+      ...additionalClaims,
+      iss,
+      sub,
+      ent,
+      aud,
+      iat,
+      exp,
+      uip,
+    };
+
+    const token = await new SignJWT(claims)
+      .setProtectedHeader({
+        typ: tokenTypes.user.typParam,
+        alg: key.alg,
+        kid: key.kid,
+      })
+      .sign(signingKey);
+
+    if (token.length > MAX_TOKEN_LENGTH) {
+      throw new Error(
+        `Failed to issue a new user token. The resulting token is excessively large, with either too many ownership claims or too large custom claims. You likely have a bug either in the sign-in resolver or catalog data. The following claims were requested: '${JSON.stringify(
+          claims,
+        )}'`,
+      );
+    }
+
+    // Store the user info in the database upon successful token
+    // issuance so that it can be retrieved later by limited user tokens
+    await this.userInfoDatabaseHandler.addUserInfo({
+      claims: omit(claims, ['aud', 'iat', 'iss', 'uip']),
+    });
+
+    return token;
   }
 
   // This will be called by other services that want to verify ID tokens.
@@ -117,7 +265,7 @@ export class TokenFactory implements TokenIssuer {
     return { keys: validKeys.map(({ key }) => key) };
   }
 
-  private async getKey(): Promise<JSONWebKey> {
+  private async getKey(): Promise<JWK> {
     // Make sure that we only generate one key at a time
     if (this.privateKeyPromise) {
       if (
@@ -137,11 +285,11 @@ export class TokenFactory implements TokenIssuer {
       .toJSDate();
     const promise = (async () => {
       // This generates a new signing key to be used to sign tokens until the next key rotation
-      const key = await JWK.generate('EC', 'P-256', {
-        use: 'sig',
-        kid: uuid(),
-        alg: 'ES256',
-      });
+      const key = await generateKeyPair(this.algorithm);
+      const publicKey = await exportJWK(key.publicKey);
+      const privateKey = await exportJWK(key.privateKey);
+      publicKey.kid = privateKey.kid = uuid();
+      publicKey.alg = privateKey.alg = this.algorithm;
 
       // We're not allowed to use the key until it has been successfully stored
       // TODO: some token verification implementations aggressively cache the list of keys, and
@@ -149,11 +297,11 @@ export class TokenFactory implements TokenIssuer {
       //       may want to keep using the existing key for some period of time until we switch to
       //       the new one. This also needs to be implemented cross-service though, meaning new services
       //       that boot up need to be able to grab an existing key to use for signing.
-      this.logger.info(`Created new signing key ${key.kid}`);
-      await this.keyStore.addKey(key.toJWK(false) as unknown as AnyJWK);
+      this.logger.info(`Created new signing key ${publicKey.kid}`);
+      await this.keyStore.addKey(publicKey as AnyJWK);
 
       // At this point we are allowed to start using the new key
-      return key as JSONWebKey;
+      return privateKey;
     })();
 
     this.privateKeyPromise = promise;
@@ -169,5 +317,47 @@ export class TokenFactory implements TokenIssuer {
     }
 
     return promise;
+  }
+
+  // Creates a string claim that can be used as part of reconstructing a limited
+  // user token. The output of this function is only the signature part of a
+  // JWS.
+  private async createUserIdentityClaim(options: {
+    header: {
+      typ: string;
+      alg: string;
+      kid?: string;
+    };
+    payload: BackstageUserIdentityProofPayload;
+    key: KeyLike | Uint8Array;
+  }): Promise<string> {
+    // NOTE: We reconstruct the header and payload structures carefully to
+    // perfectly guarantee ordering. The reason for this is that we store only
+    // the signature part of these to reduce duplication within the Backstage
+    // token. Anyone who wants to make an actual JWT based on all this must be
+    // able to do the EXACT reconstruction of the header and payload parts, to
+    // then append the signature.
+
+    const header = {
+      typ: options.header.typ,
+      alg: options.header.alg,
+      ...(options.header.kid ? { kid: options.header.kid } : {}),
+    };
+
+    const payload = {
+      sub: options.payload.sub,
+      iat: options.payload.iat,
+      exp: options.payload.exp,
+    };
+
+    const jws = await new GeneralSign(
+      new TextEncoder().encode(JSON.stringify(payload)),
+    )
+      .addSignature(options.key)
+      .setProtectedHeader(header)
+      .done()
+      .sign();
+
+    return jws.signatures[0].signature;
   }
 }

@@ -23,33 +23,32 @@ export default class HTTPServer {
   private readonly proxyEndpoint: string;
   private readonly backstageBundleDir: string;
   private readonly backstagePort: number;
-  private readonly mkdocsPort: number;
+  private readonly mkdocsTargetAddress: string;
   private readonly verbose: boolean;
 
   constructor(
     backstageBundleDir: string,
     backstagePort: number,
-    mkdocsPort: number,
+    mkdocsTargetAddress: string,
     verbose: boolean,
   ) {
-    this.proxyEndpoint = '/api/';
+    this.proxyEndpoint = '/api/techdocs/';
     this.backstageBundleDir = backstageBundleDir;
     this.backstagePort = backstagePort;
-    this.mkdocsPort = mkdocsPort;
+    this.mkdocsTargetAddress = mkdocsTargetAddress;
     this.verbose = verbose;
   }
 
   // Create a Proxy for mkdocs server
   private createProxy() {
     const proxy = httpProxy.createProxyServer({
-      target: `http://localhost:${this.mkdocsPort}`,
+      target: this.mkdocsTargetAddress,
     });
 
     return (request: http.IncomingMessage): [httpProxy, string] => {
-      // If the request goes to /api/ we want to remove /api/ from the prefix of the request URL.
-      // e.g. ['/', 'api', pathChunks]
-      const [, , ...pathChunks] = request.url?.split('/') ?? [];
-      const forwardPath = pathChunks.join('/');
+      // If the request path is prefixed with this.proxyEndpoint, remove it.
+      const proxyEndpointPath = new RegExp(`^${this.proxyEndpoint}`, 'i');
+      const forwardPath = request.url?.replace(proxyEndpointPath, '') || '';
 
       return [proxy, forwardPath];
     };
@@ -60,6 +59,18 @@ export default class HTTPServer {
       const proxyHandler = this.createProxy();
       const server = http.createServer(
         (request: http.IncomingMessage, response: http.ServerResponse) => {
+          // This endpoind is used by the frontend to issue a cookie for the user.
+          // But the MkDocs server doesn't expose it as a the Backestage backend does.
+          // So we need to fake it here to prevent 404 errors.
+          if (request.url === '/api/techdocs/.backstage/auth/v1/cookie') {
+            const oneHourInMilliseconds = 60 * 60 * 1000;
+            const expiresAt = new Date(Date.now() + oneHourInMilliseconds);
+            const cookie = { expiresAt: expiresAt.toISOString() };
+            response.setHeader('Content-Type', 'application/json');
+            response.end(JSON.stringify(cookie));
+            return;
+          }
+
           if (request.url?.startsWith(this.proxyEndpoint)) {
             const [proxy, forwardPath] = proxyHandler(request);
 
@@ -71,10 +82,18 @@ export default class HTTPServer {
             response.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
 
             request.url = forwardPath;
-            return proxy.web(request, response);
+            proxy.web(request, response);
+            return;
           }
 
-          return serveHandler(request, response, {
+          // This endpoint is used by the frontend to detect where the backend is running.
+          if (request.url === '/.detect') {
+            response.setHeader('Content-Type', 'text/plain');
+            response.end('techdocs-cli-server');
+            return;
+          }
+
+          serveHandler(request, response, {
             public: this.backstageBundleDir,
             trailingSlash: true,
             rewrites: [{ source: '**', destination: 'index.html' }],

@@ -1,8 +1,8 @@
 ---
 id: how-to-guides
-title: TechDocs "HOW TO" guides
-sidebar_label: "HOW TO" guides
-description: TechDocs "HOW TO" guides related to TechDocs
+title: TechDocs How-To guides
+sidebar_label: How-To guides
+description: TechDocs How-To guides related to TechDocs
 ---
 
 ## How to migrate from TechDocs Basic to Recommended deployment approach?
@@ -111,7 +111,7 @@ in Backstage. While a default table experience, similar to the one provided by
 the Catalog plugin, is made available for ease-of-use, it's possible for you to
 provide a completely custom experience, tailored to the needs of your
 organization. For example, TechDocs comes with an alternative grid based layout
-(`<EntityListDocsGrid>`).
+(`<EntityListDocsGrid>`) and panel layout (`TechDocsCustomHome`).
 
 This is done in your `app` package. By default, you might see something like
 this in your `App.tsx`:
@@ -126,10 +126,101 @@ const AppRoutes = () => {
 };
 ```
 
+### Using TechDocsCustomHome
+
+You can easily customize the TechDocs home page using TechDocs panel layout
+(`<TechDocsCustomHome />`).
+
+Modify your `App.tsx` as follows:
+
+```tsx
+import { TechDocsCustomHome } from '@backstage/plugin-techdocs';
+//...
+
+const techDocsTabsConfig = [
+  {
+    label: 'Recommended Documentation',
+    panels: [
+      {
+        title: 'Golden Path',
+        description: 'Documentation about standards to follow',
+        panelType: 'DocsCardGrid',
+        filterPredicate: entity =>
+          entity?.metadata?.tags?.includes('recommended') ?? false,
+      },
+    ],
+  },
+];
+
+const AppRoutes = () => {
+  <FlatRoutes>
+    <Route
+      path="/docs"
+      element={<TechDocsCustomHome tabsConfig={techDocsTabsConfig} />}
+    />
+  </FlatRoutes>;
+};
+```
+
+### Building a Custom home page
+
 But you can replace `<DefaultTechDocsHome />` with any React component, which
 will be rendered in its place. Most likely, you would want to create and
 maintain such a component in a new directory at
 `packages/app/src/components/techdocs`, and import and use it in `App.tsx`:
+
+For example, you can define the following Custom home page component:
+
+```tsx
+import React from 'react';
+
+import { Content } from '@backstage/core-components';
+import {
+  CatalogFilterLayout,
+  EntityOwnerPicker,
+  EntityTagPicker,
+  UserListPicker,
+  EntityListProvider,
+} from '@backstage/plugin-catalog-react';
+import {
+  TechDocsPageWrapper,
+  TechDocsPicker,
+} from '@backstage/plugin-techdocs';
+import { Entity } from '@backstage/catalog-model';
+
+import { EntityListDocsGrid } from '@backstage/plugin-techdocs';
+
+export type CustomTechDocsHomeProps = {
+  groups?: Array<{
+    title: React.ReactNode;
+    filterPredicate: ((entity: Entity) => boolean) | string;
+  }>;
+};
+
+export const CustomTechDocsHome = ({ groups }: CustomTechDocsHomeProps) => {
+  return (
+    <TechDocsPageWrapper>
+      <Content>
+        <EntityListProvider>
+          <CatalogFilterLayout>
+            <CatalogFilterLayout.Filters>
+              <TechDocsPicker />
+              <UserListPicker initialFilter="all" />
+              <EntityOwnerPicker />
+              <EntityTagPicker />
+            </CatalogFilterLayout.Filters>
+            <CatalogFilterLayout.Content>
+              <EntityListDocsGrid groups={groups} />
+            </CatalogFilterLayout.Content>
+          </CatalogFilterLayout>
+        </EntityListProvider>
+      </Content>
+    </TechDocsPageWrapper>
+  );
+};
+```
+
+Then you can add the following to your `App.tsx`:
 
 ```tsx
 import { CustomTechDocsHome } from './components/techdocs/CustomTechDocsHome';
@@ -137,7 +228,19 @@ import { CustomTechDocsHome } from './components/techdocs/CustomTechDocsHome';
 const AppRoutes = () => {
   <FlatRoutes>
     <Route path="/docs" element={<TechDocsIndexPage />}>
-      <CustomTechDocsHome />
+      <CustomTechDocsHome
+        groups={[
+          {
+            title: 'Recommended Documentation',
+            filterPredicate: entity =>
+              entity?.metadata?.tags?.includes('recommended') ?? false,
+          },
+          {
+            title: 'My Docs',
+            filterPredicate: 'ownedByUser',
+          },
+        ]}
+      />
     </Route>
   </FlatRoutes>;
 };
@@ -162,20 +265,11 @@ The `techDocsPage` is a default techdocs reader page which lives in
 having to set anything up.
 
 ```tsx
-<TechDocsPage>
-  {({ techdocsMetadataValue, entityMetadataValue, entityRef, onReady }) => (
-    <>
-      <TechDocsPageHeader
-        techDocsMetadata={techdocsMetadataValue}
-        entityMetadata={entityMetadataValue}
-        entityRef={entityRef}
-      />
-      <Content data-testid="techdocs-content">
-        <Reader onReady={onReady} entityRef={entityRef} />
-      </Content>
-    </>
-  )}
-</TechDocsPage>
+<Page themeId="documentation">
+  <TechDocsReaderPageHeader />
+  <TechDocsReaderPageSubheader />
+  <TechDocsReaderPageContent />
+</Page>
 ```
 
 If you would like to compose your own `techDocsPage`, you can do so by replacing
@@ -183,42 +277,30 @@ the children of TechDocsPage with something else. Maybe you are _just_
 interested in replacing the Header:
 
 ```tsx
-<TechDocsPage>
-  {({ entityRef, onReady }) => (
-    <>
-      <Header type="documentation" title="Custom Header" />
-      <Content data-testid="techdocs-content">
-        <Reader onReady={onReady} entityRef={entityRef} />
-      </Content>
-    </>
-  )}
-</TechDocsPage>
+<Page themeId="documentation">
+  <Header type="documentation" title="Custom Header" />
+  <TechDocsReaderPageContent />
+</Page>
 ```
 
 Or maybe you want to disable the in-context search
 
 ```tsx
-<TechDocsPage>
-  {({ entityRef, onReady }) => (
-    <>
-      <Header type="documentation" title="Custom Header" />
-      <Content data-testid="techdocs-content">
-        <Reader onReady={onReady} entityRef={entityRef} withSearch={false} />
-      </Content>
-    </>
-  )}
-</TechDocsPage>
+<Page themeId="documentation">
+  <Header type="documentation" title="Custom Header" />
+  <TechDocsReaderPageContent withSearch={false} />
+</Page>
 ```
 
 Or maybe you want to replace the entire TechDocs Page.
 
 ```tsx
-<TechDocsPage>
+<Page themeId="documentation">
   <Header type="documentation" title="Custom Header" />
   <Content data-testid="techdocs-content">
     <p>my own content</p>
   </Content>
-</TechDocsPage>
+</Page>
 ```
 
 ## How to migrate from TechDocs Alpha to Beta
@@ -352,7 +434,7 @@ const app = createApp({
 
 ## How to add the documentation setup to your software templates
 
-[Software Templates](https://backstage.io/docs/features/software-templates/software-templates-index)
+[Software Templates](https://backstage.io/docs/features/software-templates/)
 in Backstage is a tool that can help your users to create new components out of
 already configured templates. It comes with a set of default templates to use,
 but you can also
@@ -406,7 +488,7 @@ plugins:
 
 The `docs/index.md` can for example have the following content:
 
-```md
+```markdown
 # ${{ values.component_id }}
 
 ${{ values.description }}
@@ -417,7 +499,378 @@ Start writing your documentation by adding more markdown (.md) files to this
 folder (/docs) or replace the content in this file.
 ```
 
-> Note: The values of `site_name`, `component_id` and `site_description` depends
-> on how you have configured your `template.yaml`
+:::note Note
+
+The values of `site_name`, `component_id` and `site_description` depends
+on how you have configured your `template.yaml`.
+
+:::
 
 Done! You now have support for TechDocs in your own software template!
+
+### Prevent download of Google fonts
+
+If your Backstage instance does not have internet access, the generation will fail. TechDocs tries to download the Roboto font from Google. You can disable it by adding the following lines to mkdocs.yaml:
+
+```yaml
+theme:
+  name: material
+  font: false
+```
+
+:::note Note
+
+The addition `name: material` is necessary. Otherwise it will not work
+
+:::
+
+## How to enable iframes in TechDocs
+
+TechDocs uses the [DOMPurify](https://github.com/cure53/DOMPurify) library to
+sanitize HTML and prevent XSS attacks.
+
+It's possible to allow some iframes based on a list of allowed hosts. To do
+this, add the allowed hosts in the `techdocs.sanitizer.allowedIframeHosts`
+configuration of your `app-config.yaml`.
+
+For example:
+
+```yaml
+techdocs:
+  sanitizer:
+    allowedIframeHosts:
+      - drive.google.com
+```
+
+This way, all iframes where the host in the src attribute is in the
+`sanitizer.allowedIframeHosts` list will be displayed.
+
+## How to render PlantUML diagram in TechDocs
+
+PlantUML allows you to create diagrams from plain text language. Each diagram description begins with the keyword - (@startXYZ and @endXYZ, depending on the kind of diagram). For UML Diagrams, Keywords @startuml & @enduml should be used. Further details for all types of diagrams can be found at [PlantUML Language Reference Guide](https://plantuml.com/guide).
+
+### UML Diagram Details:-
+
+#### Embedded PlantUML Diagram Example
+
+Here, the markdown file itself contains the diagram description.
+
+````md
+```plantuml
+@startuml
+title Login Sequence
+    ComponentA->ComponentB: Login Request
+    note right of ComponentB: ComponentB logs message
+    ComponentB->ComponentA: Login Response
+@enduml
+```
+````
+
+#### Referenced PlantUML Diagram Example
+
+Here, the markdown file refers to another file (`*.puml` or `*.pu`) which contains the diagram description.
+
+````md
+```plantuml
+!include umldiagram.puml
+```
+````
+
+Note: To refer external diagram files, we need to include the diagrams directory in the path. Please refer [`Dockerfile`](https://github.com/backstage/techdocs-container/blob/main/Dockerfile) for details.
+
+## How to add Mermaid support in TechDocs
+
+There are two options for adding Mermaid support in TechDocs: using [Kroki](https://kroki.io) or by using [markdown-inline-mermaid](https://github.com/johanneswuerbach/markdown-inline-mermaid). We currently use `markdown-inline-mermaid` for the [Mermaid example on the Demo site](https://demo.backstage.io/docs/default/component/backstage-demo/examples/mermaid/).
+
+### Using Kroki
+
+To add `Mermaid` support in TechDocs, you can use [`kroki`](https://kroki.io)
+that creates diagrams from Textual descriptions. It is a single rendering
+gateway for all popular diagrams-as-a-code tools. It supports an enormous number
+of diagram types.
+
+1. **Create and Publish Docker image:** Create the Docker image from the
+   following `Dockerfile` and publish it to DockerHub.
+
+```docker
+FROM python:3.10-alpine
+
+RUN apk update && apk --no-cache add gcc musl-dev openjdk11-jdk curl graphviz ttf-dejavu fontconfig
+
+RUN pip install --upgrade pip && pip install mkdocs-techdocs-core==1.2.0
+
+RUN pip install mkdocs-kroki-plugin
+
+ENTRYPOINT [ "mkdocs" ]
+```
+
+Create a repository in your DockerHub and run the below command in the same
+folder where your `Dockerfile` is present:
+
+```shell
+docker build . -t dockerHub_Username/repositoryName:tagName
+```
+
+Once the docker image is ready, push it to DockerHub.
+
+2. **Update app-config.yaml:** So that when your app generates TechDocs, it will
+   pull your docker image from DockerHub.
+
+```python
+techdocs:
+  builder: 'local' # Alternatives - 'external'
+  generator:
+    runIn: 'docker' # Alternatives - 'local'
+    dockerImage: dockerHub_Username/repositoryName:tagName
+    pullImage: true
+  publisher:
+    type: 'local' # Alternatives - 'googleGcs' or 'awsS3'. Read documentation for using alternatives.
+```
+
+3. **Add the `kroki` plugin in `mkdocs.yml`:**
+
+```yml
+plugins:
+  - techdocs-core
+  - kroki
+```
+
+:::note Note
+
+You will very likely want to set a `kroki` `ServerURL` configuration in your
+`mkdocs.yml` as well. The default value is the publicly hosted `kroki.io`. If
+you have sensitive information in your organization's diagrams, you should set
+up a [server of your own](https://docs.kroki.io/kroki/setup/install/) and use it
+instead. Check out [mkdocs-kroki-plugin config](https://github.com/AVATEAM-IT-SYSTEMHAUS/mkdocs-kroki-plugin#config)
+for more plugin configuration details.
+
+:::
+
+4. **Add mermaid code into TechDocs:**
+
+````md
+```kroki-mermaid
+sequenceDiagram
+GitLab->>Kroki: Request rendering
+Kroki->>Mermaid: Request rendering
+Mermaid-->>Kroki: Image
+Kroki-->>GitLab: Image
+```
+````
+
+Done! Now you have a support of the following diagrams along with mermaid:
+
+- `PlantUML`
+- `BlockDiag`
+- `BPMN`
+- `ByteField`
+- `SeqDiag`
+- `ActDiag`
+- `NwDiag`
+- `PacketDiag`
+- `RackDiag`
+- `C4 with PlantUML`
+- `Ditaa`
+- `Erd`
+- `Excalidraw`
+- `GraphViz`
+- `Nomnoml`
+- `Pikchr`
+- `Svgbob`
+- `UMlet`
+- `Vega`
+- `Vega-Lite`
+- `WaveDrom`
+
+### Using `markdown-inline-mermaid`
+
+To use `markdown-inline-mermaid` to generate your Mermaid diagrams in TechDocs you'll need to do the following:
+
+1. In your Dockerfile you will need to make sure you install `markdown-inline-mermaid` like this: `RUN pip3 install mkdocs-techdocs-core markdown-inline-mermaid`
+2. You will also need to install the `@mermaid-js/mermaid-cli`, to do that add this: `RUN yarn global add @mermaid-js/mermaid-cli`
+3. Now in your `mkdocs.yml` file you will need to add the following section (this is at the root level like `plugins` which you should already have):
+
+   ```yaml title="mkdocs.yml"
+   markdown_extensions:
+     - markdown_inline_mermaid
+   ```
+
+4. With this in place you can now add Mermaid diagrams in your Markdown files like this:
+
+   ````md
+   ```mermaid
+   sequenceDiagram
+   Alice->>John: Hello John, how are you?
+   John-->>Alice: Great!
+   Alice-)John: See you later!
+   ```
+   ````
+
+## How to implement a hybrid build strategy
+
+One limitation of the [Recommended deployment](./architecture.md#recommended-deployment) is that
+the experience for users requires modifying their CI/CD process to publish
+their TechDocs. For some users, this may be unnecessary, and provides a barrier
+to entry for onboarding users to Backstage. However, a purely local TechDocs
+build restricts TechDocs creators to using the tooling provided in Backstage,
+as well as the plugins and features provided in the Backstage-included `mkdocs`
+installation.
+
+To accommodate both of these use-cases, users can implement a custom [Build Strategy](./concepts.md#techdocs-build-strategy)
+with logic to encode which TechDocs should be built locally, and which will be
+built externally.
+
+To achieve this hybrid build model:
+
+1. In your Backstage instance's `app-config.yaml`, set `techdocs.builder` to
+   `'local'`. This ensures that Backstage will build docs for users who want the
+   'out-of-the-box' experience.
+2. Configure external storage of TechDocs as normal for a production deployment.
+   This allows Backstage to publish documentation to your storage, as well as
+   allowing other users to publish documentation from their CI/CD pipelines.
+3. Create a custom build strategy, that implements the `DocsBuildStrategy` interface,
+   and which implements your custom logic for determining whether to build docs for
+   a given entity.
+   For example, to only build docs when an entity has the `company.com/techdocs-builder`
+   annotation set to `'local'`:
+
+   ```typescript
+   export class AnnotationBasedBuildStrategy {
+     private readonly config: Config;
+
+     constructor(config: Config) {
+       this.config = config;
+     }
+
+     async shouldBuild(_: Entity): Promise<boolean> {
+       return (
+         this.entity.metadata?.annotations?.['company.com/techdocs-builder'] ===
+         'local'
+       );
+     }
+   }
+   ```
+
+4. Pass an instance of this Build Strategy as the `docsBuildStrategy` parameter of the
+   TechDocs backend `createRouter` method.
+
+Users should now be able to choose to have their documentation built and published by
+the TechDocs backend by adding the `company.com/techdocs-builder` annotation to their
+entity. If the value of this annotation is `'local'`, the TechDocs backend will build
+and publish the documentation for them. If the value of the `company.com/techdocs-builder`
+annotation is anything other than `'local'`, the user is responsible for publishing
+documentation to the appropriate location in the TechDocs external storage.
+
+### Hybrid build strategy using the New Backend System
+
+To setup a hybrid build strategy using the New Backend System you'll follow the same steps as above but for Step 4 you will need to do the following:
+
+```ts title="packages/backend/src/index.ts"
+const backend = createBackend();
+
+import { createBackendModule } from '@backstage/backend-plugin-api';
+import {
+  DocsBuildStrategy,
+  techdocsBuildsExtensionPoint,
+} from '@backstage/plugin-techdocs-node';
+
+const techdocsCustomBuildStrategy = createBackendModule({
+  pluginId: 'techdocs',
+  moduleId: 'customBuildStrategy',
+  register(env) {
+    env.registerInit({
+      deps: {
+        techdocs: techdocsBuildsExtensionPoint,
+      },
+      async init({ techdocs }) {
+        const docsBuildStrategy: DocsBuildStrategy = {
+          shouldBuild: async params =>
+            params.entity.metadata?.annotations?.[
+              'demo.backstage.io/techdocs-builder'
+            ] === 'local',
+        };
+
+        techdocs.setBuildStrategy(docsBuildStrategy);
+      },
+    });
+  },
+});
+
+// Other plugins...
+
+/* highlight-add-start */
+backend.add(import('@backstage/plugin-techdocs-backend/alpha'));
+backend.add(techdocsCustomBuildStrategy());
+/* highlight-add-end */
+
+backend.start();
+```
+
+:::note Note
+
+You may need to add the `@backstage/plugin-techdocs-node` package to your backend `package.json` if it's not been imported already.
+
+:::
+
+## How to use other mkdocs plugins?
+
+The default plugin [mkdocs-techdocs-core](https://github.com/backstage/mkdocs-techdocs-core) provides a set of plugins that can be viewed as the minimum required plugins to enable TechDocs. Your organization might have needs beyond the core set though, here is the recommended way to enable other plugins.
+
+### Install the plugin
+
+#### With CI generation
+
+If you generate the HTML files in CI using `@techdocs/cli`, you need to install the desired mkdocs plugin in the runtime where the cli is being executed. This might be e.g. a docker image or a Jenkins node. Use the `--no-docker` flag with the cli to pick up the plugin you just installed.
+
+#### With local generation
+
+Create a new Docker image that extends [spotify/techdocs](https://github.com/backstage/techdocs-container), roughly:
+
+```Dockerfile
+FROM spotify/techdocs:<version>
+
+pip install <the_plugin_you_want>
+...
+```
+
+Then publish the image and use it in your config under the `techdocs.generator.dockerImage` [key](https://github.com/backstage/techdocs-container).
+
+### Specify the plugin in the mkdocs config
+
+To use the plugin, it has to be listed in the `mkdocs.yaml` file. You can either add the plugin to your applicable files, or specify defaults.
+
+To make a mkdocs plugin available for all your TechDocs components you can either list it in the `techdocs.generator.mkdocs.defaultPlugins` [config](https://github.com/backstage/backstage/blob/master/plugins/techdocs-backend/config.d.ts#L64C14-L64C14), or use the `--defaultPlugin` [cli option](https://backstage.io/docs/features/techdocs/cli#generate-techdocs-site-from-a-documentation-project) depending on your setup.
+
+## Reference another components TechDocs
+
+In systems where you might have multiple entities for example a System with a Website and an API, when served from a Monorepo you might want to keep the TechDocs in one location in the repository.
+
+In this case you can add the `backstage.io/techdocs-entity` annotation and point to the owners `entityRef` and use its TechDocs. This allows the Subcomponents to read the parents docs, filling the TechDocs link on the `AboutCard` element and the Techdocs tab
+
+```yaml
+apiVersion: backstage.io/v1alpha1
+kind: System
+metadata:
+  name: example
+  namespace: default
+  title: Example
+  description: This is the parent entity
+  annotations:
+    backstage.io/techdocs-ref: dir:.
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: example-platfrom
+  title: Example Application Platform
+  namespace: default
+  description: This is the child entity
+  annotations:
+    backstage.io/techdocs-entity: system:default/example
+```
+
+## How to resolve broken links from moved or renamed pages in your documentation site
+
+TechDocs supports using the [mkdocs-redirects](https://github.com/mkdocs/mkdocs-redirects/tree/master) plugin to create a redirect map for any TechDocs site. This allows broken links from renamed or moved pages in your site to be redirected to their specified replacement.
+TechDocs will notify the user that the page they are trying to access is no longer maintained. Then, they will be redirected. External site redirects are not supported. If an external redirect is provided, the user will instead be redirected to the index page of the documentation site.

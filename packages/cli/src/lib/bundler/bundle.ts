@@ -23,30 +23,77 @@ import {
   printFileSizesAfterBuild,
 } from 'react-dev-utils/FileSizeReporter';
 import formatWebpackMessages from 'react-dev-utils/formatWebpackMessages';
-import { createConfig, resolveBaseUrl } from './config';
+import { createConfig } from './config';
 import { BuildOptions } from './types';
-import { resolveBundlingPaths } from './paths';
+import { resolveBundlingPaths, resolveOptionalBundlingPaths } from './paths';
 import chalk from 'chalk';
+import { createDetectedModulesEntryPoint } from './packageDetection';
 
 // TODO(Rugvip): Limits from CRA, we might want to tweak these though.
 const WARN_AFTER_BUNDLE_GZIP_SIZE = 512 * 1024;
 const WARN_AFTER_CHUNK_GZIP_SIZE = 1024 * 1024;
 
+function applyContextToError(error: string, moduleName: string): string {
+  return `Failed to compile '${moduleName}':\n  ${error}`;
+}
+
 export async function buildBundle(options: BuildOptions) {
   const { statsJsonEnabled, schema: configSchema } = options;
 
   const paths = resolveBundlingPaths(options);
-  const config = await createConfig(paths, {
+  const publicPaths = await resolveOptionalBundlingPaths({
+    targetDir: options.targetDir,
+    entry: 'src/index-public-experimental',
+    dist: 'dist/public',
+  });
+
+  const commonConfigOptions = {
     ...options,
     checksEnabled: false,
     isDev: false,
-    baseUrl: resolveBaseUrl(options.frontendConfig),
-  });
-  const compiler = webpack(config);
+    getFrontendAppConfigs: () => options.frontendAppConfigs,
+  };
+
+  const configs = [];
+
+  if (options.moduleFederation?.mode === 'remote') {
+    // Package detection is disabled for remote bundles
+    configs.push(await createConfig(paths, commonConfigOptions));
+  } else {
+    const detectedModulesEntryPoint = await createDetectedModulesEntryPoint({
+      config: options.fullConfig,
+      targetPath: paths.targetPath,
+    });
+
+    configs.push(
+      await createConfig(paths, {
+        ...commonConfigOptions,
+        additionalEntryPoints: detectedModulesEntryPoint,
+        appMode: publicPaths ? 'protected' : 'public',
+      }),
+    );
+
+    if (publicPaths) {
+      console.log(
+        chalk.yellow(
+          `⚠️  WARNING: The app /public entry point is an experimental feature that may receive immediate breaking changes.`,
+        ),
+      );
+      configs.push(
+        await createConfig(publicPaths, {
+          ...commonConfigOptions,
+          appMode: 'public',
+        }),
+      );
+    }
+  }
 
   const isCi = yn(process.env.CI, { default: false });
 
   const previousFileSizes = await measureFileSizesBeforeBuild(paths.targetDist);
+  const previousAuthSizes = publicPaths
+    ? await measureFileSizesBeforeBuild(publicPaths.targetDist)
+    : undefined;
   await fs.emptyDir(paths.targetDist);
 
   if (paths.targetPublic) {
@@ -54,6 +101,14 @@ export async function buildBundle(options: BuildOptions) {
       dereference: true,
       filter: file => file !== paths.targetHtml,
     });
+
+    // If we've got a separate public index entry point, copy public content there too
+    if (publicPaths) {
+      await fs.copy(paths.targetPublic, publicPaths.targetDist, {
+        dereference: true,
+        filter: file => file !== paths.targetHtml,
+      });
+    }
   }
 
   if (configSchema) {
@@ -64,36 +119,43 @@ export async function buildBundle(options: BuildOptions) {
     );
   }
 
-  const { stats } = await build(compiler, isCi).catch(error => {
-    console.log(chalk.red('Failed to compile.\n'));
-    throw new Error(`Failed to compile.\n${error.message || error}`);
-  });
+  const { stats } = await build(configs, isCi);
 
   if (!stats) {
     throw new Error('No stats returned');
   }
+  const [mainStats, authStats] = stats.stats;
 
   if (statsJsonEnabled) {
     // No @types/bfj
     await require('bfj').write(
       resolvePath(paths.targetDist, 'bundle-stats.json'),
-      stats.toJson(),
+      mainStats.toJson(),
     );
   }
 
   printFileSizesAfterBuild(
-    stats,
+    mainStats,
     previousFileSizes,
     paths.targetDist,
     WARN_AFTER_BUNDLE_GZIP_SIZE,
     WARN_AFTER_CHUNK_GZIP_SIZE,
   );
+  if (publicPaths && previousAuthSizes) {
+    printFileSizesAfterBuild(
+      authStats,
+      previousAuthSizes,
+      publicPaths.targetDist,
+      WARN_AFTER_BUNDLE_GZIP_SIZE,
+      WARN_AFTER_CHUNK_GZIP_SIZE,
+    );
+  }
 }
 
-async function build(compiler: webpack.Compiler, isCi: boolean) {
-  const stats = await new Promise<webpack.Stats | undefined>(
+async function build(configs: webpack.Configuration[], isCi: boolean) {
+  const stats = await new Promise<webpack.MultiStats | undefined>(
     (resolve, reject) => {
-      compiler.run((err, buildStats) => {
+      webpack(configs, (err, buildStats) => {
         if (err) {
           if (err.message) {
             const { errors } = formatWebpackMessages({
@@ -115,7 +177,7 @@ async function build(compiler: webpack.Compiler, isCi: boolean) {
   );
 
   if (!stats) {
-    throw new Error('No stats provided');
+    throw new Error('Failed to compile: No stats provided');
   }
 
   const serializedStats = stats.toJson({
@@ -123,29 +185,33 @@ async function build(compiler: webpack.Compiler, isCi: boolean) {
     warnings: true,
     errors: true,
   });
-  // NOTE(freben): The code below that extracts the message part of the errors,
-  // is due to react-dev-utils not yet being compatible with webpack 5. This
-  // may be possible to remove (just passing the serialized stats object
-  // directly into the format function) after a new release of react-dev-utils
-  // has been made available.
-  // See https://github.com/facebook/create-react-app/issues/9880
   const { errors, warnings } = formatWebpackMessages({
-    errors: serializedStats.errors?.map(e => (e.message ? e.message : e)),
-    warnings: serializedStats.warnings?.map(e => (e.message ? e.message : e)),
+    errors: serializedStats.errors,
+    warnings: serializedStats.warnings,
   });
 
   if (errors.length) {
     // Only keep the first error. Others are often indicative
     // of the same problem, but confuse the reader with noise.
-    throw new Error(errors[0]);
+    const errorWithContext = applyContextToError(
+      errors[0],
+      serializedStats.errors?.[0]?.moduleName ?? '',
+    );
+    throw new Error(errorWithContext);
   }
   if (isCi && warnings.length) {
+    const warningsWithContext = warnings.map((warning, i) => {
+      return applyContextToError(
+        warning,
+        serializedStats.warnings?.[i]?.moduleName ?? '',
+      );
+    });
     console.log(
       chalk.yellow(
         '\nTreating warnings as errors because process.env.CI = true.\n',
       ),
     );
-    throw new Error(warnings.join('\n\n'));
+    throw new Error(warningsWithContext.join('\n\n'));
   }
 
   return { stats };

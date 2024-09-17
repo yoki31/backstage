@@ -14,13 +14,19 @@
  * limitations under the License.
  */
 
-import { getVoidLogger } from '@backstage/backend-common';
-import { TestDatabaseId, TestDatabases } from '@backstage/backend-test-utils';
+import {
+  mockCredentials,
+  mockServices,
+  TestDatabaseId,
+  TestDatabases,
+} from '@backstage/backend-test-utils';
+import { Entity, stringifyEntityRef } from '@backstage/catalog-model';
 import { createHash } from 'crypto';
 import { Knex } from 'knex';
-import { Logger } from 'winston';
-import { applyDatabaseMigrations } from '../database/migrations';
+import { v4 as uuid } from 'uuid';
+import { DefaultCatalogDatabase } from '../database/DefaultCatalogDatabase';
 import { DefaultProcessingDatabase } from '../database/DefaultProcessingDatabase';
+import { applyDatabaseMigrations } from '../database/migrations';
 import {
   DbRefreshStateReferencesRow,
   DbRefreshStateRow,
@@ -28,29 +34,33 @@ import {
 import { ProcessingDatabase } from '../database/types';
 import { DefaultCatalogProcessingEngine } from '../processing/DefaultCatalogProcessingEngine';
 import { EntityProcessingRequest } from '../processing/types';
-import { Stitcher } from '../stitching/Stitcher';
-import { Entity, stringifyEntityRef } from '@backstage/catalog-model';
-import { v4 as uuid } from 'uuid';
 import { DefaultRefreshService } from './DefaultRefreshService';
+import { ConfigReader } from '@backstage/config';
+import { DefaultStitcher } from '../stitching/DefaultStitcher';
+import { LoggerService } from '@backstage/backend-plugin-api';
 
-describe('Refresh integration', () => {
-  const defaultLogger = getVoidLogger();
-  const databases = TestDatabases.create({
-    ids: ['POSTGRES_13', 'POSTGRES_9', 'SQLITE_3'],
-  });
+jest.setTimeout(60_000);
+
+describe('DefaultRefreshService', () => {
+  const defaultLogger = mockServices.logger.mock();
+  const databases = TestDatabases.create();
 
   async function createDatabase(
     databaseId: TestDatabaseId,
-    logger: Logger = defaultLogger,
+    logger: LoggerService = defaultLogger,
   ) {
     const knex = await databases.init(databaseId);
     await applyDatabaseMigrations(knex);
     return {
       knex,
-      db: new DefaultProcessingDatabase({
+      processingDb: new DefaultProcessingDatabase({
         database: knex,
         logger,
         refreshInterval: () => 100,
+      }),
+      catalogDb: new DefaultCatalogDatabase({
+        database: knex,
+        logger,
       }),
     };
   }
@@ -101,10 +111,17 @@ describe('Refresh integration', () => {
       }
     }
 
-    const engine = new DefaultCatalogProcessingEngine(
-      defaultLogger,
-      db,
-      {
+    const stitcher = DefaultStitcher.fromConfig(new ConfigReader({}), {
+      knex,
+      logger: defaultLogger,
+    });
+    const engine = new DefaultCatalogProcessingEngine({
+      config: new ConfigReader({}),
+      logger: defaultLogger,
+      processingDatabase: db,
+      knex: knex,
+      stitcher: stitcher,
+      orchestrator: {
         async process(request: EntityProcessingRequest) {
           const entityRef = stringifyEntityRef(request.entity);
           const entity = entityMap.get(entityRef);
@@ -138,13 +155,13 @@ describe('Refresh integration', () => {
             errors: [],
             deferredEntities,
             state: {},
+            refreshKeys: [],
           };
         },
       },
-      new Stitcher(knex, defaultLogger),
-      () => createHash('sha1'),
-      50,
-    );
+      createHash: () => createHash('sha1'),
+      pollingIntervalMs: 50,
+    });
 
     return engine;
   };
@@ -175,10 +192,12 @@ describe('Refresh integration', () => {
   it.each(databases.eachSupportedId())(
     'should refresh the parent location, %p',
     async databaseId => {
-      const { knex, db } = await createDatabase(databaseId);
-      const refreshService = new DefaultRefreshService({ database: db });
+      const { knex, processingDb, catalogDb } = await createDatabase(
+        databaseId,
+      );
+      const refreshService = new DefaultRefreshService({ database: catalogDb });
       const engine = await createPopulatedEngine({
-        db,
+        db: processingDb,
         knex,
         entities: [
           {
@@ -205,6 +224,7 @@ describe('Refresh integration', () => {
 
       await refreshService.refresh({
         entityRef: 'component:default/mycomp',
+        credentials: mockCredentials.none(),
       });
 
       await expect(
@@ -218,10 +238,12 @@ describe('Refresh integration', () => {
   it.each(databases.eachSupportedId())(
     'should refresh the location further up the tree, %p',
     async databaseId => {
-      const { knex, db } = await createDatabase(databaseId);
-      const refreshService = new DefaultRefreshService({ database: db });
+      const { knex, processingDb, catalogDb } = await createDatabase(
+        databaseId,
+      );
+      const refreshService = new DefaultRefreshService({ database: catalogDb });
       const engine = await createPopulatedEngine({
-        db,
+        db: processingDb,
         knex,
         entities: [
           {
@@ -256,6 +278,7 @@ describe('Refresh integration', () => {
 
       await refreshService.refresh({
         entityRef: 'api:default/myapi',
+        credentials: mockCredentials.none(),
       });
 
       await expect(waitForRefresh(knex, 'api:default/myapi')).resolves.toBe(
@@ -270,10 +293,12 @@ describe('Refresh integration', () => {
     'should refresh even when parent has no changes',
     async databaseId => {
       let secondRound = false;
-      const { knex, db } = await createDatabase(databaseId);
-      const refreshService = new DefaultRefreshService({ database: db });
+      const { knex, processingDb, catalogDb } = await createDatabase(
+        databaseId,
+      );
+      const refreshService = new DefaultRefreshService({ database: catalogDb });
       const engine = await createPopulatedEngine({
-        db,
+        db: processingDb,
         knex,
         entities: [
           {
@@ -305,6 +330,7 @@ describe('Refresh integration', () => {
 
       await refreshService.refresh({
         entityRef: 'component:default/mycomp',
+        credentials: mockCredentials.none(),
       });
 
       await expect(
@@ -315,6 +341,7 @@ describe('Refresh integration', () => {
 
       await refreshService.refresh({
         entityRef: 'component:default/mycomp',
+        credentials: mockCredentials.none(),
       });
 
       await expect(

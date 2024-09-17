@@ -15,19 +15,26 @@
  */
 
 import React from 'react';
-import {
-  ListItem,
-  ListItemText,
-  ListItemIcon,
-  Switch,
-  Tooltip,
-} from '@material-ui/core';
+import ListItem from '@material-ui/core/ListItem';
+import ListItemText from '@material-ui/core/ListItemText';
+import ListItemIcon from '@material-ui/core/ListItemIcon';
+import Switch from '@material-ui/core/Switch';
+import Tooltip from '@material-ui/core/Tooltip';
 import { FeatureFlag } from '@backstage/core-plugin-api';
 
 type Props = {
   flag: FeatureFlag;
   enabled: boolean;
   toggleHandler: Function;
+};
+
+const getSecondaryText = (flag: FeatureFlag) => {
+  if (flag.description) {
+    return flag.description;
+  }
+  return flag.pluginId
+    ? `Registered in ${flag.pluginId} plugin`
+    : 'Registered in the application';
 };
 
 export const FlagItem = ({ flag, enabled, toggleHandler }: Props) => (
@@ -37,9 +44,6 @@ export const FlagItem = ({ flag, enabled, toggleHandler }: Props) => (
         <Switch color="primary" checked={enabled} name={flag.name} />
       </Tooltip>
     </ListItemIcon>
-    <ListItemText
-      primary={flag.name}
-      secondary={`Registered in ${flag.pluginId} plugin`}
-    />
+    <ListItemText primary={flag.name} secondary={getSecondaryText(flag)} />
   </ListItem>
 );

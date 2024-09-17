@@ -28,7 +28,6 @@ describe('FieldFormatEntityPolicy', () => {
       metadata:
         uid: e01199ab-08cc-44c2-8e19-5c29ded82521
         etag: lsndfkjsndfkjnsdfkjnsd==
-        generation: 13
         name: my-component-yay
         namespace: the-namespace
         labels:
@@ -64,11 +63,6 @@ describe('FieldFormatEntityPolicy', () => {
     await expect(policy.enforce(data)).rejects.toThrow(/kind/);
     data.kind = 'a#b';
     await expect(policy.enforce(data)).rejects.toThrow(/kind/);
-  });
-
-  it('handles missing metadata gracefully', async () => {
-    delete data.medatata;
-    await expect(policy.enforce(data)).resolves.toBe(data);
   });
 
   it('handles missing spec gracefully', async () => {

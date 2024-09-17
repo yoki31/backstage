@@ -14,45 +14,28 @@
  * limitations under the License.
  */
 
-import {
-  createApiRef,
-  DiscoveryApi,
-  IdentityApi,
-} from '@backstage/core-plugin-api';
+import { DiscoveryApi, FetchApi } from '@backstage/core-plugin-api';
 import { ResponseError } from '@backstage/errors';
-import { SearchQuery, SearchResultSet } from '@backstage/search-common';
+import { SearchApi } from '@backstage/plugin-search-react';
+import { SearchQuery, SearchResultSet } from '@backstage/plugin-search-common';
+
 import qs from 'qs';
-
-export const searchApiRef = createApiRef<SearchApi>({
-  id: 'plugin.search.queryservice',
-  description: 'Used to make requests against the search API',
-});
-
-export interface SearchApi {
-  query(query: SearchQuery): Promise<SearchResultSet>;
-}
 
 export class SearchClient implements SearchApi {
   private readonly discoveryApi: DiscoveryApi;
-  private readonly identityApi: IdentityApi;
+  private readonly fetchApi: FetchApi;
 
-  constructor(options: {
-    discoveryApi: DiscoveryApi;
-    identityApi: IdentityApi;
-  }) {
+  constructor(options: { discoveryApi: DiscoveryApi; fetchApi: FetchApi }) {
     this.discoveryApi = options.discoveryApi;
-    this.identityApi = options.identityApi;
+    this.fetchApi = options.fetchApi;
   }
 
   async query(query: SearchQuery): Promise<SearchResultSet> {
-    const token = await this.identityApi.getIdToken();
     const queryString = qs.stringify(query);
     const url = `${await this.discoveryApi.getBaseUrl(
-      'search/query',
-    )}?${queryString}`;
-    const response = await fetch(url, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-    });
+      'search',
+    )}/query?${queryString}`;
+    const response = await this.fetchApi.fetch(url);
 
     if (!response.ok) {
       throw await ResponseError.fromResponse(response);

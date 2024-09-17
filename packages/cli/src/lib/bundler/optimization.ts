@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-import { WebpackOptionsNormalized, WebpackPluginInstance } from 'webpack';
-import TerserPlugin from 'terser-webpack-plugin';
+import { WebpackOptionsNormalized } from 'webpack';
 import { BundlingOptions } from './types';
-import { isParallelDefault } from '../parallel';
+
+const { EsbuildPlugin } = require('esbuild-loader');
 
 export const optimization = (
   options: BundlingOptions,
@@ -26,16 +26,19 @@ export const optimization = (
 
   return {
     minimize: !isDev,
-    // Only configure when parallel is explicitly overridden from the default
-    ...(!isParallelDefault(options.parallel)
-      ? {
-          minimizer: [
-            new TerserPlugin({
-              parallel: options.parallel,
-            }) as unknown as WebpackPluginInstance,
-          ],
-        }
-      : {}),
+    minimizer: [
+      new EsbuildPlugin({
+        target: 'ES2022',
+        format: 'iife',
+        exclude: 'remoteEntry.js',
+      }),
+      // Avoid iife wrapping of module federation remote entry as it breaks the variable assignment
+      new EsbuildPlugin({
+        target: 'ES2022',
+        format: undefined,
+        include: 'remoteEntry.js',
+      }),
+    ],
     runtimeChunk: 'single',
     splitChunks: {
       automaticNameDelimiter: '-',

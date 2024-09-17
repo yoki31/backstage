@@ -14,12 +14,45 @@
  * limitations under the License.
  */
 import React from 'react';
-import { FieldProps } from '@rjsf/core';
-import { TextValuePicker } from '../TextValuePicker';
+import { EntityNamePickerProps } from './schema';
+import TextField from '@material-ui/core/TextField';
+import { useTranslationRef } from '@backstage/core-plugin-api/alpha';
+import { scaffolderTranslationRef } from '../../../translation';
 
-export const EntityNamePicker = ({
-  schema: { title = 'Name', description = 'Unique name of the component' },
-  ...props
-}: FieldProps<string>) => (
-  <TextValuePicker schema={{ title, description }} {...props} />
-);
+export { EntityNamePickerSchema } from './schema';
+
+/**
+ * EntityName Picker
+ */
+export const EntityNamePicker = (props: EntityNamePickerProps) => {
+  const { t } = useTranslationRef(scaffolderTranslationRef);
+  const {
+    onChange,
+    required,
+    schema: {
+      title = t('fields.entityNamePicker.title'),
+      description = t('fields.entityNamePicker.description'),
+    },
+    rawErrors,
+    formData,
+    uiSchema: { 'ui:autofocus': autoFocus },
+    idSchema,
+    placeholder,
+  } = props;
+
+  return (
+    <TextField
+      id={idSchema?.$id}
+      label={title}
+      placeholder={placeholder}
+      helperText={description}
+      required={required}
+      value={formData ?? ''}
+      onChange={({ target: { value } }) => onChange(value)}
+      margin="normal"
+      error={rawErrors?.length > 0 && !formData}
+      inputProps={{ autoFocus }}
+      FormHelperTextProps={{ margin: 'dense', style: { marginLeft: 0 } }}
+    />
+  );
+};

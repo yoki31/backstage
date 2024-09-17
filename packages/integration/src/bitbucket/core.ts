@@ -24,6 +24,7 @@ import { BitbucketIntegrationConfig } from './config';
  * @param url - A URL pointing to a path
  * @param config - The relevant provider config
  * @public
+ * @deprecated no longer in use, bitbucket integration replaced by integrations bitbucketCloud and bitbucketServer.
  */
 export async function getBitbucketDefaultBranch(
   url: string,
@@ -75,6 +76,7 @@ export async function getBitbucketDefaultBranch(
  * @param url - A URL pointing to a path
  * @param config - The relevant provider config
  * @public
+ * @deprecated no longer in use, bitbucket integration replaced by integrations bitbucketCloud and bitbucketServer.
  */
 export async function getBitbucketDownloadUrl(
   url: string,
@@ -98,7 +100,9 @@ export async function getBitbucketDownloadUrl(
   // path will limit the downloaded content
   // /docs will only download the docs folder and everything below it
   // /docs/index.md will download the docs folder and everything below it
-  const path = filepath ? `&path=${encodeURIComponent(filepath)}` : '';
+  const path = filepath
+    ? `&path=${encodeURIComponent(decodeURIComponent(filepath))}`
+    : '';
   const archiveUrl = isHosted
     ? `${protocol}://${resource}/${project}/${repoName}/get/${branch}.tar.gz`
     : `${config.apiBaseUrl}/projects/${project}/repos/${repoName}/archive?format=tgz&at=${branch}&prefix=${project}-${repoName}${path}`;
@@ -119,6 +123,7 @@ export async function getBitbucketDownloadUrl(
  * @param url - A URL pointing to a file
  * @param config - The relevant provider config
  * @public
+ * @deprecated no longer in use, bitbucket integration replaced by integrations bitbucketCloud and bitbucketServer.
  */
 export function getBitbucketFileFetchUrl(
   url: string,
@@ -155,6 +160,7 @@ export function getBitbucketFileFetchUrl(
  *
  * @param config - The relevant provider config
  * @public
+ * @deprecated no longer in use, bitbucket integration replaced by integrations bitbucketCloud and bitbucketServer.
  */
 export function getBitbucketRequestOptions(
   config: BitbucketIntegrationConfig,

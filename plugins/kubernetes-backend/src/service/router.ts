@@ -14,23 +14,35 @@
  * limitations under the License.
  */
 
-import { Config } from '@backstage/config';
 import { Logger } from 'winston';
 import { KubernetesClustersSupplier } from '../types/types';
 import express from 'express';
 import { KubernetesBuilder } from './KubernetesBuilder';
+import { CatalogApi } from '@backstage/catalog-client';
+import { PermissionEvaluator } from '@backstage/plugin-permission-common';
+import {
+  DiscoveryService,
+  RootConfigService,
+} from '@backstage/backend-plugin-api';
 
+/**
+ * @deprecated Please migrate to the new backend system as this will be removed in the future.
+ * @public
+ */
 export interface RouterOptions {
   logger: Logger;
-  config: Config;
+  config: RootConfigService;
+  catalogApi: CatalogApi;
   clusterSupplier?: KubernetesClustersSupplier;
+  discovery: DiscoveryService;
+  permissions: PermissionEvaluator;
 }
 
 /**
  * creates and configure a new router for handling the kubernetes backend APIs
  * @param options - specifies the options required by this plugin
  * @returns a new router
- * @deprecated Please use the new KubernetesBuilder instead like this
+ * @deprecated Please migrate to the new backend system as this will be removed in the future.
  * ```
  * import { KubernetesBuilder } from '@backstage/plugin-kubernetes-backend';
  * const { router } = await KubernetesBuilder.createBuilder({
@@ -38,6 +50,8 @@ export interface RouterOptions {
  *   config,
  * }).build();
  * ```
+ *
+ * @public
  */
 export async function createRouter(
   options: RouterOptions,

@@ -21,3 +21,10 @@
  */
 
 export * from './types';
+export * from './catalog-entity-constants';
+export {
+  kubernetesProxyPermission,
+  kubernetesPermissions,
+} from './permissions';
+export * from './error-detection';
+export * from './util';

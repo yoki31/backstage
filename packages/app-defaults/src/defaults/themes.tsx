@@ -15,11 +15,12 @@
  */
 
 import React from 'react';
-import { darkTheme, lightTheme } from '@backstage/theme';
+import {
+  UnifiedThemeProvider,
+  themes as builtinThemes,
+} from '@backstage/theme';
 import DarkIcon from '@material-ui/icons/Brightness2';
 import LightIcon from '@material-ui/icons/WbSunny';
-import { ThemeProvider } from '@material-ui/core/styles';
-import CssBaseline from '@material-ui/core/CssBaseline';
 import { AppTheme } from '@backstage/core-plugin-api';
 
 export const themes: AppTheme[] = [
@@ -28,11 +29,8 @@ export const themes: AppTheme[] = [
     title: 'Light Theme',
     variant: 'light',
     icon: <LightIcon />,
-    theme: lightTheme,
     Provider: ({ children }) => (
-      <ThemeProvider theme={lightTheme}>
-        <CssBaseline>{children}</CssBaseline>
-      </ThemeProvider>
+      <UnifiedThemeProvider theme={builtinThemes.light} children={children} />
     ),
   },
   {
@@ -40,11 +38,8 @@ export const themes: AppTheme[] = [
     title: 'Dark Theme',
     variant: 'dark',
     icon: <DarkIcon />,
-    theme: darkTheme,
     Provider: ({ children }) => (
-      <ThemeProvider theme={darkTheme}>
-        <CssBaseline>{children}</CssBaseline>
-      </ThemeProvider>
+      <UnifiedThemeProvider theme={builtinThemes.dark} children={children} />
     ),
   },
 ];

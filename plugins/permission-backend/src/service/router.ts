@@ -17,149 +17,241 @@
 import { z } from 'zod';
 import express, { Request, Response } from 'express';
 import Router from 'express-promise-router';
-import { Logger } from 'winston';
 import {
+  createLegacyAuthAdapters,
   errorHandler,
-  PluginEndpointDiscovery,
 } from '@backstage/backend-common';
-import {
-  BackstageIdentityResponse,
-  IdentityClient,
-} from '@backstage/plugin-auth-backend';
+import { InputError } from '@backstage/errors';
+import { IdentityApi } from '@backstage/plugin-auth-node';
 import {
   AuthorizeResult,
-  AuthorizeResponse,
-  AuthorizeRequest,
-  Identified,
+  EvaluatePermissionRequest,
+  EvaluatePermissionRequestBatch,
+  EvaluatePermissionResponse,
+  EvaluatePermissionResponseBatch,
+  IdentifiedPermissionMessage,
+  isResourcePermission,
+  PermissionAttributes,
 } from '@backstage/plugin-permission-common';
-import { PermissionPolicy } from '@backstage/plugin-permission-node';
+import {
+  ApplyConditionsRequestEntry,
+  ApplyConditionsResponseEntry,
+  PermissionPolicy,
+  PolicyQueryUser,
+} from '@backstage/plugin-permission-node';
 import { PermissionIntegrationClient } from './PermissionIntegrationClient';
+import { memoize } from 'lodash';
+import DataLoader from 'dataloader';
+import {
+  AuthService,
+  BackstageCredentials,
+  BackstageNonePrincipal,
+  BackstageUserPrincipal,
+  DiscoveryService,
+  HttpAuthService,
+  LoggerService,
+  RootConfigService,
+  UserInfoService,
+} from '@backstage/backend-plugin-api';
 
-const requestSchema: z.ZodSchema<Identified<AuthorizeRequest>[]> = z.array(
+const attributesSchema: z.ZodSchema<PermissionAttributes> = z.object({
+  action: z
+    .union([
+      z.literal('create'),
+      z.literal('read'),
+      z.literal('update'),
+      z.literal('delete'),
+    ])
+    .optional(),
+});
+
+const permissionSchema = z.union([
   z.object({
-    id: z.string(),
-    resourceRef: z.string().optional(),
-    permission: z.object({
-      name: z.string(),
-      resourceType: z.string().optional(),
-      attributes: z.object({
-        action: z
-          .union([
-            z.literal('create'),
-            z.literal('read'),
-            z.literal('update'),
-            z.literal('delete'),
-          ])
-          .optional(),
-      }),
-    }),
+    type: z.literal('basic'),
+    name: z.string(),
+    attributes: attributesSchema,
   }),
-);
+  z.object({
+    type: z.literal('resource'),
+    name: z.string(),
+    attributes: attributesSchema,
+    resourceType: z.string(),
+  }),
+]);
+
+const evaluatePermissionRequestSchema: z.ZodSchema<
+  IdentifiedPermissionMessage<EvaluatePermissionRequest>
+> = z.object({
+  id: z.string(),
+  resourceRef: z.string().optional(),
+  permission: permissionSchema,
+});
+
+const evaluatePermissionRequestBatchSchema: z.ZodSchema<EvaluatePermissionRequestBatch> =
+  z.object({
+    items: z.array(evaluatePermissionRequestSchema),
+  });
 
 /**
  * Options required when constructing a new {@link express#Router} using
  * {@link createRouter}.
  *
  * @public
+ * @deprecated Please migrate to the new backend system as this will be removed in the future.
  */
 export interface RouterOptions {
-  logger: Logger;
-  discovery: PluginEndpointDiscovery;
+  logger: LoggerService;
+  discovery: DiscoveryService;
   policy: PermissionPolicy;
-  identity: IdentityClient;
+  identity?: IdentityApi;
+  config: RootConfigService;
+  auth?: AuthService;
+  httpAuth?: HttpAuthService;
+  userInfo?: UserInfoService;
 }
 
 const handleRequest = async (
-  { id, resourceRef, ...request }: Identified<AuthorizeRequest>,
-  user: BackstageIdentityResponse | undefined,
+  requests: IdentifiedPermissionMessage<EvaluatePermissionRequest>[],
   policy: PermissionPolicy,
   permissionIntegrationClient: PermissionIntegrationClient,
-  authHeader?: string,
-): Promise<Identified<AuthorizeResponse>> => {
-  const response = await policy.handle(request, user);
+  credentials: BackstageCredentials<
+    BackstageNonePrincipal | BackstageUserPrincipal
+  >,
+  auth: AuthService,
+  userInfo: UserInfoService,
+): Promise<IdentifiedPermissionMessage<EvaluatePermissionResponse>[]> => {
+  const applyConditionsLoaderFor = memoize((pluginId: string) => {
+    return new DataLoader<
+      ApplyConditionsRequestEntry,
+      ApplyConditionsResponseEntry
+    >(batch =>
+      permissionIntegrationClient.applyConditions(pluginId, credentials, batch),
+    );
+  });
 
-  if (response.result === AuthorizeResult.CONDITIONAL) {
-    // Sanity check that any resource provided matches the one expected by the permission
-    if (request.permission.resourceType !== response.resourceType) {
-      throw new Error(
-        `Invalid resource conditions returned from permission policy for permission ${request.permission.name}`,
-      );
-    }
-
-    if (resourceRef) {
-      return {
-        id,
-        ...(await permissionIntegrationClient.applyConditions(
-          {
-            resourceRef,
-            pluginId: response.pluginId,
-            resourceType: response.resourceType,
-            conditions: response.conditions,
-          },
-          authHeader,
-        )),
-      };
-    }
-
-    return {
-      id,
-      result: AuthorizeResult.CONDITIONAL,
-      conditions: response.conditions,
+  let user: PolicyQueryUser | undefined;
+  if (auth.isPrincipal(credentials, 'user')) {
+    const info = await userInfo.getUserInfo(credentials);
+    const { token } = await auth.getPluginRequestToken({
+      onBehalfOf: credentials,
+      targetPluginId: 'catalog', // TODO: unknown at this point
+    });
+    user = {
+      identity: {
+        type: 'user',
+        userEntityRef: credentials.principal.userEntityRef,
+        ownershipEntityRefs: info.ownershipEntityRefs,
+      },
+      token,
+      credentials,
+      info,
     };
   }
 
-  return { id, ...response };
+  return Promise.all(
+    requests.map(({ id, resourceRef, ...request }) =>
+      policy.handle(request, user).then(decision => {
+        if (decision.result !== AuthorizeResult.CONDITIONAL) {
+          return {
+            id,
+            ...decision,
+          };
+        }
+
+        if (!isResourcePermission(request.permission)) {
+          throw new Error(
+            `Conditional decision returned from permission policy for non-resource permission ${request.permission.name}`,
+          );
+        }
+
+        if (decision.resourceType !== request.permission.resourceType) {
+          throw new Error(
+            `Invalid resource conditions returned from permission policy for permission ${request.permission.name}`,
+          );
+        }
+
+        if (!resourceRef) {
+          return {
+            id,
+            ...decision,
+          };
+        }
+
+        return applyConditionsLoaderFor(decision.pluginId).load({
+          id,
+          resourceRef,
+          ...decision,
+        });
+      }),
+    ),
+  );
 };
 
 /**
  * Creates a new {@link express#Router} which provides the backend API
  * for the permission system.
  *
+ * @deprecated Please migrate to the new backend system as this will be removed in the future.
  * @public
  */
 export async function createRouter(
   options: RouterOptions,
 ): Promise<express.Router> {
-  const { policy, discovery, identity } = options;
+  const { policy, discovery, config, logger } = options;
+  const { auth, httpAuth, userInfo } = createLegacyAuthAdapters(options);
+
+  if (!config.getOptionalBoolean('permission.enabled')) {
+    logger.warn(
+      'Permission backend started with permissions disabled. Enable permissions by setting permission.enabled=true.',
+    );
+  }
 
   const permissionIntegrationClient = new PermissionIntegrationClient({
     discovery,
+    auth,
   });
 
   const router = Router();
   router.use(express.json());
 
   router.get('/health', (_, response) => {
-    response.send({ status: 'ok' });
+    response.json({ status: 'ok' });
   });
 
   router.post(
     '/authorize',
     async (
-      req: Request<Identified<AuthorizeRequest>[]>,
-      res: Response<Identified<AuthorizeResponse>[]>,
+      req: Request<EvaluatePermissionRequestBatch>,
+      res: Response<EvaluatePermissionResponseBatch>,
     ) => {
-      const token = IdentityClient.getBearerToken(req.header('authorization'));
-      const user = token ? await identity.authenticate(token) : undefined;
+      const credentials = await httpAuth.credentials(req, {
+        allow: ['user', 'none'],
+      });
 
-      const body = requestSchema.parse(req.body);
-
-      res.json(
-        await Promise.all(
-          body.map(request =>
-            handleRequest(
-              request,
-              user,
-              policy,
-              permissionIntegrationClient,
-              req.header('authorization'),
-            ),
-          ),
-        ),
+      const parseResult = evaluatePermissionRequestBatchSchema.safeParse(
+        req.body,
       );
+
+      if (!parseResult.success) {
+        throw new InputError(parseResult.error.toString());
+      }
+
+      const body = parseResult.data;
+
+      res.json({
+        items: await handleRequest(
+          body.items,
+          policy,
+          permissionIntegrationClient,
+          credentials,
+          auth,
+          userInfo,
+        ),
+      });
     },
   );
 
   router.use(errorHandler());
+
   return router;
 }

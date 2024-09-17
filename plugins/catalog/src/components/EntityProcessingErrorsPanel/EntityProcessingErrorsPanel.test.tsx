@@ -14,18 +14,19 @@
  * limitations under the License.
  */
 
+import { AlphaEntity } from '@backstage/catalog-model/alpha';
+import { stringifyEntityRef } from '@backstage/catalog-model';
+import { ApiProvider } from '@backstage/core-app-api';
 import {
   CatalogApi,
   catalogApiRef,
   EntityProvider,
   entityRouteRef,
 } from '@backstage/plugin-catalog-react';
-
 import { renderInTestApp, TestApiRegistry } from '@backstage/test-utils';
+import { screen } from '@testing-library/react';
 import React from 'react';
 import { EntityProcessingErrorsPanel } from './EntityProcessingErrorsPanel';
-import { Entity, getEntityName } from '@backstage/catalog-model';
-import { ApiProvider } from '@backstage/core-app-api';
 
 describe('<EntityProcessErrors />', () => {
   const getEntityAncestors: jest.MockedFunction<
@@ -34,7 +35,7 @@ describe('<EntityProcessErrors />', () => {
   const apis = TestApiRegistry.from([catalogApiRef, { getEntityAncestors }]);
 
   it('renders EntityProcessErrors if the entity has errors', async () => {
-    const entity: Entity = {
+    const entity: AlphaEntity = {
       apiVersion: 'v1',
       kind: 'Component',
       metadata: {
@@ -98,10 +99,10 @@ describe('<EntityProcessErrors />', () => {
     };
 
     getEntityAncestors.mockResolvedValue({
-      root: getEntityName(entity),
-      items: [{ entity, parents: [] }],
+      rootEntityRef: stringifyEntityRef(entity),
+      items: [{ entity, parentEntityRefs: [] }],
     });
-    const { getByText, queryByText } = await renderInTestApp(
+    await renderInTestApp(
       <ApiProvider apis={apis}>
         <EntityProvider entity={entity}>
           <EntityProcessingErrorsPanel />
@@ -110,19 +111,19 @@ describe('<EntityProcessErrors />', () => {
     );
 
     expect(
-      getByText(
+      screen.getByText(
         'Error: Policy check failed; caused by Error: Malformed envelope, /metadata/labels should be object',
       ),
     ).toBeInTheDocument();
-    expect(getByText('Error: Foo')).toBeInTheDocument();
-    expect(queryByText('Error: This should not be rendered')).toBeNull();
+    expect(screen.getByText('Error: Foo')).toBeInTheDocument();
+    expect(screen.queryByText('Error: This should not be rendered')).toBeNull();
     expect(
-      queryByText('The error below originates from'),
+      screen.queryByText('The error below originates from'),
     ).not.toBeInTheDocument();
   });
 
   it('renders EntityProcessErrors if the parent entity has errors', async () => {
-    const entity: Entity = {
+    const entity: AlphaEntity = {
       apiVersion: 'v1',
       kind: 'Component',
       metadata: {
@@ -136,7 +137,7 @@ describe('<EntityProcessErrors />', () => {
       },
     };
 
-    const parent: Entity = {
+    const parent: AlphaEntity = {
       apiVersion: 'v1',
       kind: 'Component',
       metadata: {
@@ -199,13 +200,13 @@ describe('<EntityProcessErrors />', () => {
       },
     };
     getEntityAncestors.mockResolvedValue({
-      root: getEntityName(entity),
+      rootEntityRef: stringifyEntityRef(entity),
       items: [
-        { entity, parents: [getEntityName(parent)] },
-        { entity: parent, parents: [] },
+        { entity, parentEntityRefs: [stringifyEntityRef(parent)] },
+        { entity: parent, parentEntityRefs: [] },
       ],
     });
-    const { getByText, queryByText } = await renderInTestApp(
+    await renderInTestApp(
       <ApiProvider apis={apis}>
         <EntityProvider entity={entity}>
           <EntityProcessingErrorsPanel />
@@ -219,12 +220,14 @@ describe('<EntityProcessErrors />', () => {
     );
 
     expect(
-      getByText(
+      screen.getByText(
         'Error: Policy check failed; caused by Error: Malformed envelope, /metadata/labels should be object',
       ),
     ).toBeInTheDocument();
-    expect(getByText('Error: Foo')).toBeInTheDocument();
-    expect(queryByText('Error: This should not be rendered')).toBeNull();
-    expect(queryByText('The error below originates from')).toBeInTheDocument();
+    expect(screen.getByText('Error: Foo')).toBeInTheDocument();
+    expect(screen.queryByText('Error: This should not be rendered')).toBeNull();
+    expect(
+      screen.getByText('The error below originates from'),
+    ).toBeInTheDocument();
   });
 });

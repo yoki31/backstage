@@ -1,0 +1,56 @@
+name: API Breaking Changes (Trigger)
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, closed]
+    paths:
+      - '**/openapi.yaml'
+
+jobs:
+  get-backstage-changes:
+    env:
+      NODE_OPTIONS: --max-old-space-size=4096
+    name: Build PR image
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name != 'pull_request' || github.event.action != 'closed' }}
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@91182cccc01eb5e619899d80e4e971d6181294a7 # v2.10.1
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+        with:
+          # Fetch the commit that's merged into the base rather than the target ref
+          # This will let us diff only the contents of the PR, without fetching more history
+          ref: 'refs/pull/${{ github.event.pull_request.number }}/merge'
+      - name: fetch base
+        run: git fetch --depth 1 origin ${{ github.base_ref }}
+
+      - name: setup-node
+        uses: actions/setup-node@1e60f620b9541d16bece96c5465dc8ee9832be0b # v4.0.3
+        with:
+          node-version: 18.x
+          registry-url: https://registry.npmjs.org/
+
+      - name: yarn install
+        uses: backstage/actions/yarn-install@25145dd4117d50e1da9330e9ed2893bc6b75373e # v0.6.15
+        with:
+          cache-prefix: linux-v18
+
+      - name: breaking changes check
+        run: |
+          yarn backstage-repo-tools repo schema openapi diff --since origin/${{ github.base_ref }} > comment.md
+
+      - name: clone artifacts to current directory
+        run: |
+          cat ${{ github.event_path }} > event.json
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874 # v4
+        with:
+          name: preview-spec
+          path: |
+            comment.md
+            event.json
+          retention-days: 2
+          overwrite: true

@@ -15,7 +15,19 @@
  */
 
 import { ReactElement } from 'react';
-import { act, render, RenderResult } from '@testing-library/react';
+import {
+  act,
+  render,
+  RenderOptions,
+  RenderResult,
+} from '@testing-library/react';
+
+/**
+ * @public
+ * Set legacy mode when using React 18/RTL 13+.
+ * Mock this option while we're working against React 17 or lower.
+ */
+export type LegacyRootOption = { legacyRoot?: boolean };
 
 /**
  * @public
@@ -31,11 +43,11 @@ import { act, render, RenderResult } from '@testing-library/react';
  */
 export async function renderWithEffects(
   nodes: ReactElement,
+  options?: Pick<RenderOptions, 'wrapper'> & LegacyRootOption,
 ): Promise<RenderResult> {
   let value: RenderResult;
   await act(async () => {
-    value = render(nodes);
+    value = render(nodes, options);
   });
-  // @ts-ignore
-  return value;
+  return value!;
 }

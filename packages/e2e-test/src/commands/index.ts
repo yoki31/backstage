@@ -14,9 +14,13 @@
  * limitations under the License.
  */
 
-import { CommanderStatic } from 'commander';
+import { Command } from 'commander';
 import { run } from './run';
 
-export function registerCommands(program: CommanderStatic) {
-  program.command('run').description('Run e2e tests').action(run);
+export function registerCommands(program: Command) {
+  program
+    .command('run')
+    .option('--keep', 'Do not remove the temporary dir after tests complete')
+    .description('Run e2e tests')
+    .action(run);
 }

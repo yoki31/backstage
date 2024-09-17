@@ -15,31 +15,30 @@
  */
 
 import { Config } from '@backstage/config';
-import { LocationSpec, Entity } from '@backstage/catalog-model';
+import { Entity } from '@backstage/catalog-model';
 import path from 'path';
+import { LocationSpec } from '@backstage/plugin-catalog-common';
+import { minimatch } from 'minimatch';
 
 /**
  * Rules to apply to catalog entities.
  *
  * An undefined list of matchers means match all, an empty list of matchers means match none.
- *
- * @public
  */
 export type CatalogRule = {
   allow: Array<{
     kind: string;
   }>;
   locations?: Array<{
-    target?: string;
+    exact?: string;
     type: string;
+    pattern?: string;
   }>;
 };
 
 /**
  * Decides whether an entity from a given location is allowed to enter the
  * catalog, according to some rule set.
- *
- * @public
  */
 export type CatalogRulesEnforcer = {
   isAllowed(entity: Entity, location: LocationSpec): boolean;
@@ -48,8 +47,6 @@ export type CatalogRulesEnforcer = {
 /**
  * Implements the default catalog rule set, consuming the config keys
  * `catalog.rules` and `catalog.locations.[].rules`.
- *
- * @public
  */
 export class DefaultCatalogRulesEnforcer implements CatalogRulesEnforcer {
   /**
@@ -81,6 +78,14 @@ export class DefaultCatalogRulesEnforcer implements CatalogRulesEnforcer {
    * catalog:
    *   rules:
    *   - allow: [Component, API]
+   *   - allow: [Template]
+   *     locations:
+   *       - type: url
+   *         pattern: https://github.com/org/*\/blob/master/template.yaml
+   *   - allow: [Location]
+   *     locations:
+   *       - type: url
+   *         pattern: https://github.com/org/repo/blob/master/location.yaml
    *
    *   locations:
    *   - type: url
@@ -97,9 +102,26 @@ export class DefaultCatalogRulesEnforcer implements CatalogRulesEnforcer {
     const rules = new Array<CatalogRule>();
 
     if (config.has('catalog.rules')) {
-      const globalRules = config.getConfigArray('catalog.rules').map(sub => ({
-        allow: sub.getStringArray('allow').map(kind => ({ kind })),
-      }));
+      const globalRules = config
+        .getConfigArray('catalog.rules')
+        .map(ruleConf => ({
+          allow: ruleConf.getStringArray('allow').map(kind => ({ kind })),
+          locations: ruleConf
+            .getOptionalConfigArray('locations')
+            ?.map(locationConfig => {
+              const location = {
+                pattern: locationConfig.getOptionalString('pattern'),
+                type: locationConfig.getString('type'),
+                exact: locationConfig.getOptionalString('exact'),
+              };
+              if (location.pattern && location.exact) {
+                throw new Error(
+                  'A catalog rule location cannot have both exact and pattern values',
+                );
+              }
+              return location;
+            }),
+        }));
       rules.push(...globalRules);
     } else {
       rules.push(...DefaultCatalogRulesEnforcer.defaultRules);
@@ -113,11 +135,11 @@ export class DefaultCatalogRulesEnforcer implements CatalogRulesEnforcer {
             return [];
           }
           const type = locConf.getString('type');
-          const target = resolveTarget(type, locConf.getString('target'));
+          const exact = resolveTarget(type, locConf.getString('target'));
 
           return locConf.getConfigArray('rules').map(ruleConf => ({
             allow: ruleConf.getStringArray('allow').map(kind => ({ kind })),
-            locations: [{ type, target }],
+            locations: [{ type, exact }],
           }));
         });
 
@@ -130,7 +152,7 @@ export class DefaultCatalogRulesEnforcer implements CatalogRulesEnforcer {
   constructor(private readonly rules: CatalogRule[]) {}
 
   /**
-   * Checks wether a specific entity/location combination is allowed
+   * Checks whether a specific entity/location combination is allowed
    * according to the configured rules.
    */
   isAllowed(entity: Entity, location: LocationSpec) {
@@ -149,7 +171,7 @@ export class DefaultCatalogRulesEnforcer implements CatalogRulesEnforcer {
 
   private matchLocation(
     location: LocationSpec,
-    matchers?: { target?: string; type: string }[],
+    matchers?: { exact?: string; type: string; pattern?: string }[],
   ): boolean {
     if (!matchers) {
       return true;
@@ -159,7 +181,16 @@ export class DefaultCatalogRulesEnforcer implements CatalogRulesEnforcer {
       if (matcher.type !== location?.type) {
         continue;
       }
-      if (matcher.target && matcher.target !== location?.target) {
+      if (matcher.exact && matcher.exact !== location?.target) {
+        continue;
+      }
+      if (
+        matcher.pattern &&
+        !minimatch(location?.target, matcher.pattern, {
+          nocase: true,
+          dot: true,
+        })
+      ) {
         continue;
       }
       return true;

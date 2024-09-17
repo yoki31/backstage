@@ -18,6 +18,7 @@ import {
   PluginEndpointDiscovery,
   TokenManager,
 } from '@backstage/backend-common';
+import { registerMswTestHooks } from '@backstage/backend-test-utils';
 import { Entity } from '@backstage/catalog-model';
 import { DefaultCatalogCollator } from './DefaultCatalogCollator';
 import { setupServer } from 'msw/node';
@@ -61,6 +62,7 @@ describe('DefaultCatalogCollator', () => {
   let mockTokenManager: jest.Mocked<TokenManager>;
   let collator: DefaultCatalogCollator;
 
+  registerMswTestHooks(server);
   beforeAll(() => {
     mockDiscoveryApi = {
       getBaseUrl: jest.fn().mockResolvedValue('http://localhost:7007'),
@@ -74,7 +76,6 @@ describe('DefaultCatalogCollator', () => {
       discovery: mockDiscoveryApi,
       tokenManager: mockTokenManager,
     });
-    server.listen();
   });
   beforeEach(() => {
     server.use(
@@ -91,9 +92,7 @@ describe('DefaultCatalogCollator', () => {
       }),
     );
   });
-  afterEach(() => server.resetHandlers());
   afterAll(() => {
-    server.close();
     jest.useRealTimers();
   });
 
@@ -113,15 +112,21 @@ describe('DefaultCatalogCollator', () => {
       componentType: expectedEntities[0]!.spec!.type,
       lifecycle: expectedEntities[0]!.spec!.lifecycle,
       owner: expectedEntities[0]!.spec!.owner,
+      authorization: {
+        resourceRef: 'component:default/test-entity',
+      },
     });
     expect(documents[1]).toMatchObject({
-      title: expectedEntities[1].metadata.title,
+      title: `${expectedEntities[1].metadata.title} (${expectedEntities[1].metadata.name})`,
       location: '/catalog/default/component/test-entity-2',
       text: expectedEntities[1].metadata.description,
       namespace: 'default',
       componentType: expectedEntities[1]!.spec!.type,
       lifecycle: expectedEntities[1]!.spec!.lifecycle,
       owner: expectedEntities[1]!.spec!.owner,
+      authorization: {
+        resourceRef: 'component:default/test-entity-2',
+      },
     });
   });
 

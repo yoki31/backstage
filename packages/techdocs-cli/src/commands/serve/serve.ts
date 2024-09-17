@@ -14,16 +14,43 @@
  * limitations under the License.
  */
 
-import { Command } from 'commander';
+import { OptionValues } from 'commander';
 import path from 'path';
 import openBrowser from 'react-dev-utils/openBrowser';
+import { findPaths } from '@backstage/cli-common';
 import HTTPServer from '../../lib/httpServer';
 import { runMkdocsServer } from '../../lib/mkdocsServer';
 import { LogFunc, waitForSignal } from '../../lib/run';
 import { createLogger } from '../../lib/utility';
+import { getMkdocsYml } from '@backstage/plugin-techdocs-node';
+import fs from 'fs-extra';
+import { checkIfDockerIsOperational } from './utils';
 
-export default async function serve(cmd: Command) {
-  const logger = createLogger({ verbose: cmd.verbose });
+function findPreviewBundlePath(): string {
+  try {
+    return path.join(
+      path.dirname(require.resolve('techdocs-cli-embedded-app/package.json')),
+      'dist',
+    );
+  } catch {
+    // If the techdocs-cli-embedded-app package is not available it means we're
+    // running a published package. For published packages the preview bundle is
+    // copied to dist/embedded-app be the prepack script.
+    //
+    // This can be tested by running `yarn pack` and extracting the resulting tarball into a directory.
+    // Within the extracted directory, run `npm install --only=prod`.
+    // Once that's done you can test the CLI in any directory using `node <tmp-dir>/package <command>`.
+    // eslint-disable-next-line no-restricted-syntax
+    return findPaths(__dirname).resolveOwn('dist/embedded-app');
+  }
+}
+
+function getPreviewAppPath(opts: OptionValues): string {
+  return opts.previewAppBundlePath ?? findPreviewBundlePath();
+}
+
+export default async function serve(opts: OptionValues) {
+  const logger = createLogger({ verbose: opts.verbose });
 
   // Determine if we want to run in local dev mode or not
   // This will run the backstage http server on a different port and only used
@@ -32,21 +59,34 @@ export default async function serve(cmd: Command) {
     ? true
     : false;
 
-  // TODO: Backstage app port should also be configurable as a CLI option. However, since we bundle
-  // a backstage app, we define app.baseUrl in the app-config.yaml.
-  // Hence, it is complicated to make this configurable.
-  const backstagePort = 3000;
   const backstageBackendPort = 7007;
 
-  const mkdocsDockerAddr = `http://0.0.0.0:${cmd.mkdocsPort}`;
-  const mkdocsLocalAddr = `http://127.0.0.1:${cmd.mkdocsPort}`;
-  const mkdocsExpectedDevAddr = cmd.docker ? mkdocsDockerAddr : mkdocsLocalAddr;
+  const mkdocsDockerAddr = `http://0.0.0.0:${opts.mkdocsPort}`;
+  const mkdocsLocalAddr = `http://127.0.0.1:${opts.mkdocsPort}`;
+  const mkdocsExpectedDevAddr = opts.docker
+    ? mkdocsDockerAddr
+    : mkdocsLocalAddr;
+  const mkdocsConfigFileName = opts.mkdocsConfigFileName;
+  const siteName = opts.siteName;
+
+  const { path: mkdocsYmlPath, configIsTemporary } = await getMkdocsYml('./', {
+    name: siteName,
+    mkdocsConfigFileName,
+  });
+
+  // Validate that Docker is up and running
+  if (opts.docker) {
+    const isDockerOperational = await checkIfDockerIsOperational(logger);
+    if (!isDockerOperational) {
+      return;
+    }
+  }
 
   let mkdocsServerHasStarted = false;
   const mkdocsLogFunc: LogFunc = data => {
     // Sometimes the lines contain an unnecessary extra new line
     const logLines = data.toString().split('\n');
-    const logPrefix = cmd.docker ? '[docker/mkdocs]' : '[mkdocs]';
+    const logPrefix = opts.docker ? '[docker/mkdocs]' : '[mkdocs]';
     logLines.forEach(line => {
       if (line === '') {
         return;
@@ -68,11 +108,17 @@ export default async function serve(cmd: Command) {
   // Had me questioning this whole implementation for half an hour.
   logger.info('Starting mkdocs server.');
   const mkdocsChildProcess = await runMkdocsServer({
-    port: cmd.mkdocsPort,
-    dockerImage: cmd.dockerImage,
-    useDocker: cmd.docker,
+    port: opts.mkdocsPort,
+    dockerImage: opts.dockerImage,
+    dockerEntrypoint: opts.dockerEntrypoint,
+    dockerOptions: opts.dockerOption,
+    useDocker: opts.docker,
     stdoutLogFunc: mkdocsLogFunc,
     stderrLogFunc: mkdocsLogFunc,
+    mkdocsConfigFileName: mkdocsYmlPath,
+    mkdocsParameterClean: opts.mkdocsParameterClean,
+    mkdocsParameterDirtyReload: opts.mkdocsParameterDirtyreload,
+    mkdocsParameterStrict: opts.mkdocsParameterStrict,
   });
 
   // Wait until mkdocs server has started so that Backstage starts with docs loaded
@@ -91,25 +137,19 @@ export default async function serve(cmd: Command) {
     );
   }
 
-  // Run the embedded-techdocs Backstage app
-  const techdocsPreviewBundlePath = path.join(
-    path.dirname(require.resolve('@techdocs/cli/package.json')),
-    'dist',
-    'techdocs-preview-bundle',
-  );
-
-  const port = isDevMode ? backstageBackendPort : backstagePort;
+  const port = isDevMode ? backstageBackendPort : opts.previewAppPort;
+  const previewAppPath = getPreviewAppPath(opts);
   const httpServer = new HTTPServer(
-    techdocsPreviewBundlePath,
+    previewAppPath,
     port,
-    cmd.mkdocsPort,
-    cmd.verbose,
+    mkdocsExpectedDevAddr,
+    opts.verbose,
   );
 
   httpServer
     .serve()
     .catch(err => {
-      logger.error(err);
+      logger.error('Failed to start HTTP server', err);
       mkdocsChildProcess.kill();
       process.exit(1);
     })
@@ -122,4 +162,10 @@ export default async function serve(cmd: Command) {
     });
 
   await waitForSignal([mkdocsChildProcess]);
+
+  if (configIsTemporary) {
+    process.on('exit', async () => {
+      fs.rmSync(mkdocsYmlPath, {});
+    });
+  }
 }

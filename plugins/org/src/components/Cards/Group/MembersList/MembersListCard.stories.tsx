@@ -15,27 +15,45 @@
  */
 
 import { Entity, GroupEntity } from '@backstage/catalog-model';
-import { catalogApiRef, EntityProvider } from '@backstage/plugin-catalog-react';
-import { TestApiProvider } from '@backstage/test-utils';
-import { Grid } from '@material-ui/core';
-import React from 'react';
-import { MemoryRouter } from 'react-router';
+import {
+  catalogApiRef,
+  EntityProvider,
+  entityRouteRef,
+} from '@backstage/plugin-catalog-react';
+import { TestApiProvider, wrapInTestApp } from '@backstage/test-utils';
+import Grid from '@material-ui/core/Grid';
+import React, { ComponentType, PropsWithChildren } from 'react';
+import {
+  groupA,
+  mockedCatalogApiSupportingGroups,
+} from '../../../../__testUtils__/catalogMocks';
 import { MembersListCard } from './MembersListCard';
 
 export default {
   title: 'Plugins/Org/Group Members List Card',
   component: MembersListCard,
+  decorators: [
+    (Story: ComponentType<PropsWithChildren<{}>>) =>
+      wrapInTestApp(
+        <div>
+          <Story />
+        </div>,
+        { mountedRoutes: { '/': entityRouteRef } },
+      ),
+  ],
 };
 
 const makeUser = ({
   name,
   uid,
   displayName,
+  description,
   email,
 }: {
   name: string;
   uid: string;
   displayName: string;
+  description: string;
   email: string;
 }) => ({
   apiVersion: 'backstage.io/v1alpha1',
@@ -43,17 +61,19 @@ const makeUser = ({
   metadata: {
     name,
     uid,
+    description,
   },
   spec: {
     profile: {
       displayName,
       email,
-      picture: `https://avatars.dicebear.com/api/avataaars/${email}.svg?background=%23fff`,
+      picture: `https://api.dicebear.com/7.x/avataaars/svg?seed=bob${name}`,
     },
   },
   relations: [
     {
       type: 'memberOf',
+      targetRef: 'group:default/team-a',
       target: {
         namespace: 'default',
         kind: 'group',
@@ -75,7 +95,7 @@ const defaultEntity: GroupEntity = {
       displayName: 'Team A',
       email: 'team-a@example.com',
       picture:
-        'https://avatars.dicebear.com/api/identicon/team-a@example.com.svg?background=%23fff&margin=25',
+        'https://api.dicebear.com/7.x/identicon/svg?seed=Fluffy&backgroundType=solid,gradientLinear&backgroundColor=ffd5dc,b6e3f4',
     },
     type: 'group',
     children: [],
@@ -86,43 +106,52 @@ const alice = makeUser({
   name: 'alice',
   uid: '123',
   displayName: 'Alice Doe',
+  description: 'Developer',
   email: 'alice@example.com',
 });
 const bob = makeUser({
   name: 'bob',
   uid: '456',
   displayName: 'Bob Jones',
+  description: 'Developer',
   email: 'bob@example.com',
 });
 
 const catalogApi = (items: Entity[]) => ({
   getEntities: () => Promise.resolve({ items }),
 });
-
 export const Default = () => (
-  <MemoryRouter>
-    <TestApiProvider apis={[[catalogApiRef, catalogApi([alice, bob])]]}>
-      <EntityProvider entity={defaultEntity}>
-        <Grid container spacing={4}>
-          <Grid item xs={12} md={6}>
-            <MembersListCard />
-          </Grid>
+  <TestApiProvider apis={[[catalogApiRef, catalogApi([alice, bob])]]}>
+    <EntityProvider entity={defaultEntity}>
+      <Grid container spacing={4}>
+        <Grid item xs={12} md={6}>
+          <MembersListCard />
         </Grid>
-      </EntityProvider>
-    </TestApiProvider>
-  </MemoryRouter>
+      </Grid>
+    </EntityProvider>
+  </TestApiProvider>
 );
 
 export const Empty = () => (
-  <MemoryRouter>
-    <TestApiProvider apis={[[catalogApiRef, catalogApi([])]]}>
-      <EntityProvider entity={defaultEntity}>
-        <Grid container spacing={4}>
-          <Grid item xs={12} md={6}>
-            <MembersListCard />
-          </Grid>
+  <TestApiProvider apis={[[catalogApiRef, catalogApi([])]]}>
+    <EntityProvider entity={defaultEntity}>
+      <Grid container spacing={4}>
+        <Grid item xs={12} md={6}>
+          <MembersListCard />
         </Grid>
-      </EntityProvider>
-    </TestApiProvider>
-  </MemoryRouter>
+      </Grid>
+    </EntityProvider>
+  </TestApiProvider>
+);
+
+export const AggregateMembersToggle = () => (
+  <TestApiProvider apis={[[catalogApiRef, mockedCatalogApiSupportingGroups]]}>
+    <EntityProvider entity={groupA}>
+      <Grid container spacing={4}>
+        <Grid item xs={12} md={6}>
+          <MembersListCard showAggregateMembersToggle />
+        </Grid>
+      </Grid>
+    </EntityProvider>
+  </TestApiProvider>
 );

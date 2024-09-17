@@ -14,44 +14,45 @@
  * limitations under the License.
  */
 
-import { Entity } from '@backstage/catalog-model';
-import { IconButton, Tooltip, withStyles } from '@material-ui/core';
-import Star from '@material-ui/icons/Star';
-import StarBorder from '@material-ui/icons/StarBorder';
+import { Entity, stringifyEntityRef } from '@backstage/catalog-model';
+import IconButton from '@material-ui/core/IconButton';
 import React, { ComponentProps } from 'react';
 import { useStarredEntity } from '../../hooks/useStarredEntity';
+import { catalogReactTranslationRef } from '../../translation';
+import { useTranslationRef } from '@backstage/core-plugin-api/alpha';
+import { FavoriteToggle } from '@backstage/core-components';
 
-type Props = ComponentProps<typeof IconButton> & { entity: Entity };
-
-const YellowStar = withStyles({
-  root: {
-    color: '#f3ba37',
-  },
-})(Star);
-
-export const favoriteEntityTooltip = (isStarred: boolean) =>
-  isStarred ? 'Remove from favorites' : 'Add to favorites';
-
-export const favoriteEntityIcon = (isStarred: boolean) =>
-  isStarred ? <YellowStar /> : <StarBorder />;
+/** @public */
+export type FavoriteEntityProps = ComponentProps<typeof IconButton> & {
+  entity: Entity;
+};
 
 /**
  * IconButton for showing if a current entity is starred and adding/removing it from the favorite entities
- * @param props MaterialUI IconButton props extended by required `entity` prop
+ * @param props - MaterialUI IconButton props extended by required `entity` prop
+ * @public
  */
-export const FavoriteEntity = (props: Props) => {
+export const FavoriteEntity = (props: FavoriteEntityProps) => {
   const { toggleStarredEntity, isStarredEntity } = useStarredEntity(
     props.entity,
   );
+  const { t } = useTranslationRef(catalogReactTranslationRef);
+  const title = isStarredEntity
+    ? t('favoriteEntity.removeFromFavorites')
+    : t('favoriteEntity.addToFavorites');
+
+  const id = `favorite-${stringifyEntityRef(props.entity).replace(
+    /[^a-zA-Z0-9-_]/g,
+    '-',
+  )}`;
+
   return (
-    <IconButton
-      color="inherit"
+    <FavoriteToggle
+      title={title}
+      id={id}
+      isFavorite={isStarredEntity}
+      onToggle={toggleStarredEntity}
       {...props}
-      onClick={() => toggleStarredEntity()}
-    >
-      <Tooltip title={favoriteEntityTooltip(isStarredEntity)}>
-        {favoriteEntityIcon(isStarredEntity)}
-      </Tooltip>
-    </IconButton>
+    />
   );
 };

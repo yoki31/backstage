@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 import { parseEntityRef } from '@backstage/catalog-model';
 import {
   Content,
@@ -22,21 +23,27 @@ import {
   SupportButton,
 } from '@backstage/core-components';
 import { useAnalytics, useRouteRef } from '@backstage/core-plugin-api';
-import { formatEntityRefTitle } from '@backstage/plugin-catalog-react';
-import { Grid, makeStyles, Paper, Typography } from '@material-ui/core';
+import {
+  entityRouteRef,
+  humanizeEntityRef,
+} from '@backstage/plugin-catalog-react';
+import Grid from '@material-ui/core/Grid';
+import Paper from '@material-ui/core/Paper';
+import Typography from '@material-ui/core/Typography';
+import { makeStyles } from '@material-ui/core/styles';
 import FilterListIcon from '@material-ui/icons/FilterList';
 import ZoomOutMap from '@material-ui/icons/ZoomOutMap';
-import { ToggleButton } from '@material-ui/lab';
+import ToggleButton from '@material-ui/lab/ToggleButton';
 import React, { MouseEvent, useCallback } from 'react';
-import { useNavigate } from 'react-router';
-import { catalogEntityRouteRef } from '../../routes';
+import { useNavigate } from 'react-router-dom';
 import {
   ALL_RELATION_PAIRS,
   Direction,
   EntityNode,
   EntityRelationsGraph,
-  RelationPairs,
+  EntityRelationsGraphProps,
 } from '../EntityRelationsGraph';
+import { CurveFilter } from './CurveFilter';
 import { DirectionFilter } from './DirectionFilter';
 import { MaxDepthFilter } from './MaxDepthFilter';
 import { SelectedKindsFilter } from './SelectedKindsFilter';
@@ -44,77 +51,95 @@ import { SelectedRelationsFilter } from './SelectedRelationsFilter';
 import { SwitchFilter } from './SwitchFilter';
 import { useCatalogGraphPage } from './useCatalogGraphPage';
 
-const useStyles = makeStyles(theme => ({
-  content: {
-    minHeight: 0,
-  },
-  container: {
-    height: '100%',
-    maxHeight: '100%',
-    minHeight: 0,
-  },
-  fullHeight: {
-    maxHeight: '100%',
-    display: 'flex',
-    minHeight: 0,
-  },
-  graphWrapper: {
-    position: 'relative',
-    flex: 1,
-    minHeight: 0,
-    display: 'flex',
-  },
-  graph: {
-    flex: 1,
-    minHeight: 0,
-  },
-  legend: {
-    position: 'absolute',
-    bottom: 0,
-    right: 0,
-    padding: theme.spacing(1),
-    '& .icon': {
-      verticalAlign: 'bottom',
-    },
-  },
-  filters: {
-    display: 'grid',
-    gridGap: theme.spacing(1),
-    gridAutoRows: 'auto',
-    [theme.breakpoints.up('lg')]: {
-      display: 'block',
-    },
-    [theme.breakpoints.only('md')]: {
-      gridTemplateColumns: 'repeat(3, 1fr)',
-    },
-    [theme.breakpoints.only('sm')]: {
-      gridTemplateColumns: 'repeat(2, 1fr)',
-    },
-    [theme.breakpoints.down('xs')]: {
-      gridTemplateColumns: 'repeat(1, 1fr)',
-    },
-  },
-}));
+/** @public */
+export type CatalogGraphPageClassKey =
+  | 'content'
+  | 'container'
+  | 'fullHeight'
+  | 'graphWrapper'
+  | 'graph'
+  | 'legend'
+  | 'filters';
 
-export const CatalogGraphPage = ({
-  relationPairs = ALL_RELATION_PAIRS,
-  initialState,
-}: {
-  relationPairs?: RelationPairs;
-  initialState?: {
-    selectedRelations?: string[];
-    selectedKinds?: string[];
-    rootEntityRefs?: string[];
-    maxDepth?: number;
-    unidirectional?: boolean;
-    mergeRelations?: boolean;
-    direction?: Direction;
-    showFilters?: boolean;
-  };
-}) => {
+const useStyles = makeStyles(
+  theme => ({
+    content: {
+      minHeight: 0,
+    },
+    container: {
+      height: '100%',
+      maxHeight: '100%',
+      minHeight: 0,
+    },
+    fullHeight: {
+      maxHeight: '100%',
+      display: 'flex',
+      minHeight: 0,
+    },
+    graphWrapper: {
+      position: 'relative',
+      flex: 1,
+      minHeight: 0,
+      display: 'flex',
+    },
+    graph: {
+      flex: 1,
+      minHeight: 0,
+    },
+    legend: {
+      position: 'absolute',
+      bottom: 0,
+      right: 0,
+      padding: theme.spacing(1),
+      '& .icon': {
+        verticalAlign: 'bottom',
+      },
+    },
+    filters: {
+      display: 'grid',
+      gridGap: theme.spacing(1),
+      gridAutoRows: 'auto',
+      [theme.breakpoints.up('lg')]: {
+        display: 'block',
+      },
+      [theme.breakpoints.only('md')]: {
+        gridTemplateColumns: 'repeat(3, 1fr)',
+      },
+      [theme.breakpoints.only('sm')]: {
+        gridTemplateColumns: 'repeat(2, 1fr)',
+      },
+      [theme.breakpoints.down('xs')]: {
+        gridTemplateColumns: 'repeat(1, 1fr)',
+      },
+    },
+  }),
+  { name: 'PluginCatalogGraphCatalogGraphPage' },
+);
+
+export const CatalogGraphPage = (
+  props: {
+    initialState?: {
+      selectedRelations?: string[];
+      selectedKinds?: string[];
+      rootEntityRefs?: string[];
+      maxDepth?: number;
+      unidirectional?: boolean;
+      mergeRelations?: boolean;
+      direction?: Direction;
+      showFilters?: boolean;
+      curve?: 'curveStepBefore' | 'curveMonotoneX';
+    };
+  } & Partial<EntityRelationsGraphProps>,
+) => {
+  const {
+    relationPairs = ALL_RELATION_PAIRS,
+    initialState,
+    entityFilter,
+  } = props;
+
   const navigate = useNavigate();
   const classes = useStyles();
-  const catalogEntityRoute = useRouteRef(catalogEntityRouteRef);
+  const catalogEntityRoute = useRouteRef(entityRouteRef);
   const {
     maxDepth,
     setMaxDepth,
@@ -128,6 +153,8 @@ export const CatalogGraphPage = ({
     setMergeRelations,
     direction,
     setDirection,
+    curve,
+    setCurve,
     rootEntityNames,
     setRootEntityNames,
     showFilters,
@@ -147,14 +174,14 @@ export const CatalogGraphPage = ({
 
         analytics.captureEvent(
           'click',
-          node.title ?? formatEntityRefTitle(nodeEntityName),
+          node.entity.metadata.title ?? humanizeEntityRef(nodeEntityName),
           { attributes: { to: path } },
         );
         navigate(path);
       } else {
         analytics.captureEvent(
           'click',
-          node.title ?? formatEntityRefTitle(nodeEntityName),
+          node.entity.metadata.title ?? humanizeEntityRef(nodeEntityName),
         );
         setRootEntityNames([nodeEntityName]);
       }
@@ -166,7 +193,7 @@ export const CatalogGraphPage = ({
     <Page themeId="home">
       <Header
         title="Catalog Graph"
-        subtitle={rootEntityNames.map(e => formatEntityRefTitle(e)).join(', ')}
+        subtitle={rootEntityNames.map(e => humanizeEntityRef(e)).join(', ')}
       />
       <Content stretch className={classes.content}>
         <ContentHeader
@@ -199,6 +226,7 @@ export const CatalogGraphPage = ({
                 relationPairs={relationPairs}
               />
               <DirectionFilter value={direction} onChange={setDirection} />
+              <CurveFilter value={curve} onChange={setCurve} />
               <SwitchFilter
                 value={unidirectional}
                 onChange={setUnidirectional}
@@ -224,6 +252,7 @@ export const CatalogGraphPage = ({
                 navigate to entity.
               </Typography>
               <EntityRelationsGraph
+                {...props}
                 rootEntityNames={rootEntityNames}
                 maxDepth={maxDepth}
                 kinds={
@@ -241,8 +270,10 @@ export const CatalogGraphPage = ({
                 onNodeClick={onNodeClick}
                 direction={direction}
                 relationPairs={relationPairs}
+                entityFilter={entityFilter}
                 className={classes.graph}
                 zoom="enabled"
+                curve={curve}
               />
             </Paper>
           </Grid>

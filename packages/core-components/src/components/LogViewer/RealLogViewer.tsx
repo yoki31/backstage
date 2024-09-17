@@ -14,16 +14,19 @@
  * limitations under the License.
  */
 
-import React, { useEffect, useMemo, useRef } from 'react';
+import Box from '@material-ui/core/Box';
 import IconButton from '@material-ui/core/IconButton';
 import CopyIcon from '@material-ui/icons/FileCopy';
+import classnames from 'classnames';
+import React, { useEffect, useMemo, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
 import AutoSizer from 'react-virtualized-auto-sizer';
 import { FixedSizeList } from 'react-window';
+
 import { AnsiProcessor } from './AnsiProcessor';
-import { HEADER_SIZE, useStyles } from './styles';
-import classnames from 'classnames';
 import { LogLine } from './LogLine';
 import { LogViewerControls } from './LogViewerControls';
+import { HEADER_SIZE, useStyles } from './styles';
 import { useLogViewerSearch } from './useLogViewerSearch';
 import { useLogViewerSelection } from './useLogViewerSelection';
 
@@ -42,6 +45,7 @@ export function RealLogViewer(props: RealLogViewerProps) {
 
   const search = useLogViewerSearch(lines);
   const selection = useLogViewerSelection(lines);
+  const location = useLocation();
 
   useEffect(() => {
     if (search.resultLine !== undefined && listRef.current) {
@@ -49,26 +53,33 @@ export function RealLogViewer(props: RealLogViewerProps) {
     }
   }, [search.resultLine]);
 
+  useEffect(() => {
+    if (location.hash) {
+      // #line-6 -> 6
+      const line = parseInt(location.hash.replace(/\D/g, ''), 10);
+      selection.setSelection(line, false);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   const handleSelectLine = (
     line: number,
     event: { shiftKey: boolean; preventDefault: () => void },
   ) => {
-    event.preventDefault();
     selection.setSelection(line, event.shiftKey);
   };
 
   return (
     <AutoSizer>
-      {({ height, width }) => (
-        <div style={{ width, height }} className={classes.root}>
-          <div className={classes.header}>
+      {({ height, width }: { height?: number; width?: number }) => (
+        <Box style={{ width, height }} className={classes.root}>
+          <Box className={classes.header}>
             <LogViewerControls {...search} />
-          </div>
+          </Box>
           <FixedSizeList
             ref={listRef}
             className={classes.log}
-            height={height - HEADER_SIZE}
-            width={width}
+            height={(height || 480) - HEADER_SIZE}
+            width={width || 640}
             itemData={search.lines}
             itemSize={20}
             itemCount={search.lines.length}
@@ -77,7 +88,7 @@ export function RealLogViewer(props: RealLogViewerProps) {
               const line = data[index];
               const { lineNumber } = line;
               return (
-                <div
+                <Box
                   style={{ ...style }}
                   className={classnames(classes.line, {
                     [classes.lineSelected]: selection.isSelected(lineNumber),
@@ -113,11 +124,11 @@ export function RealLogViewer(props: RealLogViewerProps) {
                         : undefined
                     }
                   />
-                </div>
+                </Box>
               );
             }}
           </FixedSizeList>
-        </div>
+        </Box>
       )}
     </AutoSizer>
   );

@@ -15,8 +15,10 @@
  */
 
 import { JsonObject, JsonValue } from '@backstage/types';
-import { CatalogProcessor } from '../ingestion/processors';
-import { CatalogProcessorCache } from '../ingestion/processors/types';
+import {
+  CatalogProcessor,
+  CatalogProcessorCache,
+} from '@backstage/plugin-catalog-node';
 import { isObject } from './util';
 
 class SingleProcessorSubCache implements CatalogProcessorCache {
@@ -104,7 +106,7 @@ export class ProcessorCacheManager {
     key?: string,
   ): CatalogProcessorCache {
     // constructor name will be deprecated in the future when we make `getProcessorName` required in the implementation
-    const name = processor.getProcessorName?.() ?? processor.constructor.name;
+    const name = processor.getProcessorName();
     const cache = this.caches.get(name);
     if (cache) {
       return key ? cache.withKey(key) : cache;

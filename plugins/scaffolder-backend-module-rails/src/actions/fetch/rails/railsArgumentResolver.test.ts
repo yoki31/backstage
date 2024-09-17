@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Spotify AB
+ * Copyright 2021 The Backstage Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,14 @@ describe('railsArgumentResolver', () => {
       [{ api: true }, ['--api']],
       [{ skipBundle: true }, ['--skip-bundle']],
       [{ skipWebpackInstall: true }, ['--skip-webpack-install']],
+      [{ skipTest: true }, ['--skip-test']],
+      [{ skipActionCable: true }, ['--skip-action-cable']],
+      [{ skipActionMailer: true }, ['--skip-action-mailer']],
+      [{ skipActionMailbox: true }, ['--skip-action-mailbox']],
+      [{ skipActiveStorage: true }, ['--skip-active-storage']],
+      [{ skipActionText: true }, ['--skip-action-text']],
+      [{ skipActiveRecord: true }, ['--skip-active-record']],
+      [{ force: true }, ['--force']],
       [{ webpacker: 'vue' }, ['--webpack', 'vue']],
       [{ database: 'postgresql' }, ['--database', 'postgresql']],
       [{ railsVersion: 'dev' }, ['--dev']],

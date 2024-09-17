@@ -15,19 +15,30 @@
  */
 
 import { Entity } from '@backstage/catalog-model';
-import { makeStyles } from '@material-ui/core';
+import { makeStyles } from '@material-ui/core/styles';
 import React, { ReactNode } from 'react';
-import * as columnFactories from './columns';
+import { columnFactories } from './columns';
 import { componentEntityColumns, systemEntityColumns } from './presets';
-import { Table, TableColumn } from '@backstage/core-components';
+import {
+  InfoCardVariants,
+  Table,
+  TableColumn,
+  TableOptions,
+} from '@backstage/core-components';
 
-type Props<T extends Entity> = {
+/**
+ * Props for {@link EntityTable}.
+ *
+ * @public
+ */
+export interface EntityTableProps<T extends Entity> {
   title: string;
-  variant?: 'gridItem';
+  variant?: InfoCardVariants;
   entities: T[];
   emptyContent?: ReactNode;
   columns: TableColumn<T>[];
-};
+  tableOptions?: TableOptions;
+}
 
 const useStyles = makeStyles(theme => ({
   empty: {
@@ -37,13 +48,22 @@ const useStyles = makeStyles(theme => ({
   },
 }));
 
-export function EntityTable<T extends Entity>({
-  entities,
-  title,
-  emptyContent,
-  variant = 'gridItem',
-  columns,
-}: Props<T>) {
+/**
+ * A general entity table component, that can be used for composing more
+ * specific entity tables.
+ *
+ * @public
+ */
+export const EntityTable = <T extends Entity>(props: EntityTableProps<T>) => {
+  const {
+    entities,
+    title,
+    emptyContent,
+    variant = 'gridItem',
+    columns,
+    tableOptions = {},
+  } = props;
+
   const classes = useStyles();
   const tableStyle: React.CSSProperties = {
     minWidth: '0',
@@ -68,11 +88,13 @@ export function EntityTable<T extends Entity>({
         paging: false,
         actionsColumnIndex: -1,
         padding: 'dense',
+        draggable: false,
+        ...tableOptions,
       }}
       data={entities}
     />
   );
-}
+};
 
 EntityTable.columns = columnFactories;
 

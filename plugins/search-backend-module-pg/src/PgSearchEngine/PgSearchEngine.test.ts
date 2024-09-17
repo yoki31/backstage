@@ -13,29 +13,59 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { range } from 'lodash';
+import { ConfigReader } from '@backstage/config';
 import { DatabaseStore } from '../database';
 import {
   ConcretePgSearchQuery,
   decodePageCursor,
   encodePageCursor,
   PgSearchEngine,
+  PgSearchHighlightOptions,
 } from './PgSearchEngine';
+import { PgSearchEngineIndexer } from './PgSearchEngineIndexer';
+
+const highlightOptions: PgSearchHighlightOptions = {
+  preTag: '<tag>',
+  postTag: '</tag>',
+  useHighlight: true,
+  maxWords: 35,
+  minWords: 15,
+  shortWord: 3,
+  highlightAll: false,
+  maxFragments: 0,
+  fragmentDelimiter: ' ... ',
+};
+
+jest.mock('uuid', () => ({ v4: () => 'tag' }));
+
+jest.mock('./PgSearchEngineIndexer', () => ({
+  PgSearchEngineIndexer: jest
+    .fn()
+    .mockImplementation(async () => 'the-expected-indexer'),
+}));
 
 describe('PgSearchEngine', () => {
   const tx: any = {} as any;
   let searchEngine: PgSearchEngine;
   let database: jest.Mocked<DatabaseStore>;
+  const config = {
+    search: {
+      pg: {
+        highlightOptions,
+      },
+    },
+  };
 
   beforeEach(() => {
     database = {
       transaction: jest.fn(),
+      getTransaction: jest.fn(),
       insertDocuments: jest.fn(),
       query: jest.fn(),
       completeInsert: jest.fn(),
       prepareInsert: jest.fn(),
     };
-    searchEngine = new PgSearchEngine(database);
+    searchEngine = new PgSearchEngine(database, new ConfigReader(config));
   });
 
   describe('translator', () => {
@@ -51,17 +81,23 @@ describe('PgSearchEngine', () => {
         filters: {},
       });
 
-      expect(translatorSpy).toHaveBeenCalledWith({
-        term: 'testTerm',
-        filters: {},
-      });
+      expect(translatorSpy).toHaveBeenCalledWith(
+        {
+          term: 'testTerm',
+          filters: {},
+        },
+        { highlightOptions },
+      );
     });
 
     it('should pass page cursor', async () => {
-      const actualTranslatedQuery = searchEngine.translator({
-        term: 'Hello',
-        pageCursor: 'MQ==',
-      });
+      const actualTranslatedQuery = searchEngine.translator(
+        {
+          term: 'Hello',
+          pageCursor: 'MQ==',
+        },
+        { highlightOptions },
+      );
 
       expect(actualTranslatedQuery).toMatchObject({
         pgQuery: {
@@ -74,9 +110,12 @@ describe('PgSearchEngine', () => {
     });
 
     it('should return translated query term', async () => {
-      const actualTranslatedQuery = searchEngine.translator({
-        term: 'Hello World',
-      });
+      const actualTranslatedQuery = searchEngine.translator(
+        {
+          term: 'Hello World',
+        },
+        { highlightOptions },
+      );
 
       expect(actualTranslatedQuery).toMatchObject({
         pgQuery: {
@@ -89,10 +128,13 @@ describe('PgSearchEngine', () => {
     });
 
     it('should sanitize query term', async () => {
-      const actualTranslatedQuery = searchEngine.translator({
-        term: 'H&e|l!l*o W\0o(r)l:d',
-        pageCursor: '',
-      }) as ConcretePgSearchQuery;
+      const actualTranslatedQuery = searchEngine.translator(
+        {
+          term: 'H&e|l!l*o W\0o(r)l:d',
+          pageCursor: '',
+        },
+        { highlightOptions },
+      ) as ConcretePgSearchQuery;
 
       expect(actualTranslatedQuery).toMatchObject({
         pgQuery: {
@@ -103,11 +145,14 @@ describe('PgSearchEngine', () => {
     });
 
     it('should return translated query with filters', async () => {
-      const actualTranslatedQuery = searchEngine.translator({
-        term: 'testTerm',
-        filters: { kind: 'testKind' },
-        types: ['my-filter'],
-      });
+      const actualTranslatedQuery = searchEngine.translator(
+        {
+          term: 'testTerm',
+          filters: { kind: 'testKind' },
+          types: ['my-filter'],
+        },
+        { highlightOptions },
+      );
 
       expect(actualTranslatedQuery).toMatchObject({
         pgQuery: {
@@ -122,46 +167,21 @@ describe('PgSearchEngine', () => {
     });
   });
 
-  describe('insert', () => {
-    it('should insert documents', async () => {
-      database.transaction.mockImplementation(fn => fn(tx));
+  describe('index', () => {
+    it('should instantiate indexer', async () => {
+      const indexer = await searchEngine.getIndexer('my-type');
 
-      const documents = [
-        { title: 'Hello World', text: 'Lorem Ipsum', location: 'location-1' },
-        {
-          location: 'location-2',
-          text: 'Hello World',
-          title: 'Dolor sit amet',
-        },
-      ];
-
-      await searchEngine.index('my-type', documents);
-
-      expect(database.transaction).toHaveBeenCalledTimes(1);
-      expect(database.prepareInsert).toHaveBeenCalledTimes(1);
-      expect(database.insertDocuments).toHaveBeenCalledWith(
-        tx,
-        'my-type',
-        documents,
+      // Indexer instantiated with expected args.
+      expect(PgSearchEngineIndexer).toHaveBeenCalledWith(
+        expect.objectContaining({
+          batchSize: 1000,
+          type: 'my-type',
+          databaseStore: database,
+        }),
       );
-      expect(database.completeInsert).toHaveBeenCalledWith(tx, 'my-type');
-    });
 
-    it('should batch insert documents', async () => {
-      database.transaction.mockImplementation(fn => fn(tx));
-
-      const documents = range(350).map(i => ({
-        title: `Hello World ${i}`,
-        text: 'Lorem Ipsum',
-        location: `location-${i}`,
-      }));
-
-      await searchEngine.index('my-type', documents);
-
-      expect(database.transaction).toHaveBeenCalledTimes(1);
-      expect(database.prepareInsert).toHaveBeenCalledTimes(1);
-      expect(database.insertDocuments).toBeCalledTimes(4);
-      expect(database.completeInsert).toHaveBeenCalledWith(tx, 'my-type');
+      // Indexer is as expected.
+      expect(indexer).toBe('the-expected-indexer');
     });
   });
 
@@ -176,6 +196,11 @@ describe('PgSearchEngine', () => {
             location: 'location-1',
           },
           type: 'my-type',
+          highlight: {
+            title: 'Hello World',
+            text: 'Lorem Ipsum',
+            location: 'location-1',
+          },
         },
       ]);
 
@@ -192,6 +217,17 @@ describe('PgSearchEngine', () => {
               location: 'location-1',
             },
             type: 'my-type',
+            rank: 1,
+            highlight: {
+              preTag: '<tag>',
+              postTag: '</tag>',
+              fields: {
+                title: 'Hello World',
+                text: 'Lorem Ipsum',
+                location: 'location-1',
+                path: '',
+              },
+            },
           },
         ],
         nextPageCursor: undefined,
@@ -201,6 +237,7 @@ describe('PgSearchEngine', () => {
         pgTerm: '("Hello" | "Hello":*)&("World" | "World":*)',
         offset: 0,
         limit: 26,
+        options: highlightOptions,
       });
     });
 
@@ -216,6 +253,11 @@ describe('PgSearchEngine', () => {
               location: `location-${i}`,
             },
             type: 'my-type',
+            highlight: {
+              title: 'Hello World',
+              text: 'Lorem Ipsum',
+              location: 'location-1',
+            },
           })),
       );
 
@@ -233,6 +275,17 @@ describe('PgSearchEngine', () => {
               location: `location-${i}`,
             },
             type: 'my-type',
+            rank: i + 1,
+            highlight: {
+              preTag: '<tag>',
+              postTag: '</tag>',
+              fields: {
+                title: 'Hello World',
+                text: 'Lorem Ipsum',
+                location: 'location-1',
+                path: '',
+              },
+            },
           })),
         nextPageCursor: 'MQ==',
       });
@@ -241,6 +294,7 @@ describe('PgSearchEngine', () => {
         pgTerm: '("Hello" | "Hello":*)&("World" | "World":*)',
         offset: 0,
         limit: 26,
+        options: highlightOptions,
       });
     });
 
@@ -256,6 +310,11 @@ describe('PgSearchEngine', () => {
               location: `location-${i}`,
             },
             type: 'my-type',
+            highlight: {
+              title: 'Hello World',
+              text: 'Lorem Ipsum',
+              location: 'location-1',
+            },
           }))
           .slice(25),
       );
@@ -275,6 +334,17 @@ describe('PgSearchEngine', () => {
               location: `location-${i}`,
             },
             type: 'my-type',
+            rank: i + 1,
+            highlight: {
+              preTag: '<tag>',
+              postTag: '</tag>',
+              fields: {
+                title: 'Hello World',
+                text: 'Lorem Ipsum',
+                location: 'location-1',
+                path: '',
+              },
+            },
           }))
           .slice(25),
         previousPageCursor: 'MA==',
@@ -284,6 +354,7 @@ describe('PgSearchEngine', () => {
         pgTerm: '("Hello" | "Hello":*)&("World" | "World":*)',
         offset: 25,
         limit: 26,
+        options: highlightOptions,
       });
     });
   });

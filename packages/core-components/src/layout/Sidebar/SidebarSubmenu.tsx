@@ -13,32 +13,46 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { makeStyles } from '@material-ui/core/styles';
+
+import Box from '@material-ui/core/Box';
+import { makeStyles, Theme } from '@material-ui/core/styles';
 import Typography from '@material-ui/core/Typography';
 import classnames from 'classnames';
-import React, { ReactNode, useContext } from 'react';
-import {
-  SidebarItemWithSubmenuContext,
-  sidebarConfig,
-  SidebarContext,
-  submenuConfig,
-} from './config';
-import { BackstageTheme } from '@backstage/theme';
+import React, { ReactNode, useContext, useEffect, useState } from 'react';
 
-const useStyles = (props: { left: number }) =>
-  makeStyles<BackstageTheme>(theme => ({
+import {
+  SidebarConfigContext,
+  SidebarItemWithSubmenuContext,
+  SubmenuConfig,
+} from './config';
+import { useSidebarOpenState } from './SidebarOpenStateContext';
+
+/** @public */
+export type SidebarSubmenuClassKey = 'root' | 'drawer' | 'drawerOpen' | 'title';
+
+const useStyles = makeStyles<
+  Theme,
+  { submenuConfig: SubmenuConfig; left: number }
+>(
+  theme => ({
     root: {
       zIndex: 1000,
       position: 'relative',
       overflow: 'visible',
       width: theme.spacing(7) + 1,
     },
-    drawer: {
+    drawer: props => ({
       display: 'flex',
       flexFlow: 'column nowrap',
       alignItems: 'flex-start',
       position: 'fixed',
-      left: props.left,
+      [theme.breakpoints.up('sm')]: {
+        marginLeft: props.left,
+        transition: theme.transitions.create('margin-left', {
+          easing: theme.transitions.easing.sharp,
+          duration: theme.transitions.duration.shortest,
+        }),
+      },
       top: 0,
       bottom: 0,
       padding: 0,
@@ -47,25 +61,37 @@ const useStyles = (props: { left: number }) =>
       msOverflowStyle: 'none',
       scrollbarWidth: 'none',
       cursor: 'default',
-      width: submenuConfig.drawerWidthClosed,
-      borderRight: `1px solid #383838`,
+      width: props.submenuConfig.drawerWidthClosed,
+      transitionDelay: `${props.submenuConfig.defaultOpenDelayMs}ms`,
       '& > *': {
         flexShrink: 0,
       },
       '&::-webkit-scrollbar': {
         display: 'none',
       },
-    },
-    drawerOpen: {
-      width: submenuConfig.drawerWidthOpen,
-    },
+    }),
+    drawerOpen: props => ({
+      width: props.submenuConfig.drawerWidthOpen,
+      [theme.breakpoints.down('xs')]: {
+        width: '100%',
+        position: 'relative',
+        paddingLeft: theme.spacing(3),
+        left: 0,
+        top: 0,
+      },
+    }),
     title: {
-      fontSize: 24,
-      fontWeight: 500,
-      color: '#FFF',
-      padding: 20,
+      fontSize: theme.typography.h5.fontSize,
+      fontWeight: theme.typography.fontWeightMedium,
+      color: theme.palette.navigation.color,
+      padding: theme.spacing(2.5),
+      [theme.breakpoints.down('xs')]: {
+        display: 'none',
+      },
     },
-  }));
+  }),
+  { name: 'BackstageSidebarSubmenu' },
+);
 
 /**
  * Holds a title for text Header of a sidebar submenu and children
@@ -84,23 +110,30 @@ export type SidebarSubmenuProps = {
  * @public
  */
 export const SidebarSubmenu = (props: SidebarSubmenuProps) => {
-  const { isOpen } = useContext(SidebarContext);
+  const { isOpen } = useSidebarOpenState();
+  const { sidebarConfig, submenuConfig } = useContext(SidebarConfigContext);
   const left = isOpen
     ? sidebarConfig.drawerWidthOpen
     : sidebarConfig.drawerWidthClosed;
-  const classes = useStyles({ left: left })();
+  const classes = useStyles({ left, submenuConfig });
 
   const { isHoveredOn } = useContext(SidebarItemWithSubmenuContext);
+  const [isSubmenuOpen, setIsSubmenuOpen] = useState(false);
+
+  useEffect(() => {
+    setIsSubmenuOpen(isHoveredOn);
+  }, [isHoveredOn]);
+
   return (
-    <div
+    <Box
       className={classnames(classes.drawer, {
-        [classes.drawerOpen]: isHoveredOn,
+        [classes.drawerOpen]: isSubmenuOpen,
       })}
     >
-      <Typography variant="h5" className={classes.title}>
+      <Typography variant="h5" component="span" className={classes.title}>
         {props.title}
       </Typography>
       {props.children}
-    </div>
+    </Box>
   );
 };

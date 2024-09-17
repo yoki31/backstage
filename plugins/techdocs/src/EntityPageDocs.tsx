@@ -14,22 +14,37 @@
  * limitations under the License.
  */
 
-import React from 'react';
-import { Entity } from '@backstage/catalog-model';
-import { Reader } from './reader';
-import { toLowerMaybe } from './helpers';
-import { configApiRef, useApi } from '@backstage/core-plugin-api';
+import {
+  Entity,
+  getCompoundEntityRef,
+  parseEntityRef,
+} from '@backstage/catalog-model';
+import { TECHDOCS_EXTERNAL_ANNOTATION } from '@backstage/plugin-techdocs-common';
 
-export const EntityPageDocs = ({ entity }: { entity: Entity }) => {
-  const config = useApi(configApiRef);
+import React from 'react';
+import { TechDocsReaderPage } from './plugin';
+import { TechDocsReaderPageContent } from './reader/components/TechDocsReaderPageContent';
+import { TechDocsReaderPageSubheader } from './reader/components/TechDocsReaderPageSubheader';
+
+type EntityPageDocsProps = { entity: Entity };
+
+export const EntityPageDocs = ({ entity }: EntityPageDocsProps) => {
+  let entityRef = getCompoundEntityRef(entity);
+
+  if (entity.metadata.annotations?.[TECHDOCS_EXTERNAL_ANNOTATION]) {
+    try {
+      entityRef = parseEntityRef(
+        entity.metadata.annotations?.[TECHDOCS_EXTERNAL_ANNOTATION],
+      );
+    } catch {
+      // not a fan of this but we don't care if the parseEntityRef fails
+    }
+  }
+
   return (
-    <Reader
-      withSearch={false}
-      entityRef={{
-        namespace: toLowerMaybe(entity.metadata.namespace ?? 'default', config),
-        kind: toLowerMaybe(entity.kind, config),
-        name: toLowerMaybe(entity.metadata.name, config),
-      }}
-    />
+    <TechDocsReaderPage entityRef={entityRef}>
+      <TechDocsReaderPageSubheader />
+      <TechDocsReaderPageContent withSearch={false} />
+    </TechDocsReaderPage>
   );
 };

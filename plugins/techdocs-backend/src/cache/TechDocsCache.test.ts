@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-import { CacheClient, getVoidLogger } from '@backstage/backend-common';
 import { ConfigReader } from '@backstage/config';
 import { CacheInvalidationError, TechDocsCache } from './TechDocsCache';
+import { mockServices } from '@backstage/backend-test-utils';
+import { CacheService } from '@backstage/backend-plugin-api';
 
 const cached = (str: string): string => {
   return Buffer.from(str).toString('base64');
@@ -24,17 +25,18 @@ const cached = (str: string): string => {
 
 describe('TechDocsCache', () => {
   let CacheUnderTest: TechDocsCache;
-  let MockClient: jest.Mocked<CacheClient>;
+  let MockClient: jest.Mocked<CacheService>;
 
   beforeEach(() => {
     MockClient = {
       get: jest.fn(),
       set: jest.fn(),
       delete: jest.fn(),
+      withOptions: jest.fn(),
     };
     CacheUnderTest = TechDocsCache.fromConfig(new ConfigReader({}), {
       cache: MockClient,
-      logger: getVoidLogger(),
+      logger: mockServices.logger.mock(),
     });
   });
 
@@ -81,7 +83,7 @@ describe('TechDocsCache', () => {
         }),
         {
           cache: MockClient,
-          logger: getVoidLogger(),
+          logger: mockServices.logger.mock(),
         },
       );
 
@@ -151,7 +153,7 @@ describe('TechDocsCache', () => {
 
       await expect(
         CacheUnderTest.invalidateMultiple(expectedPaths),
-      ).rejects.toThrowError(CacheInvalidationError);
+      ).rejects.toThrow(CacheInvalidationError);
       expect(MockClient.delete).toHaveBeenCalledTimes(2);
     });
 

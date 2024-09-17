@@ -17,13 +17,17 @@
 import express from 'express';
 import { Profile as PassportProfile } from 'passport';
 import {
-  RedirectInfo,
   BackstageSignInResult,
   ProfileInfo,
-} from '../../providers/types';
+  OAuthState as _OAuthState,
+} from '@backstage/plugin-auth-node';
+import { OAuthStartResponse } from '../../providers/types';
 
 /**
  * Common options for passport.js-based OAuth providers
+ *
+ * @public
+ * @deprecated No longer in use
  */
 export type OAuthProviderOptions = {
   /**
@@ -40,11 +44,16 @@ export type OAuthProviderOptions = {
   callbackUrl: string;
 };
 
+/**
+ * @public
+ * @deprecated Use `OAuthAuthenticatorResult<PassportProfile>` from `@backstage/plugin-auth-node` instead
+ */
 export type OAuthResult = {
   fullProfile: PassportProfile;
   params: {
     id_token?: string;
     scope: string;
+    token_type?: string;
     expires_in: number;
   };
   accessToken: string;
@@ -52,9 +61,8 @@ export type OAuthResult = {
 };
 
 /**
- * The expected response from an OAuth flow.
- *
  * @public
+ * @deprecated Use `ClientAuthResponse` from `@backstage/plugin-auth-node` instead
  */
 export type OAuthResponse = {
   profile: ProfileInfo;
@@ -62,6 +70,10 @@ export type OAuthResponse = {
   backstageIdentity?: BackstageSignInResult;
 };
 
+/**
+ * @public
+ * @deprecated Use `createOAuthRouteHandlers` from `@backstage/plugin-auth-node` instead
+ */
 export type OAuthProviderInfo = {
   /**
    * An access token issued for the signed in user.
@@ -79,46 +91,52 @@ export type OAuthProviderInfo = {
    * Scopes granted for the access token.
    */
   scope: string;
-  /**
-   * A refresh token issued for the signed in user
-   */
-  refreshToken?: string;
 };
 
-export type OAuthState = {
-  /* A type for the serialized value in the `state` parameter of the OAuth authorization flow
-   */
-  nonce: string;
-  env: string;
-  origin?: string;
-};
+/**
+ * @public
+ * @deprecated import from `@backstage/plugin-auth-node` instead
+ */
+export type OAuthState = _OAuthState;
 
+/**
+ * @public
+ * @deprecated Use `createOAuthRouteHandlers` from `@backstage/plugin-auth-node` instead
+ */
 export type OAuthStartRequest = express.Request<{}> & {
   scope: string;
   state: OAuthState;
 };
 
+/**
+ * @public
+ * @deprecated Use `createOAuthRouteHandlers` from `@backstage/plugin-auth-node` instead
+ */
 export type OAuthRefreshRequest = express.Request<{}> & {
   scope: string;
   refreshToken: string;
 };
 
 /**
- * Any OAuth provider needs to implement this interface which has provider specific
- * handlers for different methods to perform authentication, get access tokens,
- * refresh tokens and perform sign out.
+ * @public
+ * @deprecated Use `createOAuthRouteHandlers` from `@backstage/plugin-auth-node` instead
+ */
+export type OAuthLogoutRequest = express.Request<{}> & {
+  refreshToken: string;
+};
+
+/**
+ * @public
+ * @deprecated Use `createOAuthRouteHandlers` from `@backstage/plugin-auth-node` instead
  */
 export interface OAuthHandlers {
   /**
-   * This method initiates a sign in request with an auth provider.
-   * @param {express.Request} req
-   * @param options
+   * Initiate a sign in request with an auth provider.
    */
-  start(req: OAuthStartRequest): Promise<RedirectInfo>;
+  start(req: OAuthStartRequest): Promise<OAuthStartResponse>;
 
   /**
-   * Handles the redirect from the auth provider when the user has signed in.
-   * @param {express.Request} req
+   * Handle the redirect from the auth provider when the user has signed in.
    */
   handler(req: express.Request): Promise<{
     response: OAuthResponse;
@@ -127,13 +145,14 @@ export interface OAuthHandlers {
 
   /**
    * (Optional) Given a refresh token and scope fetches a new access token from the auth provider.
-   * @param {string} refreshToken
-   * @param {string} scope
    */
-  refresh?(req: OAuthRefreshRequest): Promise<OAuthResponse>;
+  refresh?(req: OAuthRefreshRequest): Promise<{
+    response: OAuthResponse;
+    refreshToken?: string;
+  }>;
 
   /**
    * (Optional) Sign out of the auth provider.
    */
-  logout?(): Promise<void>;
+  logout?(req: OAuthLogoutRequest): Promise<void>;
 }

@@ -19,16 +19,16 @@ import { promisify } from 'util';
 import chalk from 'chalk';
 import inquirer, { Answers, Question } from 'inquirer';
 import { exec as execCb } from 'child_process';
-import { resolve as resolvePath, join as joinPath } from 'path';
+import { join as joinPath, resolve as resolvePath } from 'path';
 import camelCase from 'lodash/camelCase';
 import upperFirst from 'lodash/upperFirst';
 import os from 'os';
-import { Command } from 'commander';
+import { OptionValues } from 'commander';
 import { assertError } from '@backstage/errors';
 import {
-  parseOwnerIds,
   addCodeownersEntry,
   getCodeownersFilePath,
+  parseOwnerIds,
 } from '../../lib/codeowners';
 import { paths } from '../../lib/paths';
 import { Task, templatingTask } from '../../lib/tasks';
@@ -195,7 +195,7 @@ export async function movePlugin(
   });
 }
 
-export default async (cmd: Command) => {
+export default async (opts: OptionValues) => {
   const codeownersPath = await getCodeownersFilePath(paths.targetRoot);
 
   const questions: Question[] = [
@@ -242,21 +242,21 @@ export default async (cmd: Command) => {
 
   const answers: Answers = await inquirer.prompt(questions);
   const pluginId =
-    cmd.backend && !answers.id.endsWith('-backend')
+    opts.backend && !answers.id.endsWith('-backend')
       ? `${answers.id}-backend`
       : answers.id;
 
-  const name = cmd.scope
-    ? `@${cmd.scope.replace(/^@/, '')}/plugin-${pluginId}`
+  const name = opts.scope
+    ? `@${opts.scope.replace(/^@/, '')}/plugin-${pluginId}`
     : `plugin-${pluginId}`;
   const pluginVar = `${camelCase(answers.id)}Plugin`;
   const extensionName = `${upperFirst(camelCase(answers.id))}Page`;
-  const npmRegistry = cmd.npmRegistry && cmd.scope ? cmd.npmRegistry : '';
-  const privatePackage = cmd.private === false ? false : true;
+  const npmRegistry = opts.npmRegistry && opts.scope ? opts.npmRegistry : '';
+  const privatePackage = opts.private === false ? false : true;
   const isMonoRepo = await fs.pathExists(paths.resolveTargetRoot('lerna.json'));
   const appPackage = paths.resolveTargetRoot('packages/app');
   const templateDir = paths.resolveOwn(
-    cmd.backend
+    opts.backend
       ? 'templates/default-backend-plugin'
       : 'templates/default-plugin',
   );
@@ -266,6 +266,7 @@ export default async (cmd: Command) => {
   const { version: pluginVersion } = isMonoRepo
     ? await fs.readJson(paths.resolveTargetRoot('lerna.json'))
     : { version: '0.1.0' };
+  const license = opts.license ?? 'Apache-2.0';
 
   let lockfile: Lockfile | undefined;
   try {
@@ -299,8 +300,10 @@ export default async (cmd: Command) => {
         name,
         privatePackage,
         npmRegistry,
+        license,
       },
       createPackageVersionProvider(lockfile),
+      isMonoRepo,
     );
 
     Task.section('Moving to final location');
@@ -309,7 +312,7 @@ export default async (cmd: Command) => {
     Task.section('Building the plugin');
     await buildPlugin(pluginDir);
 
-    if ((await fs.pathExists(appPackage)) && !cmd.backend) {
+    if ((await fs.pathExists(appPackage)) && !opts.backend) {
       Task.section('Adding plugin as dependency in app');
       await addPluginDependencyToApp(paths.targetRoot, name, pluginVersion);
 

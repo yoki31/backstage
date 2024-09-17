@@ -6,224 +6,200 @@
 /// <reference types="node" />
 /// <reference types="webpack-env" />
 
-import { AbortSignal as AbortSignal_2 } from 'node-abort-controller';
-import { AwsS3Integration } from '@backstage/integration';
-import { AzureIntegration } from '@backstage/integration';
-import { BitbucketIntegration } from '@backstage/integration';
+import { AppConfig } from '@backstage/config';
+import { AuthCallback } from 'isomorphic-git';
+import { AuthService } from '@backstage/backend-plugin-api';
+import { BackendFeature } from '@backstage/backend-plugin-api';
+import { CacheService } from '@backstage/backend-plugin-api';
+import { CacheServiceOptions } from '@backstage/backend-plugin-api';
+import { CacheServiceSetOptions } from '@backstage/backend-plugin-api';
 import { Config } from '@backstage/config';
+import { ConfigSchema } from '@backstage/config-loader';
 import cors from 'cors';
+import { DatabaseService } from '@backstage/backend-plugin-api';
+import { DiscoveryService } from '@backstage/backend-plugin-api';
 import Docker from 'dockerode';
 import { ErrorRequestHandler } from 'express';
 import express from 'express';
-import { GithubCredentialsProvider } from '@backstage/integration';
-import { GitHubIntegration } from '@backstage/integration';
-import { GitLabIntegration } from '@backstage/integration';
-import { isChildPath } from '@backstage/cli-common';
-import { JsonValue } from '@backstage/types';
-import { Knex } from 'knex';
-import { Logger as Logger_2 } from 'winston';
+import { HttpAuthService } from '@backstage/backend-plugin-api';
+import { isChildPath as isChildPath_2 } from '@backstage/backend-plugin-api';
+import { isDatabaseConflictError as isDatabaseConflictError_2 } from '@backstage/backend-plugin-api';
+import { KubeConfig } from '@kubernetes/client-node';
+import { LifecycleService } from '@backstage/backend-plugin-api';
+import { LoadConfigOptionsRemote } from '@backstage/config-loader';
+import { Logger } from 'winston';
+import { LoggerService } from '@backstage/backend-plugin-api';
 import { MergeResult } from 'isomorphic-git';
+import { PermissionsService } from '@backstage/backend-plugin-api';
+import { PluginMetadataService } from '@backstage/backend-plugin-api';
 import { PushResult } from 'isomorphic-git';
-import { Readable } from 'stream';
 import { ReadCommitResult } from 'isomorphic-git';
+import { Request as Request_2 } from 'express';
 import { RequestHandler } from 'express';
+import { resolvePackagePath as resolvePackagePath_2 } from '@backstage/backend-plugin-api';
+import { resolveSafeChildPath as resolveSafeChildPath_2 } from '@backstage/backend-plugin-api';
+import { RootConfigService } from '@backstage/backend-plugin-api';
 import { Router } from 'express';
-import { S3 } from 'aws-sdk';
+import { SchedulerService } from '@backstage/backend-plugin-api';
 import { Server } from 'http';
+import { ServiceRef } from '@backstage/backend-plugin-api';
+import { TransportStreamOptions } from 'winston-transport';
+import { UrlReaderService } from '@backstage/backend-plugin-api';
+import { UserInfoService } from '@backstage/backend-plugin-api';
+import { V1PodTemplateSpec } from '@kubernetes/client-node';
 import * as winston from 'winston';
 import { Writable } from 'stream';
 
-// Warning: (ae-missing-release-tag) "AwsS3UrlReader" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
-// @public (undocumented)
-export class AwsS3UrlReader implements UrlReader {
-  constructor(
-    integration: AwsS3Integration,
-    deps: {
-      s3: S3;
-      treeResponseFactory: ReadTreeResponseFactory;
-    },
-  );
-  // (undocumented)
-  static factory: ReaderFactory;
-  // (undocumented)
-  read(url: string): Promise<Buffer>;
-  // (undocumented)
-  readTree(url: string, options?: ReadTreeOptions): Promise<ReadTreeResponse>;
-  // (undocumented)
-  readUrl(url: string, options?: ReadUrlOptions): Promise<ReadUrlResponse>;
-  // (undocumented)
-  search(): Promise<SearchResponse>;
-  // (undocumented)
-  toString(): string;
-}
-
-// @public (undocumented)
-export class AzureUrlReader implements UrlReader {
-  constructor(
-    integration: AzureIntegration,
-    deps: {
-      treeResponseFactory: ReadTreeResponseFactory;
-    },
-  );
-  // (undocumented)
-  static factory: ReaderFactory;
-  // (undocumented)
-  read(url: string): Promise<Buffer>;
-  // (undocumented)
-  readTree(url: string, options?: ReadTreeOptions): Promise<ReadTreeResponse>;
-  // (undocumented)
-  readUrl(url: string, options?: ReadUrlOptions): Promise<ReadUrlResponse>;
-  // (undocumented)
-  search(url: string, options?: SearchOptions): Promise<SearchResponse>;
-  // (undocumented)
-  toString(): string;
-}
-
-// @public
-export class BitbucketUrlReader implements UrlReader {
-  constructor(
-    integration: BitbucketIntegration,
-    deps: {
-      treeResponseFactory: ReadTreeResponseFactory;
-    },
-  );
-  // (undocumented)
-  static factory: ReaderFactory;
-  // (undocumented)
-  read(url: string): Promise<Buffer>;
-  // (undocumented)
-  readTree(url: string, options?: ReadTreeOptions): Promise<ReadTreeResponse>;
-  // (undocumented)
-  readUrl(url: string, options?: ReadUrlOptions): Promise<ReadUrlResponse>;
-  // (undocumented)
-  search(url: string, options?: SearchOptions): Promise<SearchResponse>;
-  // (undocumented)
-  toString(): string;
-}
-
-// @public
-export interface CacheClient {
-  delete(key: string): Promise<void>;
-  get(key: string): Promise<JsonValue | undefined>;
-  set(
-    key: string,
-    value: JsonValue,
-    options?: CacheClientSetOptions,
-  ): Promise<void>;
-}
-
-// @public (undocumented)
-export type CacheClientOptions = {
-  defaultTtl?: number;
+// @public @deprecated
+export type AuthCallbackOptions = {
+  onAuth: AuthCallback;
+  logger?: LoggerService;
 };
 
-// @public (undocumented)
-export type CacheClientSetOptions = {
-  ttl?: number;
-};
+// @public @deprecated (undocumented)
+export type CacheClient = CacheService;
 
-// @public
+// @public @deprecated (undocumented)
+export type CacheClientOptions = CacheServiceOptions;
+
+// @public @deprecated (undocumented)
+export type CacheClientSetOptions = CacheServiceSetOptions;
+
+// @public @deprecated (undocumented)
 export class CacheManager {
+  // (undocumented)
   forPlugin(pluginId: string): PluginCacheManager;
   static fromConfig(
-    config: Config,
+    config: RootConfigService,
     options?: CacheManagerOptions,
   ): CacheManager;
 }
 
-// @public (undocumented)
-export type CacheManagerOptions = {
-  logger?: Logger_2;
-  onError?: (err: Error) => void;
+// Warning: (ae-forgotten-export) The symbol "CacheManagerOptions_2" needs to be exported by the entry point index.d.ts
+//
+// @public @deprecated (undocumented)
+export type CacheManagerOptions = CacheManagerOptions_2;
+
+// @public @deprecated
+export function cacheToPluginCacheManager(cache: CacheService): {
+  getClient(options?: CacheServiceOptions): CacheService;
 };
 
-// @public (undocumented)
+// @public @deprecated
 export const coloredFormat: winston.Logform.Format;
 
-// @public (undocumented)
+// @public @deprecated
 export interface ContainerRunner {
-  // (undocumented)
   runContainer(opts: RunContainerOptions): Promise<void>;
 }
 
+// Warning: (ae-forgotten-export) The symbol "createConfigSecretEnumerator_2" needs to be exported by the entry point index.d.ts
+//
+// @public @deprecated (undocumented)
+export const createConfigSecretEnumerator: typeof createConfigSecretEnumerator_2;
+
 // @public @deprecated
-export const createDatabase: typeof createDatabaseClient;
+export function createLegacyAuthAdapters<
+  TOptions extends {
+    auth?: AuthService;
+    httpAuth?: HttpAuthService;
+    userInfo?: UserInfoService;
+    identity?: LegacyIdentityService;
+    tokenManager?: TokenManager;
+    discovery: PluginEndpointDiscovery;
+  },
+  TAdapters = (TOptions extends {
+    auth?: AuthService;
+  }
+    ? {
+        auth: AuthService;
+      }
+    : {}) &
+    (TOptions extends {
+      httpAuth?: HttpAuthService;
+    }
+      ? {
+          httpAuth: HttpAuthService;
+        }
+      : {}) &
+    (TOptions extends {
+      userInfo?: UserInfoService;
+    }
+      ? {
+          userInfo: UserInfoService;
+        }
+      : {}),
+>(options: TOptions): TAdapters;
 
-// @public
-export function createDatabaseClient(
-  dbConfig: Config,
-  overrides?: Partial<Knex.Config>,
-): Knex<any, unknown[]>;
-
-// @public (undocumented)
+// @public @deprecated
 export function createRootLogger(
   options?: winston.LoggerOptions,
   env?: NodeJS.ProcessEnv,
 ): winston.Logger;
 
-// @public
+// @public @deprecated
 export function createServiceBuilder(_module: NodeModule): ServiceBuilder;
 
-// @public (undocumented)
+// @public @deprecated
 export function createStatusCheckRouter(options: {
-  logger: Logger_2;
+  logger: LoggerService;
   path?: string;
   statusCheck?: StatusCheck;
 }): Promise<express.Router>;
 
-// @public (undocumented)
-export class DatabaseManager {
-  forPlugin(pluginId: string): PluginDatabaseManager;
+// @public @deprecated (undocumented)
+export class DatabaseManager implements LegacyRootDatabaseService {
+  // (undocumented)
+  forPlugin(
+    pluginId: string,
+    deps?:
+      | {
+          lifecycle: LifecycleService;
+          pluginMetadata: PluginMetadataService;
+        }
+      | undefined,
+  ): PluginDatabaseManager;
+  // (undocumented)
   static fromConfig(
     config: Config,
-    options?: DatabaseManagerOptions,
+    options?: {
+      migrations?: DatabaseService['migrations'];
+      logger?: LoggerService;
+    },
   ): DatabaseManager;
 }
 
-// @public
-export type DatabaseManagerOptions = {
-  migrations?: PluginDatabaseManager['migrations'];
-};
+// Warning: (ae-forgotten-export) The symbol "DatabaseManagerOptions_2" needs to be exported by the entry point index.d.ts
+//
+// @public @deprecated (undocumented)
+export type DatabaseManagerOptions = DatabaseManagerOptions_2;
 
-// @public (undocumented)
+// @public @deprecated
 export class DockerContainerRunner implements ContainerRunner {
   constructor(options: { dockerClient: Docker });
   // (undocumented)
   runContainer(options: RunContainerOptions): Promise<void>;
 }
 
-// @public
-export function ensureDatabaseExists(
-  dbConfig: Config,
-  ...databases: Array<string>
-): Promise<void>;
-
-// @public
+// @public @deprecated
 export function errorHandler(
   options?: ErrorHandlerOptions,
 ): ErrorRequestHandler;
 
-// @public (undocumented)
+// @public @deprecated
 export type ErrorHandlerOptions = {
   showStackTraces?: boolean;
-  logger?: Logger_2;
+  logger?: LoggerService;
   logClientErrors?: boolean;
 };
 
-// @public
-export type FromReadableArrayOptions = Array<{
-  data: Readable;
-  path: string;
-}>;
-
-// @public (undocumented)
+// @public @deprecated
 export function getRootLogger(): winston.Logger;
 
-// @public
+// @public @deprecated
 export function getVoidLogger(): winston.Logger;
 
-// @public (undocumented)
+// @public @deprecated
 export class Git {
   // (undocumented)
   add(options: { dir: string; filepath: string }): Promise<void>;
@@ -232,9 +208,19 @@ export class Git {
     dir: string;
     remote: string;
     url: string;
+    force?: boolean;
   }): Promise<void>;
   // (undocumented)
-  clone(options: { url: string; dir: string; ref?: string }): Promise<void>;
+  branch(options: { dir: string; ref: string }): Promise<void>;
+  // (undocumented)
+  checkout(options: { dir: string; ref: string }): Promise<void>;
+  clone(options: {
+    url: string;
+    dir: string;
+    ref?: string;
+    depth?: number;
+    noCheckout?: boolean;
+  }): Promise<void>;
   // (undocumented)
   commit(options: {
     dir: string;
@@ -248,22 +234,22 @@ export class Git {
       email: string;
     };
   }): Promise<string>;
-  // (undocumented)
   currentBranch(options: {
     dir: string;
     fullName?: boolean;
   }): Promise<string | undefined>;
   // (undocumented)
-  fetch(options: { dir: string; remote?: string }): Promise<void>;
+  deleteRemote(options: { dir: string; remote: string }): Promise<void>;
+  fetch(options: {
+    dir: string;
+    remote?: string;
+    tags?: boolean;
+  }): Promise<void>;
   // (undocumented)
-  static fromAuth: (options: {
-    username?: string;
-    password?: string;
-    logger?: Logger_2;
-  }) => Git;
+  static fromAuth: (options: StaticAuthOptions | AuthCallbackOptions) => Git;
   // (undocumented)
   init(options: { dir: string; defaultBranch?: string }): Promise<void>;
-  // (undocumented)
+  log(options: { dir: string; ref?: string }): Promise<ReadCommitResult[]>;
   merge(options: {
     dir: string;
     theirs: string;
@@ -278,185 +264,199 @@ export class Git {
     };
   }): Promise<MergeResult>;
   // (undocumented)
-  push(options: { dir: string; remote: string }): Promise<PushResult>;
-  // (undocumented)
+  push(options: {
+    dir: string;
+    remote: string;
+    remoteRef?: string;
+    force?: boolean;
+  }): Promise<PushResult>;
   readCommit(options: { dir: string; sha: string }): Promise<ReadCommitResult>;
-  // (undocumented)
+  remove(options: { dir: string; filepath: string }): Promise<void>;
   resolveRef(options: { dir: string; ref: string }): Promise<string>;
 }
 
-// @public
-export class GithubUrlReader implements UrlReader {
-  constructor(
-    integration: GitHubIntegration,
-    deps: {
-      treeResponseFactory: ReadTreeResponseFactory;
-      credentialsProvider: GithubCredentialsProvider;
-    },
-  );
+// @public @deprecated
+class HostDiscovery implements DiscoveryService {
+  static fromConfig(config: Config): HostDiscovery;
   // (undocumented)
-  static factory: ReaderFactory;
+  getBaseUrl(pluginId: string): Promise<string>;
   // (undocumented)
-  read(url: string): Promise<Buffer>;
+  getExternalBaseUrl(pluginId: string): Promise<string>;
+}
+export { HostDiscovery };
+export { HostDiscovery as SingleHostDiscovery };
+
+// @public @deprecated (undocumented)
+export const isChildPath: typeof isChildPath_2;
+
+// @public @deprecated (undocumented)
+export const isDatabaseConflictError: typeof isDatabaseConflictError_2;
+
+// @public @deprecated
+export class KubernetesContainerRunner implements ContainerRunner {
+  constructor(options: KubernetesContainerRunnerOptions);
   // (undocumented)
-  readTree(url: string, options?: ReadTreeOptions): Promise<ReadTreeResponse>;
-  // (undocumented)
-  readUrl(url: string, options?: ReadUrlOptions): Promise<ReadUrlResponse>;
-  // (undocumented)
-  search(url: string, options?: SearchOptions): Promise<SearchResponse>;
-  // (undocumented)
-  toString(): string;
+  runContainer(options: RunContainerOptions): Promise<void>;
 }
 
-// @public (undocumented)
-export class GitlabUrlReader implements UrlReader {
-  constructor(
-    integration: GitLabIntegration,
-    deps: {
-      treeResponseFactory: ReadTreeResponseFactory;
-    },
-  );
-  // (undocumented)
-  static factory: ReaderFactory;
-  // (undocumented)
-  read(url: string): Promise<Buffer>;
-  // (undocumented)
-  readTree(url: string, options?: ReadTreeOptions): Promise<ReadTreeResponse>;
-  // (undocumented)
-  readUrl(url: string, options?: ReadUrlOptions): Promise<ReadUrlResponse>;
-  // (undocumented)
-  search(url: string, options?: SearchOptions): Promise<SearchResponse>;
-  // (undocumented)
-  toString(): string;
-}
-
-export { isChildPath };
-
-// @public
-export function isDatabaseConflictError(e: unknown): boolean;
-
-// @public
-export function loadBackendConfig(options: {
-  logger: Logger_2;
-  argv: string[];
-}): Promise<Config>;
-
-// @public
-export function notFoundHandler(): RequestHandler;
-
-// @public
-export type PluginCacheManager = {
-  getClient: (options?: CacheClientOptions) => CacheClient;
+// @public @deprecated
+export type KubernetesContainerRunnerMountBase = {
+  volumeName: string;
+  basePath: string;
 };
 
-// @public
-export interface PluginDatabaseManager {
-  getClient(): Promise<Knex>;
-  migrations?: {
-    skip?: boolean;
+// @public @deprecated
+export type KubernetesContainerRunnerOptions = {
+  kubeConfig: KubeConfig;
+  name: string;
+  namespace?: string;
+  mountBase?: KubernetesContainerRunnerMountBase;
+  podTemplate?: V1PodTemplateSpec;
+  timeoutMs?: number;
+};
+
+// @public @deprecated (undocumented)
+export type LegacyCreateRouter<TEnv> = (deps: TEnv) => Promise<RequestHandler>;
+
+// @public @deprecated
+export interface LegacyIdentityService {
+  // (undocumented)
+  getIdentity(options: { request: Request_2<unknown> }): Promise<
+    | {
+        expiresInSeconds?: number;
+        token: string;
+        identity: {
+          type: 'user';
+          userEntityRef: string;
+          ownershipEntityRefs: string[];
+        };
+      }
+    | undefined
+  >;
+}
+
+// @public @deprecated
+export const legacyPlugin: (
+  name: string,
+  createRouterImport: Promise<{
+    default: LegacyCreateRouter<
+      TransformedEnv<
+        {
+          cache: CacheService;
+          config: RootConfigService;
+          database: DatabaseService;
+          discovery: DiscoveryService;
+          logger: LoggerService;
+          permissions: PermissionsService;
+          scheduler: SchedulerService;
+          reader: UrlReaderService;
+        },
+        {
+          logger: (log: LoggerService) => Logger;
+          cache: (cache: CacheService) => {
+            getClient(options?: CacheServiceOptions | undefined): CacheService;
+          };
+        }
+      > & {
+        tokenManager: TokenManager;
+        identity: LegacyIdentityService;
+      }
+    >;
+  }>,
+) => BackendFeature;
+
+// @public @deprecated (undocumented)
+export type LegacyRootDatabaseService = {
+  forPlugin(pluginId: string): DatabaseService;
+};
+
+// @public @deprecated
+export function loadBackendConfig(options: {
+  logger: LoggerService;
+  remote?: LoadConfigOptionsRemote;
+  additionalConfigs?: AppConfig[];
+  argv: string[];
+  watch?: boolean;
+}): Promise<Config>;
+
+// @public @deprecated (undocumented)
+export function loggerToWinstonLogger(
+  logger: LoggerService,
+  opts?: TransportStreamOptions,
+): Logger;
+
+// @public @deprecated
+export function makeLegacyPlugin<
+  TEnv extends Record<string, unknown>,
+  TEnvTransforms extends {
+    [key in keyof TEnv]?: (dep: TEnv[key]) => unknown;
+  },
+>(
+  envMapping: {
+    [key in keyof TEnv]: ServiceRef<TEnv[key]>;
+  },
+  envTransforms: TEnvTransforms,
+): (
+  name: string,
+  createRouterImport: Promise<{
+    default: LegacyCreateRouter<
+      TransformedEnv<TEnv, TEnvTransforms> & {
+        tokenManager: TokenManager;
+        identity: LegacyIdentityService;
+      }
+    >;
+  }>,
+) => BackendFeature;
+
+// @public @deprecated
+export function notFoundHandler(): RequestHandler;
+
+// @public @deprecated (undocumented)
+export type PluginCacheManager = {
+  getClient(options?: CacheServiceOptions): CacheService;
+};
+
+// @public @deprecated (undocumented)
+export type PluginDatabaseManager = DatabaseService;
+
+// @public @deprecated (undocumented)
+export type PluginEndpointDiscovery = DiscoveryService;
+
+// @public @deprecated
+export interface PullOptions {
+  // (undocumented)
+  [key: string]: unknown;
+  // (undocumented)
+  authconfig?: {
+    username?: string;
+    password?: string;
+    auth?: string;
+    email?: string;
+    serveraddress?: string;
+    [key: string]: unknown;
   };
 }
 
-// @public
-export type PluginEndpointDiscovery = {
-  getBaseUrl(pluginId: string): Promise<string>;
-  getExternalBaseUrl(pluginId: string): Promise<string>;
-};
+// @public @deprecated
+export function redactWinstonLogLine(
+  info: winston.Logform.TransformableInfo,
+): winston.Logform.TransformableInfo;
 
-// @public
-export type ReaderFactory = (options: {
-  config: Config;
-  logger: Logger_2;
-  treeResponseFactory: ReadTreeResponseFactory;
-}) => UrlReaderPredicateTuple[];
+// @public @deprecated
+export function requestLoggingHandler(logger?: LoggerService): RequestHandler;
 
-// @public
-export type ReadTreeOptions = {
-  filter?(
-    path: string,
-    info?: {
-      size: number;
-    },
-  ): boolean;
-  etag?: string;
-  signal?: AbortSignal_2;
-};
-
-// @public
-export type ReadTreeResponse = {
-  files(): Promise<ReadTreeResponseFile[]>;
-  archive(): Promise<NodeJS.ReadableStream>;
-  dir(options?: ReadTreeResponseDirOptions): Promise<string>;
-  etag: string;
-};
-
-// @public
-export type ReadTreeResponseDirOptions = {
-  targetDir?: string;
-};
-
-// @public (undocumented)
-export interface ReadTreeResponseFactory {
-  // (undocumented)
-  fromReadableArray(
-    options: FromReadableArrayOptions,
-  ): Promise<ReadTreeResponse>;
-  // (undocumented)
-  fromTarArchive(
-    options: ReadTreeResponseFactoryOptions,
-  ): Promise<ReadTreeResponse>;
-  // (undocumented)
-  fromZipArchive(
-    options: ReadTreeResponseFactoryOptions,
-  ): Promise<ReadTreeResponse>;
-}
-
-// @public
-export type ReadTreeResponseFactoryOptions = {
-  stream: Readable;
-  subpath?: string;
-  etag: string;
-  filter?: (
-    path: string,
-    info?: {
-      size: number;
-    },
-  ) => boolean;
-};
-
-// @public
-export type ReadTreeResponseFile = {
-  path: string;
-  content(): Promise<Buffer>;
-};
-
-// @public
-export type ReadUrlOptions = {
-  etag?: string;
-  signal?: AbortSignal_2;
-};
-
-// @public
-export type ReadUrlResponse = {
-  buffer(): Promise<Buffer>;
-  etag?: string;
-};
-
-// @public
-export function requestLoggingHandler(logger?: Logger_2): RequestHandler;
-
-// @public (undocumented)
+// @public @deprecated
 export type RequestLoggingHandlerFactory = (
-  logger?: Logger_2,
+  logger?: LoggerService,
 ) => RequestHandler;
 
-// @public
-export function resolvePackagePath(name: string, ...paths: string[]): string;
+// @public @deprecated (undocumented)
+export const resolvePackagePath: typeof resolvePackagePath_2;
 
-// @public
-export function resolveSafeChildPath(base: string, path: string): string;
+// @public @deprecated (undocumented)
+export const resolveSafeChildPath: typeof resolveSafeChildPath_2;
 
-// @public (undocumented)
+// @public @deprecated
 export type RunContainerOptions = {
   imageName: string;
   command?: string | string[];
@@ -466,46 +466,38 @@ export type RunContainerOptions = {
   workingDir?: string;
   envVars?: Record<string, string>;
   pullImage?: boolean;
+  defaultUser?: boolean;
+  pullOptions?: PullOptions;
 };
 
-// @public
-export type SearchOptions = {
-  etag?: string;
-  signal?: AbortSignal_2;
-};
-
-// @public
-export type SearchResponse = {
-  files: SearchResponseFile[];
-  etag: string;
-};
-
-// @public
-export type SearchResponseFile = {
-  url: string;
-  content(): Promise<Buffer>;
-};
-
-// @public
+// @public @deprecated
 export class ServerTokenManager implements TokenManager {
   // (undocumented)
   authenticate(token: string): Promise<void>;
   // (undocumented)
-  static fromConfig(config: Config): ServerTokenManager;
+  static fromConfig(
+    config: Config,
+    options: ServerTokenManagerOptions,
+  ): TokenManager;
   // (undocumented)
   getToken(): Promise<{
     token: string;
   }>;
-  // (undocumented)
   static noop(): TokenManager;
 }
 
-// @public (undocumented)
+// @public @deprecated
+export interface ServerTokenManagerOptions {
+  allowDisabledTokenManager?: boolean;
+  logger: LoggerService;
+}
+
+// @public @deprecated
 export type ServiceBuilder = {
   loadConfig(config: Config): ServiceBuilder;
   setPort(port: number): ServiceBuilder;
   setHost(host: string): ServiceBuilder;
-  setLogger(logger: Logger_2): ServiceBuilder;
+  setLogger(logger: LoggerService): ServiceBuilder;
   enableCors(options: cors.CorsOptions): ServiceBuilder;
   setHttpsSettings(settings: {
     certificate:
@@ -526,86 +518,44 @@ export type ServiceBuilder = {
   start(): Promise<Server>;
 };
 
-// @public (undocumented)
+// @public @deprecated
 export function setRootLogger(newLogger: winston.Logger): void;
 
 // @public @deprecated
-export const SingleConnectionDatabaseManager: typeof DatabaseManager;
+export type StaticAuthOptions = {
+  username?: string;
+  password?: string;
+  token?: string;
+  logger?: LoggerService;
+};
 
-// @public
-export class SingleHostDiscovery implements PluginEndpointDiscovery {
-  static fromConfig(
-    config: Config,
-    options?: {
-      basePath?: string;
-    },
-  ): SingleHostDiscovery;
-  // (undocumented)
-  getBaseUrl(pluginId: string): Promise<string>;
-  // (undocumented)
-  getExternalBaseUrl(pluginId: string): Promise<string>;
-}
-
-// @public (undocumented)
+// @public @deprecated
 export type StatusCheck = () => Promise<any>;
 
-// @public
+// @public @deprecated
 export function statusCheckHandler(
   options?: StatusCheckHandlerOptions,
 ): Promise<RequestHandler>;
 
-// @public (undocumented)
+// @public @deprecated
 export interface StatusCheckHandlerOptions {
   statusCheck?: StatusCheck;
 }
 
-// @public
+// @public @deprecated (undocumented)
 export interface TokenManager {
-  // (undocumented)
-  authenticate: (token: string) => Promise<void>;
-  // (undocumented)
-  getToken: () => Promise<{
+  authenticate(token: string): Promise<void>;
+  getToken(): Promise<{
     token: string;
   }>;
 }
 
-// @public
-export type UrlReader = {
-  read(url: string): Promise<Buffer>;
-  readUrl?(url: string, options?: ReadUrlOptions): Promise<ReadUrlResponse>;
-  readTree(url: string, options?: ReadTreeOptions): Promise<ReadTreeResponse>;
-  search(url: string, options?: SearchOptions): Promise<SearchResponse>;
-};
-
-// @public
-export type UrlReaderPredicateTuple = {
-  predicate: (url: URL) => boolean;
-  reader: UrlReader;
-};
-
-// @public
-export class UrlReaders {
-  static create(options: UrlReadersOptions): UrlReader;
-  static default(options: UrlReadersOptions): UrlReader;
-}
-
-// @public (undocumented)
-export type UrlReadersOptions = {
-  config: Config;
-  logger: Logger_2;
-  factories?: ReaderFactory[];
-};
-
-// @public
+// @public @deprecated
 export function useHotCleanup(
   _module: NodeModule,
   cancelEffect: () => void,
 ): void;
 
-// @public
+// @public @deprecated
 export function useHotMemoize<T>(_module: NodeModule, valueFactory: () => T): T;
-
-// Warnings were encountered during analysis:
-//
-// src/database/types.d.ts:23:12 - (tsdoc-undefined-tag) The TSDoc tag "@default" is not defined in this configuration
 ```

@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
-import { deserializeError } from '../serialization';
+import { deserializeError } from '../serialization/error';
 import {
   ErrorResponseBody,
   parseErrorResponseBody,
 } from '../serialization/response';
+import { ConsumedResponse } from './types';
 
 /**
  * An error thrown as the result of a failed server request.
@@ -34,7 +35,7 @@ export class ResponseError extends Error {
    * Note that the body of this response is always consumed. Its parsed form is
    * in the `body` field.
    */
-  readonly response: Response;
+  readonly response: ConsumedResponse;
 
   /**
    * The parsed JSON error body, as sent by the server.
@@ -52,6 +53,9 @@ export class ResponseError extends Error {
    */
   readonly cause: Error;
 
+  readonly statusCode: number;
+
+  readonly statusText: string;
   /**
    * Constructs a ResponseError based on a failed response.
    *
@@ -59,12 +63,14 @@ export class ResponseError extends Error {
    * function consumes the body of the response, and assumes that it hasn't
    * been consumed before.
    */
-  static async fromResponse(response: Response): Promise<ResponseError> {
+  static async fromResponse(
+    response: ConsumedResponse & { text(): Promise<string> },
+  ): Promise<ResponseError> {
     const data = await parseErrorResponseBody(response);
 
-    const status = data.response.statusCode || response.status;
-    const statusText = data.error.name || response.statusText;
-    const message = `Request failed with ${status} ${statusText}`;
+    const statusCode = data.response.statusCode || response.status;
+    const statusText = response.statusText;
+    const message = `Request failed with ${statusCode} ${statusText}`;
     const cause = deserializeError(data.error);
 
     return new ResponseError({
@@ -72,31 +78,26 @@ export class ResponseError extends Error {
       response,
       data,
       cause,
+      statusCode,
+      statusText,
     });
   }
 
-  /**
-   * @deprecated will be removed.
-   **/
-  constructor(props: {
+  private constructor(opts: {
     message: string;
-    response: Response;
+    response: ConsumedResponse;
     data: ErrorResponseBody;
     cause: Error;
+    statusCode: number;
+    statusText: string;
   }) {
-    super(props.message);
+    super(opts.message);
+
     this.name = 'ResponseError';
-    this.response = props.response;
-    this.body = props.data;
-    this.cause = props.cause;
-  }
-  /**
-   * The parsed JSON error body, as sent by the server.
-   * @deprecated use body instead.
-   */
-  get data(): ErrorResponseBody {
-    // eslint-disable-next-line no-console
-    console.warn('ErrorResponse.data is deprecated, use .body instead.');
-    return this.body;
+    this.response = opts.response;
+    this.body = opts.data;
+    this.cause = opts.cause;
+    this.statusCode = opts.statusCode;
+    this.statusText = opts.statusText;
   }
 }

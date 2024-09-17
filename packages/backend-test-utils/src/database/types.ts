@@ -14,8 +14,13 @@
  * limitations under the License.
  */
 
-import { DatabaseManager } from '@backstage/backend-common';
 import { Knex } from 'knex';
+import { getDockerImageForName } from '../util/getDockerImageForName';
+
+export interface Engine {
+  createDatabaseInstance(): Promise<Knex>;
+  shutdown(): Promise<void>;
+}
 
 /**
  * The possible databases to test against.
@@ -23,7 +28,12 @@ import { Knex } from 'knex';
  * @public
  */
 export type TestDatabaseId =
+  | 'POSTGRES_16'
+  | 'POSTGRES_15'
+  | 'POSTGRES_14'
   | 'POSTGRES_13'
+  | 'POSTGRES_12'
+  | 'POSTGRES_11'
   | 'POSTGRES_9'
   | 'MYSQL_8'
   | 'SQLITE_3';
@@ -35,36 +45,73 @@ export type TestDatabaseProperties = {
   connectionStringEnvironmentVariableName?: string;
 };
 
-export type Instance = {
-  stopContainer?: () => Promise<void>;
-  databaseManager: DatabaseManager;
-  connections: Array<Knex>;
-};
 export const allDatabases: Record<TestDatabaseId, TestDatabaseProperties> =
   Object.freeze({
+    POSTGRES_16: {
+      name: 'Postgres 16.x',
+      driver: 'pg',
+      dockerImageName: getDockerImageForName('postgres:16'),
+      connectionStringEnvironmentVariableName:
+        'BACKSTAGE_TEST_DATABASE_POSTGRES16_CONNECTION_STRING',
+    },
+    POSTGRES_15: {
+      name: 'Postgres 15.x',
+      driver: 'pg',
+      dockerImageName: getDockerImageForName('postgres:15'),
+      connectionStringEnvironmentVariableName:
+        'BACKSTAGE_TEST_DATABASE_POSTGRES15_CONNECTION_STRING',
+    },
+    POSTGRES_14: {
+      name: 'Postgres 14.x',
+      driver: 'pg',
+      dockerImageName: getDockerImageForName('postgres:14'),
+      connectionStringEnvironmentVariableName:
+        'BACKSTAGE_TEST_DATABASE_POSTGRES14_CONNECTION_STRING',
+    },
     POSTGRES_13: {
       name: 'Postgres 13.x',
       driver: 'pg',
-      dockerImageName: 'postgres:13',
+      dockerImageName: getDockerImageForName('postgres:13'),
       connectionStringEnvironmentVariableName:
         'BACKSTAGE_TEST_DATABASE_POSTGRES13_CONNECTION_STRING',
+    },
+    POSTGRES_12: {
+      name: 'Postgres 12.x',
+      driver: 'pg',
+      dockerImageName: getDockerImageForName('postgres:12'),
+      connectionStringEnvironmentVariableName:
+        'BACKSTAGE_TEST_DATABASE_POSTGRES12_CONNECTION_STRING',
+    },
+    POSTGRES_11: {
+      name: 'Postgres 11.x',
+      driver: 'pg',
+      dockerImageName: getDockerImageForName('postgres:11'),
+      connectionStringEnvironmentVariableName:
+        'BACKSTAGE_TEST_DATABASE_POSTGRES11_CONNECTION_STRING',
     },
     POSTGRES_9: {
       name: 'Postgres 9.x',
       driver: 'pg',
-      dockerImageName: 'postgres:9',
+      dockerImageName: getDockerImageForName('postgres:9'),
       connectionStringEnvironmentVariableName:
         'BACKSTAGE_TEST_DATABASE_POSTGRES9_CONNECTION_STRING',
     },
     MYSQL_8: {
       name: 'MySQL 8.x',
       driver: 'mysql2',
-      dockerImageName: 'mysql:8',
+      dockerImageName: getDockerImageForName('mysql:8'),
       connectionStringEnvironmentVariableName:
         'BACKSTAGE_TEST_DATABASE_MYSQL8_CONNECTION_STRING',
     },
     SQLITE_3: {
       name: 'SQLite 3.x',
-      driver: 'sqlite3',
+      driver: 'better-sqlite3',
     },
   });
+
+export const LARGER_POOL_CONFIG = {
+  pool: {
+    min: 0,
+    max: 50,
+  },
+};

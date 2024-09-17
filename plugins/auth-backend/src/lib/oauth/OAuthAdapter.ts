@@ -14,94 +14,118 @@
  * limitations under the License.
  */
 
-import express from 'express';
+import express, { CookieOptions } from 'express';
 import crypto from 'crypto';
 import { URL } from 'url';
 import {
-  AuthProviderRouteHandlers,
   AuthProviderConfig,
+  AuthProviderRouteHandlers,
   BackstageIdentityResponse,
   BackstageSignInResult,
-} from '../../providers/types';
+  CookieConfigurer,
+  OAuthState,
+} from '@backstage/plugin-auth-node';
 import {
   AuthenticationError,
   InputError,
   isError,
   NotAllowedError,
 } from '@backstage/errors';
-import { TokenIssuer } from '../../identity/types';
-import { readState, verifyNonce } from './helpers';
-import { postMessageResponse, ensuresXRequestedWith } from '../flow';
+import { defaultCookieConfigurer, readState, verifyNonce } from './helpers';
+import {
+  postMessageResponse,
+  ensuresXRequestedWith,
+  WebMessageResponse,
+} from '../flow';
 import {
   OAuthHandlers,
   OAuthStartRequest,
   OAuthRefreshRequest,
-  OAuthState,
+  OAuthLogoutRequest,
 } from './types';
 import { prepareBackstageIdentityResponse } from '../../providers/prepareBackstageIdentityResponse';
 
 export const THOUSAND_DAYS_MS = 1000 * 24 * 60 * 60 * 1000;
 export const TEN_MINUTES_MS = 600 * 1000;
 
-export type Options = {
+/**
+ * @public
+ * @deprecated Use `createOAuthRouteHandlers` from `@backstage/plugin-auth-node` instead
+ */
+export type OAuthAdapterOptions = {
   providerId: string;
-  secure: boolean;
-  disableRefresh?: boolean;
   persistScopes?: boolean;
-  cookieDomain: string;
-  cookiePath: string;
   appOrigin: string;
-  tokenIssuer: TokenIssuer;
+  baseUrl: string;
+  cookieConfigurer: CookieConfigurer;
   isOriginAllowed: (origin: string) => boolean;
+  callbackUrl: string;
 };
 
+/**
+ * @public
+ * @deprecated Use `createOAuthRouteHandlers` from `@backstage/plugin-auth-node` instead
+ */
 export class OAuthAdapter implements AuthProviderRouteHandlers {
   static fromConfig(
     config: AuthProviderConfig,
     handlers: OAuthHandlers,
     options: Pick<
-      Options,
-      'providerId' | 'persistScopes' | 'disableRefresh' | 'tokenIssuer'
+      OAuthAdapterOptions,
+      'providerId' | 'persistScopes' | 'callbackUrl'
     >,
   ): OAuthAdapter {
-    const { origin: appOrigin } = new URL(config.appUrl);
-    const secure = config.baseUrl.startsWith('https://');
-    const url = new URL(config.baseUrl);
-    const cookiePath = `${url.pathname}/${options.providerId}`;
+    const { appUrl, baseUrl, isOriginAllowed } = config;
+    const { origin: appOrigin } = new URL(appUrl);
+
+    const cookieConfigurer = config.cookieConfigurer ?? defaultCookieConfigurer;
+
     return new OAuthAdapter(handlers, {
       ...options,
       appOrigin,
-      cookieDomain: url.hostname,
-      cookiePath,
-      secure,
-      isOriginAllowed: config.isOriginAllowed,
+      baseUrl,
+      cookieConfigurer,
+      isOriginAllowed,
     });
   }
 
+  private readonly baseCookieOptions: CookieOptions;
+
   constructor(
     private readonly handlers: OAuthHandlers,
-    private readonly options: Options,
-  ) {}
+    private readonly options: OAuthAdapterOptions,
+  ) {
+    this.baseCookieOptions = {
+      httpOnly: true,
+      sameSite: 'lax',
+    };
+  }
 
   async start(req: express.Request, res: express.Response): Promise<void> {
     // retrieve scopes from request
     const scope = req.query.scope?.toString() ?? '';
     const env = req.query.env?.toString();
     const origin = req.query.origin?.toString();
+    const redirectUrl = req.query.redirectUrl?.toString();
+    const flow = req.query.flow?.toString();
 
     if (!env) {
       throw new InputError('No env provided in request query parameters');
     }
 
-    if (this.options.persistScopes) {
-      this.setScopesCookie(res, scope);
-    }
+    const cookieConfig = this.getCookieConfig(origin);
 
     const nonce = crypto.randomBytes(16).toString('base64');
     // set a nonce cookie before redirecting to oauth provider
-    this.setNonceCookie(res, nonce);
+    this.setNonceCookie(res, nonce, cookieConfig);
 
-    const state = { nonce, env, origin };
+    const state: OAuthState = { nonce, env, origin, redirectUrl, flow };
+
+    // If scopes are persisted then we pass them through the state so that we
+    // can set the cookie on successful auth
+    if (this.options.persistScopes) {
+      state.scope = scope;
+    }
     const forwardReq = Object.assign(req, { scope, state });
 
     const { url, status } = await this.handlers.start(
@@ -139,26 +163,38 @@ export class OAuthAdapter implements AuthProviderRouteHandlers {
 
       const { response, refreshToken } = await this.handlers.handler(req);
 
-      if (this.options.persistScopes) {
-        const grantedScopes = this.getScopesFromCookie(
-          req,
-          this.options.providerId,
-        );
-        response.providerInfo.scope = grantedScopes;
+      const cookieConfig = this.getCookieConfig(appOrigin);
+
+      // Store the scope that we have been granted for this session. This is useful if
+      // the provider does not return granted scopes on refresh or if they are normalized.
+      if (this.options.persistScopes && state.scope) {
+        this.setGrantedScopeCookie(res, state.scope, cookieConfig);
+        response.providerInfo.scope = state.scope;
       }
 
-      if (refreshToken && !this.options.disableRefresh) {
+      if (refreshToken) {
         // set new refresh token
-        this.setRefreshTokenCookie(res, refreshToken);
+        this.setRefreshTokenCookie(res, refreshToken, cookieConfig);
       }
 
       const identity = await this.populateIdentity(response.backstageIdentity);
 
-      // post message back to popup if successful
-      return postMessageResponse(res, appOrigin, {
+      const responseObj: WebMessageResponse = {
         type: 'authorization_response',
         response: { ...response, backstageIdentity: identity },
-      });
+      };
+
+      if (state.flow === 'redirect') {
+        if (!state.redirectUrl) {
+          throw new InputError(
+            'No redirectUrl provided in request query parameters',
+          );
+        }
+        res.redirect(state.redirectUrl);
+        return undefined;
+      }
+      // post message back to popup if successful
+      return postMessageResponse(res, appOrigin, responseObj);
     } catch (error) {
       const { name, message } = isError(error)
         ? error
@@ -176,8 +212,18 @@ export class OAuthAdapter implements AuthProviderRouteHandlers {
       throw new AuthenticationError('Invalid X-Requested-With header');
     }
 
+    if (this.handlers.logout) {
+      const refreshToken = this.getRefreshTokenFromCookie(req);
+      const revokeRequest: OAuthLogoutRequest = Object.assign(req, {
+        refreshToken,
+      });
+      await this.handlers.logout(revokeRequest);
+    }
+
     // remove refresh token cookie if it is set
-    this.removeRefreshTokenCookie(res);
+    const origin = req.get('origin');
+    const cookieConfig = this.getCookieConfig(origin);
+    this.removeRefreshTokenCookie(res, cookieConfig);
 
     res.status(200).end();
   }
@@ -187,39 +233,38 @@ export class OAuthAdapter implements AuthProviderRouteHandlers {
       throw new AuthenticationError('Invalid X-Requested-With header');
     }
 
-    if (!this.handlers.refresh || this.options.disableRefresh) {
+    if (!this.handlers.refresh) {
       throw new InputError(
         `Refresh token is not supported for provider ${this.options.providerId}`,
       );
     }
 
     try {
-      const refreshToken =
-        req.cookies[`${this.options.providerId}-refresh-token`];
+      const refreshToken = this.getRefreshTokenFromCookie(req);
 
       // throw error if refresh token is missing in the request
       if (!refreshToken) {
         throw new InputError('Missing session cookie');
       }
 
-      const scope = req.query.scope?.toString() ?? '';
-
+      let scope = req.query.scope?.toString() ?? '';
+      if (this.options.persistScopes) {
+        scope = this.getGrantedScopeFromCookie(req);
+      }
       const forwardReq = Object.assign(req, { scope, refreshToken });
 
       // get new access_token
-      const response = await this.handlers.refresh(
-        forwardReq as OAuthRefreshRequest,
-      );
+      const { response, refreshToken: newRefreshToken } =
+        await this.handlers.refresh(forwardReq as OAuthRefreshRequest);
 
       const backstageIdentity = await this.populateIdentity(
         response.backstageIdentity,
       );
 
-      if (
-        response.providerInfo.refreshToken &&
-        response.providerInfo.refreshToken !== refreshToken
-      ) {
-        this.setRefreshTokenCookie(res, response.providerInfo.refreshToken);
+      if (newRefreshToken && newRefreshToken !== refreshToken) {
+        const origin = req.get('origin');
+        const cookieConfig = this.getCookieConfig(origin);
+        this.setRefreshTokenCookie(res, newRefreshToken, cookieConfig);
       }
 
       res.status(200).json({ ...response, backstageIdentity });
@@ -238,66 +283,75 @@ export class OAuthAdapter implements AuthProviderRouteHandlers {
     if (!identity) {
       return undefined;
     }
-
-    if (identity.token) {
-      return prepareBackstageIdentityResponse(identity);
+    if (!identity.token) {
+      throw new InputError(`Identity response must return a token`);
     }
 
-    const token = await this.options.tokenIssuer.issueToken({
-      claims: { sub: identity.id },
-    });
-
-    return prepareBackstageIdentityResponse({ ...identity, token });
+    return prepareBackstageIdentityResponse(identity);
   }
 
-  private setNonceCookie = (res: express.Response, nonce: string) => {
+  private setNonceCookie = (
+    res: express.Response,
+    nonce: string,
+    cookieConfig: ReturnType<CookieConfigurer>,
+  ) => {
     res.cookie(`${this.options.providerId}-nonce`, nonce, {
       maxAge: TEN_MINUTES_MS,
-      secure: this.options.secure,
-      sameSite: 'lax',
-      domain: this.options.cookieDomain,
-      path: `${this.options.cookiePath}/handler`,
-      httpOnly: true,
+      ...this.baseCookieOptions,
+      ...cookieConfig,
+      path: `${cookieConfig.path}/handler`,
     });
   };
 
-  private setScopesCookie = (res: express.Response, scope: string) => {
-    res.cookie(`${this.options.providerId}-scope`, scope, {
-      maxAge: TEN_MINUTES_MS,
-      secure: this.options.secure,
-      sameSite: 'lax',
-      domain: this.options.cookieDomain,
-      path: `${this.options.cookiePath}/handler`,
-      httpOnly: true,
+  private setGrantedScopeCookie = (
+    res: express.Response,
+    scope: string,
+    cookieConfig: ReturnType<CookieConfigurer>,
+  ) => {
+    res.cookie(`${this.options.providerId}-granted-scope`, scope, {
+      maxAge: THOUSAND_DAYS_MS,
+      ...this.baseCookieOptions,
+      ...cookieConfig,
     });
   };
 
-  private getScopesFromCookie = (req: express.Request, providerId: string) => {
-    return req.cookies[`${providerId}-scope`];
+  private getRefreshTokenFromCookie = (req: express.Request) => {
+    return req.cookies[`${this.options.providerId}-refresh-token`];
+  };
+
+  private getGrantedScopeFromCookie = (req: express.Request) => {
+    return req.cookies[`${this.options.providerId}-granted-scope`];
   };
 
   private setRefreshTokenCookie = (
     res: express.Response,
     refreshToken: string,
+    cookieConfig: ReturnType<CookieConfigurer>,
   ) => {
     res.cookie(`${this.options.providerId}-refresh-token`, refreshToken, {
       maxAge: THOUSAND_DAYS_MS,
-      secure: this.options.secure,
-      sameSite: 'lax',
-      domain: this.options.cookieDomain,
-      path: this.options.cookiePath,
-      httpOnly: true,
+      ...this.baseCookieOptions,
+      ...cookieConfig,
     });
   };
 
-  private removeRefreshTokenCookie = (res: express.Response) => {
+  private removeRefreshTokenCookie = (
+    res: express.Response,
+    cookieConfig: ReturnType<CookieConfigurer>,
+  ) => {
     res.cookie(`${this.options.providerId}-refresh-token`, '', {
       maxAge: 0,
-      secure: this.options.secure,
-      sameSite: 'lax',
-      domain: this.options.cookieDomain,
-      path: this.options.cookiePath,
-      httpOnly: true,
+      ...this.baseCookieOptions,
+      ...cookieConfig,
+    });
+  };
+
+  private getCookieConfig = (origin?: string) => {
+    return this.options.cookieConfigurer({
+      providerId: this.options.providerId,
+      baseUrl: this.options.baseUrl,
+      callbackUrl: this.options.callbackUrl,
+      appOrigin: origin ?? this.options.appOrigin,
     });
   };
 }

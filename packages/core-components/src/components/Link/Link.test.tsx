@@ -14,33 +14,34 @@
  * limitations under the License.
  */
 
-import React from 'react';
-import { render, fireEvent, waitFor } from '@testing-library/react';
+import React, { ComponentType } from 'react';
+import { fireEvent, waitFor, screen, renderHook } from '@testing-library/react';
 import {
   MockAnalyticsApi,
   TestApiProvider,
-  wrapInTestApp,
+  renderInTestApp,
 } from '@backstage/test-utils';
-import { analyticsApiRef } from '@backstage/core-plugin-api';
-import { isExternalUri, Link } from './Link';
-import { Route, Routes } from 'react-router';
+import { analyticsApiRef, configApiRef } from '@backstage/core-plugin-api';
+import { isExternalUri, Link, useResolvedPath } from './Link';
+import { Route, Routes } from 'react-router-dom';
+import { ConfigReader } from '@backstage/config';
 
 describe('<Link />', () => {
   it('navigates using react-router', async () => {
     const testString = 'This is test string';
     const linkText = 'Navigate!';
-    const { getByText } = render(
-      wrapInTestApp(
+    await renderInTestApp(
+      <>
+        <Link to="/test">{linkText}</Link>
         <Routes>
-          <Link to="/test">{linkText}</Link>
           <Route path="/test" element={<p>{testString}</p>} />
-        </Routes>,
-      ),
+        </Routes>
+      </>,
     );
-    expect(() => getByText(testString)).toThrow();
-    fireEvent.click(getByText(linkText));
+    expect(() => screen.getByText(testString)).toThrow();
+    fireEvent.click(screen.getByText(linkText));
     await waitFor(() => {
-      expect(getByText(testString)).toBeInTheDocument();
+      expect(screen.getByText(testString)).toBeInTheDocument();
     });
   });
 
@@ -49,17 +50,15 @@ describe('<Link />', () => {
     const analyticsApi = new MockAnalyticsApi();
     const customOnClick = jest.fn();
 
-    const { getByText } = render(
-      wrapInTestApp(
-        <TestApiProvider apis={[[analyticsApiRef, analyticsApi]]}>
-          <Link to="/test" onClick={customOnClick}>
-            {linkText}
-          </Link>
-        </TestApiProvider>,
-      ),
+    await renderInTestApp(
+      <TestApiProvider apis={[[analyticsApiRef, analyticsApi]]}>
+        <Link to="/test" onClick={customOnClick}>
+          {linkText}
+        </Link>
+      </TestApiProvider>,
     );
 
-    fireEvent.click(getByText(linkText));
+    fireEvent.click(screen.getByText(linkText));
 
     // Analytics event should have been fired.
     await waitFor(() => {
@@ -73,6 +72,31 @@ describe('<Link />', () => {
 
       // Custom onClick handler should have still been fired too.
       expect(customOnClick).toHaveBeenCalled();
+    });
+  });
+
+  it('does not capture click when noTrack is set', async () => {
+    const linkText = 'Navigate!';
+    const analyticsApi = new MockAnalyticsApi();
+    const customOnClick = jest.fn();
+
+    await renderInTestApp(
+      <TestApiProvider apis={[[analyticsApiRef, analyticsApi]]}>
+        <Link to="/test" onClick={customOnClick} noTrack>
+          {linkText}
+        </Link>
+      </TestApiProvider>,
+    );
+
+    fireEvent.click(screen.getByText(linkText));
+
+    // Analytics event should have been fired.
+    await waitFor(() => {
+      // Custom onClick handler should have been fired.
+      expect(customOnClick).toHaveBeenCalled();
+
+      // But there should be no analytics event.
+      expect(analyticsApi.getEvents()).toHaveLength(0);
     });
   });
 
@@ -100,5 +124,68 @@ describe('<Link />', () => {
     ])('should be %p when %p', (expected, uri) => {
       expect(isExternalUri(uri)).toBe(expected);
     });
+  });
+
+  describe('useResolvedPath', () => {
+    const wrapper: ComponentType<React.PropsWithChildren<{}>> = ({
+      children,
+    }) => {
+      const configApi = new ConfigReader({
+        app: { baseUrl: 'http://localhost:3000/example' },
+      });
+      return (
+        <TestApiProvider apis={[[configApiRef, configApi]]}>
+          {children}
+        </TestApiProvider>
+      );
+    };
+
+    describe('concatenate base path', () => {
+      it('when uri is internal and does not start with base path', () => {
+        const path = '/catalog/default/component/artist-lookup';
+        const { result } = renderHook(() => useResolvedPath(path), {
+          wrapper,
+        });
+        expect(result.current).toBe('/example'.concat(path));
+      });
+    });
+
+    describe('does not concatenate base path', () => {
+      it('when uri is external', () => {
+        const path = 'https://stackoverflow.com/questions/1/example';
+        const { result } = renderHook(() => useResolvedPath(path), {
+          wrapper,
+        });
+        expect(result.current).toBe(path);
+      });
+
+      it('when uri already starts with base path', () => {
+        const path = '/example/catalog/default/component/artist-lookup';
+        const { result } = renderHook(() => useResolvedPath(path), {
+          wrapper,
+        });
+        expect(result.current).toBe(path);
+      });
+    });
+  });
+
+  it('throws an error when attempting to link to script code', async () => {
+    await expect(
+      // eslint-disable-next-line no-script-url
+      renderInTestApp(<Link to="javascript:alert('hello')">Script</Link>),
+    ).rejects.toThrowErrorMatchingInlineSnapshot(
+      `"Link component rejected javascript: URL as a security precaution"`,
+    );
+  });
+});
+
+describe('window.open', () => {
+  it('throws an error when attempting to open script code', () => {
+    expect(() =>
+      // eslint-disable-next-line no-script-url
+      window.open("javascript:alert('hello')"),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `"Rejected window.open() with a javascript: URL as a security precaution"`,
+    );
   });
 });

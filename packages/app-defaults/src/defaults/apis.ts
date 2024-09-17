@@ -21,19 +21,20 @@ import {
   ErrorAlerter,
   GoogleAuth,
   GithubAuth,
-  OAuth2,
   OktaAuth,
   GitlabAuth,
-  Auth0Auth,
   MicrosoftAuth,
   BitbucketAuth,
+  BitbucketServerAuth,
   OAuthRequestManager,
   WebStorage,
   UrlPatternDiscovery,
-  SamlAuth,
   OneLoginAuth,
   UnhandledErrorForwarder,
   AtlassianAuth,
+  createFetchApi,
+  FetchMiddlewares,
+  VMwareCloudAuth,
 } from '@backstage/core-app-api';
 
 import {
@@ -42,22 +43,26 @@ import {
   analyticsApiRef,
   errorApiRef,
   discoveryApiRef,
+  fetchApiRef,
+  identityApiRef,
   oauthRequestApiRef,
   googleAuthApiRef,
   githubAuthApiRef,
-  oauth2ApiRef,
   oktaAuthApiRef,
   gitlabAuthApiRef,
-  auth0AuthApiRef,
   microsoftAuthApiRef,
   storageApiRef,
   configApiRef,
-  samlAuthApiRef,
   oneloginAuthApiRef,
-  oidcAuthApiRef,
   bitbucketAuthApiRef,
+  bitbucketServerAuthApiRef,
   atlassianAuthApiRef,
+  vmwareCloudAuthApiRef,
 } from '@backstage/core-plugin-api';
+import {
+  permissionApiRef,
+  IdentityPermissionApi,
+} from '@backstage/plugin-permission-react';
 
 export const apis = [
   createApiFactory({
@@ -93,6 +98,27 @@ export const apis = [
     factory: ({ errorApi }) => WebStorage.create({ errorApi }),
   }),
   createApiFactory({
+    api: fetchApiRef,
+    deps: {
+      configApi: configApiRef,
+      identityApi: identityApiRef,
+      discoveryApi: discoveryApiRef,
+    },
+    factory: ({ configApi, identityApi, discoveryApi }) => {
+      return createFetchApi({
+        middleware: [
+          FetchMiddlewares.resolvePluginProtocol({
+            discoveryApi,
+          }),
+          FetchMiddlewares.injectIdentityAuth({
+            identityApi,
+            config: configApi,
+          }),
+        ],
+      });
+    },
+  }),
+  createApiFactory({
     api: oauthRequestApiRef,
     deps: {},
     factory: () => new OAuthRequestManager(),
@@ -106,6 +132,7 @@ export const apis = [
     },
     factory: ({ discoveryApi, oauthRequestApi, configApi }) =>
       GoogleAuth.create({
+        configApi,
         discoveryApi,
         oauthRequestApi,
         environment: configApi.getOptionalString('auth.environment'),
@@ -120,6 +147,7 @@ export const apis = [
     },
     factory: ({ discoveryApi, oauthRequestApi, configApi }) =>
       MicrosoftAuth.create({
+        configApi,
         discoveryApi,
         oauthRequestApi,
         environment: configApi.getOptionalString('auth.environment'),
@@ -134,6 +162,7 @@ export const apis = [
     },
     factory: ({ discoveryApi, oauthRequestApi, configApi }) =>
       GithubAuth.create({
+        configApi,
         discoveryApi,
         oauthRequestApi,
         defaultScopes: ['read:user'],
@@ -149,6 +178,7 @@ export const apis = [
     },
     factory: ({ discoveryApi, oauthRequestApi, configApi }) =>
       OktaAuth.create({
+        configApi,
         discoveryApi,
         oauthRequestApi,
         environment: configApi.getOptionalString('auth.environment'),
@@ -163,48 +193,9 @@ export const apis = [
     },
     factory: ({ discoveryApi, oauthRequestApi, configApi }) =>
       GitlabAuth.create({
+        configApi,
         discoveryApi,
         oauthRequestApi,
-        environment: configApi.getOptionalString('auth.environment'),
-      }),
-  }),
-  createApiFactory({
-    api: auth0AuthApiRef,
-    deps: {
-      discoveryApi: discoveryApiRef,
-      oauthRequestApi: oauthRequestApiRef,
-      configApi: configApiRef,
-    },
-    factory: ({ discoveryApi, oauthRequestApi, configApi }) =>
-      Auth0Auth.create({
-        discoveryApi,
-        oauthRequestApi,
-        environment: configApi.getOptionalString('auth.environment'),
-      }),
-  }),
-  createApiFactory({
-    api: oauth2ApiRef,
-    deps: {
-      discoveryApi: discoveryApiRef,
-      oauthRequestApi: oauthRequestApiRef,
-      configApi: configApiRef,
-    },
-    factory: ({ discoveryApi, oauthRequestApi, configApi }) =>
-      OAuth2.create({
-        discoveryApi,
-        oauthRequestApi,
-        environment: configApi.getOptionalString('auth.environment'),
-      }),
-  }),
-  createApiFactory({
-    api: samlAuthApiRef,
-    deps: {
-      discoveryApi: discoveryApiRef,
-      configApi: configApiRef,
-    },
-    factory: ({ discoveryApi, configApi }) =>
-      SamlAuth.create({
-        discoveryApi,
         environment: configApi.getOptionalString('auth.environment'),
       }),
   }),
@@ -217,27 +208,9 @@ export const apis = [
     },
     factory: ({ discoveryApi, oauthRequestApi, configApi }) =>
       OneLoginAuth.create({
+        configApi,
         discoveryApi,
         oauthRequestApi,
-        environment: configApi.getOptionalString('auth.environment'),
-      }),
-  }),
-  createApiFactory({
-    api: oidcAuthApiRef,
-    deps: {
-      discoveryApi: discoveryApiRef,
-      oauthRequestApi: oauthRequestApiRef,
-      configApi: configApiRef,
-    },
-    factory: ({ discoveryApi, oauthRequestApi, configApi }) =>
-      OAuth2.create({
-        discoveryApi,
-        oauthRequestApi,
-        provider: {
-          id: 'oidc',
-          title: 'Your Identity Provider',
-          icon: () => null,
-        },
         environment: configApi.getOptionalString('auth.environment'),
       }),
   }),
@@ -250,10 +223,26 @@ export const apis = [
     },
     factory: ({ discoveryApi, oauthRequestApi, configApi }) =>
       BitbucketAuth.create({
+        configApi,
         discoveryApi,
         oauthRequestApi,
-        defaultScopes: ['team'],
+        defaultScopes: ['account'],
         environment: configApi.getOptionalString('auth.environment'),
+      }),
+  }),
+  createApiFactory({
+    api: bitbucketServerAuthApiRef,
+    deps: {
+      discoveryApi: discoveryApiRef,
+      oauthRequestApi: oauthRequestApiRef,
+      configApi: configApiRef,
+    },
+    factory: ({ discoveryApi, oauthRequestApi, configApi }) =>
+      BitbucketServerAuth.create({
+        configApi,
+        discoveryApi,
+        oauthRequestApi,
+        defaultScopes: ['REPO_READ'],
       }),
   }),
   createApiFactory({
@@ -265,10 +254,37 @@ export const apis = [
     },
     factory: ({ discoveryApi, oauthRequestApi, configApi }) => {
       return AtlassianAuth.create({
+        configApi,
         discoveryApi,
         oauthRequestApi,
         environment: configApi.getOptionalString('auth.environment'),
       });
     },
+  }),
+  createApiFactory({
+    api: vmwareCloudAuthApiRef,
+    deps: {
+      discoveryApi: discoveryApiRef,
+      oauthRequestApi: oauthRequestApiRef,
+      configApi: configApiRef,
+    },
+    factory: ({ discoveryApi, oauthRequestApi, configApi }) => {
+      return VMwareCloudAuth.create({
+        configApi,
+        discoveryApi,
+        oauthRequestApi,
+        environment: configApi.getOptionalString('auth.environment'),
+      });
+    },
+  }),
+  createApiFactory({
+    api: permissionApiRef,
+    deps: {
+      discovery: discoveryApiRef,
+      identity: identityApiRef,
+      config: configApiRef,
+    },
+    factory: ({ config, discovery, identity }) =>
+      IdentityPermissionApi.create({ config, discovery, identity }),
   }),
 ];

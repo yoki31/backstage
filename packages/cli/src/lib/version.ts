@@ -19,7 +19,7 @@ import semver from 'semver';
 import { paths } from './paths';
 import { Lockfile } from './versioning';
 
-/* eslint-disable import/no-extraneous-dependencies,monorepo/no-internal-import */
+/* eslint-disable @backstage/no-relative-monorepo-imports */
 /*
 This is a list of all packages used by the templates. If dependencies are added or removed,
 this list should be updated as well.
@@ -32,20 +32,27 @@ This does not create an actual dependency on these packages and does not bring i
 Rollup will extract the value of the version field in each package at build time without
 leaving any imports in place.
 */
-
-import { version as backendCommon } from '@backstage/backend-common/package.json';
-import { version as cli } from '@backstage/cli/package.json';
-import { version as config } from '@backstage/config/package.json';
-import { version as coreAppApi } from '@backstage/core-app-api/package.json';
-import { version as coreComponents } from '@backstage/core-components/package.json';
-import { version as corePluginApi } from '@backstage/core-plugin-api/package.json';
-import { version as devUtils } from '@backstage/dev-utils/package.json';
-import { version as testUtils } from '@backstage/test-utils/package.json';
-import { version as theme } from '@backstage/theme/package.json';
-import { version as scaffolderBackend } from '@backstage/plugin-scaffolder-backend/package.json';
+import { version as backendCommon } from '../../../../packages/backend-common/package.json';
+import { version as backendPluginApi } from '../../../../packages/backend-plugin-api/package.json';
+import { version as backendTestUtils } from '../../../../packages/backend-test-utils/package.json';
+import { version as cli } from '../../../../packages/cli/package.json';
+import { version as config } from '../../../../packages/config/package.json';
+import { version as coreAppApi } from '../../../../packages/core-app-api/package.json';
+import { version as coreComponents } from '../../../../packages/core-components/package.json';
+import { version as corePluginApi } from '../../../../packages/core-plugin-api/package.json';
+import { version as devUtils } from '../../../../packages/dev-utils/package.json';
+import { version as testUtils } from '../../../../packages/test-utils/package.json';
+import { version as scaffolderNode } from '../../../../plugins/scaffolder-node/package.json';
+import { version as authBackend } from '../../../../plugins/auth-backend/package.json';
+import { version as authBackendModuleGuestProvider } from '../../../../plugins/auth-backend-module-guest-provider/package.json';
+import { version as theme } from '../../../../packages/theme/package.json';
+import { version as backendDefaults } from '../../../../packages/backend-defaults/package.json';
 
 export const packageVersions: Record<string, string> = {
   '@backstage/backend-common': backendCommon,
+  '@backstage/backend-defaults': backendDefaults,
+  '@backstage/backend-plugin-api': backendPluginApi,
+  '@backstage/backend-test-utils': backendTestUtils,
   '@backstage/cli': cli,
   '@backstage/config': config,
   '@backstage/core-app-api': coreAppApi,
@@ -54,7 +61,10 @@ export const packageVersions: Record<string, string> = {
   '@backstage/dev-utils': devUtils,
   '@backstage/test-utils': testUtils,
   '@backstage/theme': theme,
-  '@backstage/plugin-scaffolder-backend': scaffolderBackend,
+  '@backstage/plugin-scaffolder-node': scaffolderNode,
+  '@backstage/plugin-auth-backend': authBackend,
+  '@backstage/plugin-auth-backend-module-guest-provider':
+    authBackendModuleGuestProvider,
 };
 
 export function findVersion() {
@@ -80,6 +90,14 @@ export function createPackageVersionProvider(lockfile?: Lockfile) {
     ) {
       return '*';
     }
+
+    for (const specifier of ['^', '~', '*']) {
+      const range = `workspace:${specifier}`;
+      if (lockfileEntries?.some(entry => entry.range === range)) {
+        return range;
+      }
+    }
+
     const validRanges = lockfileEntries?.filter(entry =>
       semver.satisfies(targetVersion, entry.range),
     );

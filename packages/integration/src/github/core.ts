@@ -15,8 +15,8 @@
  */
 
 import parseGitUrl from 'git-url-parse';
-import { GitHubIntegrationConfig } from './config';
-import { GithubCredentials } from './GithubCredentialsProvider';
+import { GithubIntegrationConfig } from './config';
+import { GithubCredentials } from './types';
 
 /**
  * Given a URL pointing to a file on a provider, returns a URL that is suitable
@@ -33,9 +33,9 @@ import { GithubCredentials } from './GithubCredentialsProvider';
  * @param config - The relevant provider config
  * @public
  */
-export function getGitHubFileFetchUrl(
+export function getGithubFileFetchUrl(
   url: string,
-  config: GitHubIntegrationConfig,
+  config: GithubIntegrationConfig,
   credentials: GithubCredentials,
 ): string {
   try {
@@ -71,7 +71,7 @@ export function getGitHubFileFetchUrl(
  * @public
  */
 export function getGitHubRequestOptions(
-  config: GitHubIntegrationConfig,
+  config: GithubIntegrationConfig,
   credentials: GithubCredentials,
 ): { headers: Record<string, string> } {
   const headers: Record<string, string> = {};
@@ -88,7 +88,7 @@ export function getGitHubRequestOptions(
 }
 
 export function chooseEndpoint(
-  config: GitHubIntegrationConfig,
+  config: GithubIntegrationConfig,
   credentials: GithubCredentials,
 ): 'api' | 'raw' {
   if (config.apiBaseUrl && (credentials.token || !config.rawBaseUrl)) {

@@ -1,7 +1,6 @@
 # Backstage Catalog Frontend
 
-This is the React frontend for the default Backstage [software
-catalog](http://backstage.io/docs/features/software-catalog/software-catalog-overview).
+This is the React frontend for the default Backstage [software catalog](http://backstage.io/docs/features/software-catalog/).
 This package supplies interfaces related to listing catalog entities or showing
 more information about them on entity pages.
 
@@ -20,8 +19,7 @@ plugin, if you previously removed it.
 
 ```bash
 # From your Backstage root directory
-cd packages/app
-yarn add @backstage/plugin-catalog
+yarn --cwd packages/app add @backstage/plugin-catalog
 ```
 
 ### Add the plugin to your `packages/app`

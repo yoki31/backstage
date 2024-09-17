@@ -1,6 +1,7 @@
 ---
 id: adrs-adr003
-title: ADR003: Avoid Default Exports and Prefer Named Exports
+title: 'ADR003: Avoid Default Exports and Prefer Named Exports'
+# prettier-ignore
 description: Architecture Decision Record (ADR) log on Avoid Default Exports and Prefer Named Exports
 ---
 
@@ -14,7 +15,7 @@ thing well". The module would be consumed
 (`const localName = require('the-module');`) without having to know the internal
 structure.
 
-Now, ESModules are the primary authoring format. They have numerous benefits,
+Now, `ESModules` are the primary authoring format. They have numerous benefits,
 such as compile-time verification of exports, and standards-defined semantics.
 They have a similar mechanism known as "default exports", which allows for a
 consumer to `import localName from 'the-module';`. This is implicitly the same

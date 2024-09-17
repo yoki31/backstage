@@ -15,7 +15,7 @@
  */
 
 import fs from 'fs-extra';
-import { Command } from 'commander';
+import { OptionValues } from 'commander';
 import {
   diffTemplateFiles,
   handlers,
@@ -40,35 +40,30 @@ const fileHandlers = [
     handler: handlers.packageJson,
   },
   {
-    // Not all plugins have routes
-    patterns: ['src/routes.ts'],
-    handler: handlers.skip,
-  },
-  {
     // make sure files in 1st level of src/ and dev/ exist
-    patterns: ['.eslintrc.js', /^(src|dev)\/[^/]+$/],
+    patterns: ['.eslintrc.js'],
     handler: handlers.exists,
   },
   {
-    patterns: ['README.md', 'tsconfig.json', /^src\//],
+    patterns: ['README.md', 'tsconfig.json', /^src\//, /^dev\//],
     handler: handlers.skip,
   },
 ];
 
-export default async (cmd: Command) => {
+export default async (opts: OptionValues) => {
   let promptFunc = inquirerPromptFunc;
   let finalize = () => {};
 
-  if (cmd.check) {
+  if (opts.check) {
     [promptFunc, finalize] = makeCheckPromptFunc();
-  } else if (cmd.yes) {
+  } else if (opts.yes) {
     promptFunc = yesPromptFunc;
   }
 
   const data = await readPluginData();
   const templateFiles = await diffTemplateFiles('default-plugin', data);
   await handleAllFiles(fileHandlers, templateFiles, promptFunc);
-  await finalize();
+  finalize();
 };
 
 // Reads templating data from the existing plugin

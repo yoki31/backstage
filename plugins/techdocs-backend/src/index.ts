@@ -20,6 +20,44 @@
  * @packageDocumentation
  */
 
-export { createRouter } from './service/router';
-export * from './search';
-export * from '@backstage/techdocs-common';
+import { Entity } from '@backstage/catalog-model';
+import {
+  DocsBuildStrategy as _DocsBuildStrategy,
+  TechDocsDocument as _TechDocsDocument,
+} from '@backstage/plugin-techdocs-node';
+
+export { createRouter } from './service';
+export type {
+  RouterOptions,
+  RecommendedDeploymentOptions,
+  OutOfTheBoxDeploymentOptions,
+} from './service';
+
+export {
+  DefaultTechDocsCollator,
+  DefaultTechDocsCollatorFactory,
+} from './search';
+export type {
+  TechDocsCollatorFactoryOptions,
+  TechDocsCollatorOptions,
+} from './search';
+
+/**
+ * @public
+ * @deprecated import from `@backstage/plugin-techdocs-node` instead
+ */
+export type DocsBuildStrategy = _DocsBuildStrategy;
+/**
+ * @public
+ * @deprecated use direct type definition instead
+ */
+export type ShouldBuildParameters = {
+  entity: Entity;
+};
+/**
+ * @public
+ * @deprecated import from `@backstage/plugin-techdocs-node` instead
+ */
+export type TechDocsDocument = _TechDocsDocument;
+
+export * from '@backstage/plugin-techdocs-node';

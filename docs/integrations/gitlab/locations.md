@@ -19,16 +19,18 @@ integrations:
       token: ${GITLAB_TOKEN}
 ```
 
-> Note: A public GitLab provider is added automatically at startup for
-> convenience, so you only need to list it if you want to supply a
-> [token](https://docs.gitlab.com/ee/user/profile/personal_access_tokens.html).
+:::note Note
+
+A public GitLab provider is added automatically at startup for convenience, so you only need to list it if you want to supply a [token](https://docs.gitlab.com/ee/user/profile/personal_access_tokens.html).
+
+:::
 
 Directly under the `gitlab` key is a list of provider configurations, where you
 can list the GitLab providers you want to fetch data from. Each entry is a
 structure with up to four elements:
 
 - `host`: The host of the GitLab instance, e.g. `gitlab.company.com`.
-- `token` (optional): An authentication token as expected by GitLab. If this is
+- `token` (optional): An authentication token as expected by GitLab. The token need at least `api`, `read_repository` and `write_repository` scopes. If this is
   not supplied, anonymous access will be used.
 - `apiBaseUrl` (optional): The URL of the GitLab API. For self-hosted
   installations, it is commonly at `https://<host>/api/v4`. For gitlab.com, this

@@ -15,54 +15,66 @@
  */
 
 import {
-  AuthorizeRequest,
-  AuthorizeResult,
-  PermissionCondition,
-  PermissionCriteria,
+  Permission,
+  PolicyDecision,
 } from '@backstage/plugin-permission-common';
-import { BackstageIdentityResponse } from '@backstage/plugin-auth-backend';
+import { BackstageUserIdentity } from '@backstage/plugin-auth-node';
+import {
+  BackstageCredentials,
+  BackstageUserInfo,
+} from '@backstage/backend-plugin-api';
 
 /**
- * An authorization request to be evaluated by the {@link PermissionPolicy}.
+ * A query to be evaluated by the {@link PermissionPolicy}.
  *
  * @remarks
  *
- * This differs from {@link @backstage/permission-common#AuthorizeRequest} in that `resourceRef`
- * should never be provided. This forces policies to be written in a way that's compatible with
- * filtering collections of resources at data load time.
+ * Unlike other parts of the permission API, the policy does not accept a resource ref. This keeps
+ * the policy decoupled from the resource loading and condition applying logic.
  *
  * @public
  */
-export type PolicyAuthorizeRequest = Omit<AuthorizeRequest, 'resourceRef'>;
-
-/**
- * A conditional result to an authorization request, returned by the {@link PermissionPolicy}.
- *
- * @remarks
- *
- * This indicates that the policy allows authorization for the request, given that the returned
- * conditions hold when evaluated. The conditions will be evaluated by the corresponding plugin
- * which knows about the referenced permission rules.
- *
- * Similar to {@link @backstage/permission-common#AuthorizeResult}, but with the plugin and resource
- * identifiers needed to evaluate the returned conditions.
- * @public
- */
-export type ConditionalPolicyDecision = {
-  result: AuthorizeResult.CONDITIONAL;
-  pluginId: string;
-  resourceType: string;
-  conditions: PermissionCriteria<PermissionCondition>;
+export type PolicyQuery = {
+  permission: Permission;
 };
 
 /**
- * The result of evaluating an authorization request with a {@link PermissionPolicy}.
+ * The context within which a policy query is evaluated.
  *
  * @public
  */
-export type PolicyDecision =
-  | { result: AuthorizeResult.ALLOW | AuthorizeResult.DENY }
-  | ConditionalPolicyDecision;
+export type PolicyQueryUser = {
+  /**
+   * The token used to authenticate the user within Backstage.
+   *
+   * @deprecated User the `credentials` field in combination with `coreServices.auth` to generate a request token instead.
+   */
+  token: string;
+
+  /**
+   * The number of seconds until the token expires. If not set, it can be assumed that the token does not expire.
+   *
+   * @deprecated This field is deprecated and will be removed in a future release.
+   */
+  expiresInSeconds?: number;
+
+  /**
+   * A plaintext description of the identity that is encapsulated within the token.
+   *
+   * @deprecated Use the `info` field instead.
+   */
+  identity: BackstageUserIdentity;
+
+  /**
+   * The credentials of the user making the request.
+   */
+  credentials: BackstageCredentials;
+
+  /**
+   * The information for the user making the request.
+   */
+  info: BackstageUserInfo;
+};
 
 /**
  * A policy to evaluate authorization requests for any permissioned action performed in Backstage.
@@ -81,8 +93,5 @@ export type PolicyDecision =
  * @public
  */
 export interface PermissionPolicy {
-  handle(
-    request: PolicyAuthorizeRequest,
-    user?: BackstageIdentityResponse,
-  ): Promise<PolicyDecision>;
+  handle(request: PolicyQuery, user?: PolicyQueryUser): Promise<PolicyDecision>;
 }

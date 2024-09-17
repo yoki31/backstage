@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-import { Entity, LocationSpec } from '@backstage/catalog-model';
+import { Entity } from '@backstage/catalog-model';
 import { ConfigReader } from '@backstage/config';
 import { DefaultCatalogRulesEnforcer } from './CatalogRules';
+import { LocationSpec } from '@backstage/plugin-catalog-common';
 
 const entity = {
   user: {
@@ -34,12 +35,20 @@ const entity = {
 };
 
 const location: Record<string, LocationSpec> = {
+  v: {
+    type: 'url',
+    target: 'https://github.com/b/c/blob/master/.folder/v.yaml',
+  },
+  w: {
+    type: 'url',
+    target: 'https://github.com/b/c/blob/master/w.yaml',
+  },
   x: {
-    type: 'github',
+    type: 'url',
     target: 'https://github.com/a/b/blob/master/x.yaml',
   },
   y: {
-    type: 'github',
+    type: 'url',
     target: 'https://github.com/a/b/blob/master/y.yaml',
   },
   z: {
@@ -49,6 +58,28 @@ const location: Record<string, LocationSpec> = {
 };
 
 describe('DefaultCatalogRulesEnforcer', () => {
+  it('should throw an error if both pattern and exact are used', () => {
+    expect(() =>
+      DefaultCatalogRulesEnforcer.fromConfig(
+        new ConfigReader({
+          catalog: {
+            rules: [
+              {
+                allow: ['Component'],
+                locations: [
+                  {
+                    type: 'url',
+                    pattern: 'https://github.com/b/**',
+                    exact: 'https://github.com/a/b/blob/master/w.yaml',
+                  },
+                ],
+              },
+            ],
+          },
+        }),
+      ),
+    ).toThrow(/cannot have both exact and pattern values/i);
+  });
   it('should deny by default', () => {
     const enforcer = new DefaultCatalogRulesEnforcer([]);
     expect(enforcer.isAllowed(entity.user, location.x)).toBe(false);
@@ -180,7 +211,7 @@ describe('DefaultCatalogRulesEnforcer', () => {
             rules: [{ allow: ['user'] }],
             locations: [
               {
-                type: 'github',
+                type: 'url',
                 target: 'https://github.com/a/b/blob/master/x.yaml',
                 rules: [
                   {
@@ -204,7 +235,7 @@ describe('DefaultCatalogRulesEnforcer', () => {
       const enforcer = DefaultCatalogRulesEnforcer.fromConfig(
         new ConfigReader({
           catalog: {
-            rules: [{ allow: ['Group'], locations: [{ type: 'github' }] }],
+            rules: [{ allow: ['Group'] }],
           },
         }),
       );
@@ -215,5 +246,41 @@ describe('DefaultCatalogRulesEnforcer', () => {
       expect(enforcer.isAllowed(entity.component, location.z)).toBe(false);
       expect(enforcer.isAllowed(entity.location, location.z)).toBe(false);
     });
+
+    it('should only allow locations that match a given pattern', () => {
+      const enforcer = DefaultCatalogRulesEnforcer.fromConfig(
+        new ConfigReader({
+          catalog: {
+            rules: [
+              {
+                allow: ['Component'],
+                locations: [
+                  { type: 'url', pattern: 'https://github.com/b/**' },
+                ],
+              },
+            ],
+          },
+        }),
+      );
+      expect(enforcer.isAllowed(entity.component, location.w)).toBe(true);
+      expect(enforcer.isAllowed(entity.component, location.y)).toBe(false);
+      expect(enforcer.isAllowed(entity.component, location.z)).toBe(false);
+    });
+  });
+
+  it('should allow locations with a hidden folder', () => {
+    const enforcer = DefaultCatalogRulesEnforcer.fromConfig(
+      new ConfigReader({
+        catalog: {
+          rules: [
+            {
+              allow: ['Component'],
+              locations: [{ type: 'url', pattern: 'https://github.com/b/**' }],
+            },
+          ],
+        },
+      }),
+    );
+    expect(enforcer.isAllowed(entity.component, location.v)).toBe(true);
   });
 });

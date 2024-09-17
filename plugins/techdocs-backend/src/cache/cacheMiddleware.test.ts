@@ -14,26 +14,30 @@
  * limitations under the License.
  */
 
-import { getVoidLogger } from '@backstage/backend-common';
 import express from 'express';
 import request from 'supertest';
-import { createCacheMiddleware, TechDocsCache } from '.';
+import { createCacheMiddleware } from './cacheMiddleware';
+import { TechDocsCache } from './TechDocsCache';
+import { mockServices } from '@backstage/backend-test-utils';
 
 /**
  * Mocks cached HTTP response.
  */
 const getMockHttpResponseFor = (content: string): Buffer => {
-  return Buffer.concat([
-    Buffer.from(`HTTP/1.1 200 OK
-Content-Type: text/plain; charset=utf-8
-Accept-Ranges: bytes
-Cache-Control: public, max-age=0
-Last-Modified: Sat, 1 Jul 2021 12:00:00 GMT
-Date: Sat, 1 Jul 2021 12:00:00 GMT
-Connection: close
-Content-Length: ${content.length}\n\n`),
-    Buffer.from(content),
-  ]);
+  return Buffer.from(
+    [
+      'HTTP/1.1 200 OK',
+      'Content-Type: text/plain; charset=utf-8',
+      'Accept-Ranges: bytes',
+      'Cache-Control: public, max-age=0',
+      'Last-Modified: Sat, 1 Jul 2021 12:00:00 GMT',
+      'Date: Sat, 1 Jul 2021 12:00:00 GMT',
+      'Connection: close',
+      `Content-Length: ${content.length}`,
+      '',
+      content,
+    ].join('\r\n'),
+  );
 };
 
 /**
@@ -53,7 +57,7 @@ describe('createCacheMiddleware', () => {
       invalidateMultiple: jest.fn().mockResolvedValue(undefined),
     } as unknown as jest.Mocked<TechDocsCache>;
     const router = await createCacheMiddleware({
-      logger: getVoidLogger(),
+      logger: mockServices.logger.mock(),
       cache,
     });
     app = express().use(router);
@@ -85,6 +89,15 @@ describe('createCacheMiddleware', () => {
       expect(cache.set).not.toHaveBeenCalled();
     });
 
+    it('checks cache for head requests', async () => {
+      cache.get.mockResolvedValueOnce(getMockHttpResponseFor('xyz'));
+
+      await request(app).head('/static/docs/foo.html').expect(200);
+
+      await waitForSocketClose();
+      expect(cache.set).not.toHaveBeenCalled();
+    });
+
     it('sets cache when content is cacheable', async () => {
       const expectedPath = 'default/api/xyz/index.html';
       await request(app)
@@ -101,6 +114,14 @@ describe('createCacheMiddleware', () => {
 
     it('does not set cache on error', async () => {
       await request(app).get('/static/docs/error.png').expect(500);
+
+      await waitForSocketClose();
+      expect(cache.set).not.toHaveBeenCalled();
+    });
+
+    it('does not set cache on head requests', async () => {
+      const expectedPath = 'default/api/xyz/index.html';
+      await request(app).head(`/static/docs/${expectedPath}`).expect(200);
 
       await waitForSocketClose();
       expect(cache.set).not.toHaveBeenCalled();

@@ -14,38 +14,13 @@
  * limitations under the License.
  */
 
-export {
-  EDIT_URL_ANNOTATION,
-  ENTITY_DEFAULT_NAMESPACE,
-  ENTITY_META_GENERATED_FIELDS,
-  VIEW_URL_ANNOTATION,
-} from './constants';
-export type {
-  Entity,
-  EntityLink,
-  EntityMeta,
-  EntityRelation,
-  EntityRelationSpec,
-} from './Entity';
+export * from './conditions';
+export * from './constants';
+export type { Entity, EntityLink, EntityMeta, EntityRelation } from './Entity';
 export type { EntityEnvelope } from './EntityEnvelope';
-export type {
-  UNSTABLE_EntityStatus,
-  UNSTABLE_EntityStatusItem,
-  UNSTABLE_EntityStatusLevel,
-} from './EntityStatus';
 export * from './policies';
 export {
-  compareEntityToRef,
-  getEntityName,
-  parseEntityName,
+  getCompoundEntityRef,
   parseEntityRef,
-  serializeEntityRef,
   stringifyEntityRef,
 } from './ref';
-export type { EntityRefContext } from './ref';
-export {
-  entityHasChanges,
-  generateEntityEtag,
-  generateEntityUid,
-  generateUpdatedEntity,
-} from './util';

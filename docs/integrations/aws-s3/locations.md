@@ -20,8 +20,7 @@ To use this integration, add configuration to your `app-config.yaml`:
 ```yaml
 integrations:
   awsS3:
-    - host: amazonaws.com
-      accessKeyId: ${AWS_ACCESS_KEY_ID}
+    - accessKeyId: ${AWS_ACCESS_KEY_ID}
       secretAccessKey: ${AWS_SECRET_ACCESS_KEY}
 ```
 
@@ -35,8 +34,22 @@ instruct the AWS S3 reader to assume a role before accessing S3:
 ```yaml
 integrations:
   awsS3:
-    - host: amazonaws.com
-      accessKeyId: ${AWS_ACCESS_KEY_ID}
+    - accessKeyId: ${AWS_ACCESS_KEY_ID}
       secretAccessKey: ${AWS_SECRET_ACCESS_KEY}
       roleArn: 'arn:aws:iam::xxxxxxxxxxxx:role/example-role'
+      externalId: 'some-id' # optional
+```
+
+Configuration allows specifying custom S3 endpoint, along with
+[path-style access](https://docs.aws.amazon.com/AmazonS3/latest/userguide/VirtualHosting.html)
+to support integration with providers like
+[LocalStack](https://github.com/localstack/localstack):
+
+```yaml
+integrations:
+  awsS3:
+    - endpoint: 'http://localhost:4566'
+      s3ForcePathStyle: true
+      accessKeyId: ${AWS_ACCESS_KEY_ID}
+      secretAccessKey: ${AWS_SECRET_ACCESS_KEY}
 ```

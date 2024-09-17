@@ -19,31 +19,21 @@
  *
  * @packageDocumentation
  */
+export { ScaffolderClient } from './api';
 
-export { scaffolderApiRef, ScaffolderClient } from './api';
-export type { ScaffolderApi } from './api';
-export {
-  createScaffolderFieldExtension,
-  ScaffolderFieldExtensions,
-} from './extensions';
-export type { CustomFieldValidator, FieldExtensionOptions } from './extensions';
 export {
   EntityPickerFieldExtension,
   EntityNamePickerFieldExtension,
+  EntityTagsPickerFieldExtension,
   OwnerPickerFieldExtension,
+  OwnedEntityPickerFieldExtension,
+  MyGroupsPickerFieldExtension,
   RepoUrlPickerFieldExtension,
+  MultiEntityPickerFieldExtension,
+  RepoBranchPickerFieldExtension,
   ScaffolderPage,
-  scaffolderPlugin as plugin,
   scaffolderPlugin,
 } from './plugin';
-export {
-  EntityNamePicker,
-  EntityPicker,
-  OwnerPicker,
-  RepoUrlPicker,
-  TextValuePicker,
-} from './components/fields';
-export { FavouriteTemplate } from './components/FavouriteTemplate';
-export { TemplateList } from './components/TemplateList';
-export type { TemplateListProps } from './components/TemplateList';
-export { TemplateTypePicker } from './components/TemplateTypePicker';
+
+export * from './components';
+export * from './deprecated';

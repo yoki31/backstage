@@ -14,15 +14,13 @@
  * limitations under the License.
  */
 
-import {
-  Box,
-  Checkbox,
-  FormControlLabel,
-  FormHelperText,
-  StepLabel,
-  TextField,
-  Typography,
-} from '@material-ui/core';
+import Box from '@material-ui/core/Box';
+import Checkbox from '@material-ui/core/Checkbox';
+import FormControlLabel from '@material-ui/core/FormControlLabel';
+import FormHelperText from '@material-ui/core/FormHelperText';
+import StepLabel from '@material-ui/core/StepLabel';
+import TextField from '@material-ui/core/TextField';
+import Typography from '@material-ui/core/Typography';
 import React from 'react';
 import { BackButton } from '../Buttons';
 import { asInputRef } from '../helpers';
@@ -42,7 +40,12 @@ export type StepConfiguration = {
   content: React.ReactElement;
 };
 
-export type StepperProvider = {
+/**
+ * Defines the details of the stepper.
+ *
+ * @public
+ */
+export interface StepperProvider {
   analyze: (
     s: Extract<ImportState, { activeState: 'analyze' }>,
     opts: { apis: StepperApis },
@@ -59,7 +62,7 @@ export type StepperProvider = {
     s: Extract<ImportState, { activeState: 'finish' }>,
     opts: { apis: StepperApis },
   ) => StepConfiguration;
-};
+}
 
 /**
  * The default stepper generation function.
@@ -67,8 +70,9 @@ export type StepperProvider = {
  * Override this function to customize the import flow. Each flow should at
  * least override the prepare operation.
  *
- * @param flow the name of the active flow
- * @param defaults the default steps
+ * @param flow - the name of the active flow
+ * @param defaults - the default steps
+ * @public
  */
 export function defaultGenerateStepper(
   flow: ImportFlows,

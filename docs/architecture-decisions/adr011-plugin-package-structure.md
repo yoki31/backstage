@@ -1,13 +1,13 @@
 ---
 id: adrs-adr011
-title: ADR011: Plugin Package Structure
+title: 'ADR011: Plugin Package Structure'
+# prettier-ignore
 description: Architecture Decision Record (ADR) for Plugin Package Structure
 ---
 
 ## Context
 
-A core feature of Backstage is the extensibility via plugins. The Backstage
-repository is open for contributions of plugins. Even most of the core features
+A core feature of Backstage is the extensibility via plugins. Even most of the core features
 are implemented as plugins. A plugin consists of one or multiple packages in the
 `plugins/` directory. Up till now, we have a simple conventions for naming
 plugin packages: Plugins are named `x`, with the option of having a related
@@ -34,9 +34,11 @@ We follow this structure for plugin packages (where `x` is the plugin name, for
 example `catalog` or `techdocs`):
 
 - `x`: Contains the main frontend code of the plugin.
+- `x-module-<name>`: Contains optional modules related to the frontend plugin
+  package.
 - `x-backend`: Contains the main backend code of the plugin.
 - `x-backend-module-<name>`: Contains optional modules related to the backend
-  plugin.
+  plugin package.
 - `x-react`: Contains shared widgets, hooks and similar that both the plugin
   itself (`x`) and third-party frontend plugins can depend on.
 - `x-node`: Contains utilities for backends that both the plugin backend itself

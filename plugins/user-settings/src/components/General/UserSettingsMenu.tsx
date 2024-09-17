@@ -15,12 +15,21 @@
  */
 
 import React from 'react';
-import { IconButton, ListItemIcon, Menu, MenuItem } from '@material-ui/core';
+import IconButton from '@material-ui/core/IconButton';
+import ListItemIcon from '@material-ui/core/ListItemIcon';
+import Menu from '@material-ui/core/Menu';
+import MenuItem from '@material-ui/core/MenuItem';
 import SignOutIcon from '@material-ui/icons/MeetingRoom';
 import MoreVertIcon from '@material-ui/icons/MoreVert';
-import { identityApiRef, useApi } from '@backstage/core-plugin-api';
+import {
+  identityApiRef,
+  errorApiRef,
+  useApi,
+} from '@backstage/core-plugin-api';
 
+/** @public */
 export const UserSettingsMenu = () => {
+  const errorApi = useApi(errorApiRef);
   const identityApi = useApi(identityApiRef);
   const [open, setOpen] = React.useState(false);
   const [anchorEl, setAnchorEl] = React.useState<undefined | HTMLElement>(
@@ -47,7 +56,12 @@ export const UserSettingsMenu = () => {
         <MoreVertIcon />
       </IconButton>
       <Menu anchorEl={anchorEl} open={open} onClose={handleClose}>
-        <MenuItem data-testid="sign-out" onClick={() => identityApi.signOut()}>
+        <MenuItem
+          data-testid="sign-out"
+          onClick={() =>
+            identityApi.signOut().catch(error => errorApi.post(error))
+          }
+        >
           <ListItemIcon>
             <SignOutIcon />
           </ListItemIcon>

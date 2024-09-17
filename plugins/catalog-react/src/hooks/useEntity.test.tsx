@@ -14,47 +14,71 @@
  * limitations under the License.
  */
 
-import React from 'react';
-import { renderHook } from '@testing-library/react-hooks';
+import React, { PropsWithChildren } from 'react';
+import { renderHook } from '@testing-library/react';
 import {
   useEntity,
+  useAsyncEntity,
   EntityProvider,
   AsyncEntityProvider,
-  EntityContext,
 } from './useEntity';
 import { Entity } from '@backstage/catalog-model';
+import { analyticsApiRef, useAnalytics } from '@backstage/core-plugin-api';
+import {
+  MockAnalyticsApi,
+  TestApiRegistry,
+  withLogCollector,
+} from '@backstage/test-utils';
+import { ApiProvider } from '@backstage/core-app-api';
 
-describe('EntityProvider', () => {
-  it('should provide no entity', async () => {
-    const { result } = renderHook(() => useEntity(), {
-      wrapper: ({ children }) => <EntityProvider children={children} />,
+const entity = { metadata: { name: 'my-entity' }, kind: 'MyKind' } as Entity;
+
+describe('useEntity', () => {
+  it('should throw if no entity is provided', async () => {
+    withLogCollector(() => {
+      expect(() =>
+        renderHook(() => useEntity(), {
+          wrapper: ({ children }: React.PropsWithChildren<{}>) => (
+            <EntityProvider children={children} />
+          ),
+        }),
+      ).toThrow(/entity has not been loaded/);
     });
-
-    expect(result.current.entity).toBe(undefined);
-    expect(result.current.loading).toBe(true);
-    expect(result.current.error).toBe(undefined);
-    expect(result.current.refresh).toBe(undefined);
   });
 
   it('should provide an entity', async () => {
-    const entity = { kind: 'MyEntity' } as Entity;
     const { result } = renderHook(() => useEntity(), {
-      wrapper: ({ children }) => (
+      wrapper: ({ children }: React.PropsWithChildren<{}>) => (
         <EntityProvider entity={entity} children={children} />
       ),
     });
 
     expect(result.current.entity).toBe(entity);
-    expect(result.current.loading).toBe(false);
-    expect(result.current.error).toBe(undefined);
-    expect(result.current.refresh).toBe(undefined);
+  });
+
+  it('should provide entityRef analytics context', () => {
+    const analyticsSpy = new MockAnalyticsApi();
+    const apis = TestApiRegistry.from([analyticsApiRef, analyticsSpy]);
+    const { result } = renderHook(() => useAnalytics(), {
+      wrapper: ({ children }: React.PropsWithChildren<{}>) => (
+        <ApiProvider apis={apis}>
+          <EntityProvider entity={entity} children={children} />
+        </ApiProvider>
+      ),
+    });
+
+    result.current.captureEvent('test', 'value');
+
+    expect(analyticsSpy.getEvents()[0]).toMatchObject({
+      context: { entityRef: 'mykind:default/my-entity' },
+    });
   });
 });
 
-describe('AsyncEntityProvider', () => {
+describe('useAsyncEntity', () => {
   it('should provide no entity', async () => {
-    const { result } = renderHook(() => useEntity(), {
-      wrapper: ({ children }) => (
+    const { result } = renderHook(() => useAsyncEntity(), {
+      wrapper: ({ children }: React.PropsWithChildren<{}>) => (
         <AsyncEntityProvider loading={false} children={children} />
       ),
     });
@@ -66,10 +90,9 @@ describe('AsyncEntityProvider', () => {
   });
 
   it('should provide an entity', async () => {
-    const entity = { kind: 'MyEntity' } as Entity;
     const refresh = () => {};
-    const { result } = renderHook(() => useEntity(), {
-      wrapper: ({ children }) => (
+    const { result } = renderHook(() => useAsyncEntity(), {
+      wrapper: ({ children }: React.PropsWithChildren<{}>) => (
         <AsyncEntityProvider
           loading={false}
           entity={entity}
@@ -87,8 +110,8 @@ describe('AsyncEntityProvider', () => {
 
   it('should provide an error', async () => {
     const error = new Error('oh no');
-    const { result } = renderHook(() => useEntity(), {
-      wrapper: ({ children }) => (
+    const { result } = renderHook(() => useAsyncEntity(), {
+      wrapper: ({ children }: PropsWithChildren<{}>) => (
         <AsyncEntityProvider
           loading={false}
           error={error}
@@ -102,39 +125,43 @@ describe('AsyncEntityProvider', () => {
     expect(result.current.error).toBe(error);
     expect(result.current.refresh).toBe(undefined);
   });
-});
 
-describe('EntityContext.Provider', () => {
-  it('should provide no entity', async () => {
-    const { result } = renderHook(() => useEntity(), {
-      wrapper: ({ children }) => (
-        <EntityContext.Provider
-          value={{ loading: false }}
-          children={children}
-        />
+  it('should provide entityRef analytics context', () => {
+    const analyticsSpy = new MockAnalyticsApi();
+    const apis = TestApiRegistry.from([analyticsApiRef, analyticsSpy]);
+    const { result } = renderHook(() => useAnalytics(), {
+      wrapper: ({ children }: React.PropsWithChildren<{}>) => (
+        <ApiProvider apis={apis}>
+          <AsyncEntityProvider
+            loading={false}
+            entity={entity}
+            refresh={() => {}}
+            children={children}
+          />
+        </ApiProvider>
       ),
     });
 
-    expect(result.current.entity).toBe(undefined);
-    expect(result.current.loading).toBe(false);
-    expect(result.current.error).toBe(undefined);
-    expect(result.current.refresh).toBe(undefined);
+    result.current.captureEvent('test', 'value');
+
+    expect(analyticsSpy.getEvents()[0]).toMatchObject({
+      context: { entityRef: 'mykind:default/my-entity' },
+    });
   });
 
-  it('should provide an entity', async () => {
-    const entity = { kind: 'MyEntity' } as Entity;
-    const { result } = renderHook(() => useEntity(), {
-      wrapper: ({ children }) => (
-        <EntityContext.Provider
-          value={{ entity, loading: false }}
-          children={children}
-        />
+  it('should omit entityRef analytics context', () => {
+    const analyticsSpy = new MockAnalyticsApi();
+    const apis = TestApiRegistry.from([analyticsApiRef, analyticsSpy]);
+    const { result } = renderHook(() => useAnalytics(), {
+      wrapper: ({ children }: PropsWithChildren<{}>) => (
+        <ApiProvider apis={apis}>
+          <AsyncEntityProvider loading={false} children={children} />
+        </ApiProvider>
       ),
     });
 
-    expect(result.current.entity).toBe(entity);
-    expect(result.current.loading).toBe(false);
-    expect(result.current.error).toBe(undefined);
-    expect(result.current.refresh).toBe(undefined);
+    result.current.captureEvent('test', 'value');
+
+    expect(analyticsSpy.getEvents()[0].context).not.toHaveProperty('entityRef');
   });
 });

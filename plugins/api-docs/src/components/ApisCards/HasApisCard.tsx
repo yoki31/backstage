@@ -15,7 +15,7 @@
  */
 
 import { ApiEntity, RELATION_HAS_PART } from '@backstage/catalog-model';
-import { Typography } from '@material-ui/core';
+import Typography from '@material-ui/core/Typography';
 import {
   EntityTable,
   useEntity,
@@ -26,17 +26,15 @@ import { createSpecApiTypeColumn } from './presets';
 import {
   CodeSnippet,
   InfoCard,
+  InfoCardVariants,
   Link,
   Progress,
   TableColumn,
+  TableOptions,
   WarningPanel,
 } from '@backstage/core-components';
 
-type Props = {
-  variant?: 'gridItem';
-};
-
-const columns: TableColumn<ApiEntity>[] = [
+const presetColumns: TableColumn<ApiEntity>[] = [
   EntityTable.columns.createEntityRefColumn({ defaultKind: 'API' }),
   EntityTable.columns.createOwnerColumn(),
   createSpecApiTypeColumn(),
@@ -44,7 +42,21 @@ const columns: TableColumn<ApiEntity>[] = [
   EntityTable.columns.createMetadataDescriptionColumn(),
 ];
 
-export const HasApisCard = ({ variant = 'gridItem' }: Props) => {
+/**
+ * @public
+ */
+export const HasApisCard = (props: {
+  variant?: InfoCardVariants;
+  title?: string;
+  columns?: TableColumn<ApiEntity>[];
+  tableOptions?: TableOptions;
+}) => {
+  const {
+    variant = 'gridItem',
+    title = 'APIs',
+    columns = presetColumns,
+    tableOptions = {},
+  } = props;
   const { entity } = useEntity();
   const { entities, loading, error } = useRelatedEntities(entity, {
     type: RELATION_HAS_PART,
@@ -53,7 +65,7 @@ export const HasApisCard = ({ variant = 'gridItem' }: Props) => {
 
   if (loading) {
     return (
-      <InfoCard variant={variant} title="APIs">
+      <InfoCard variant={variant} title={title}>
         <Progress />
       </InfoCard>
     );
@@ -61,7 +73,7 @@ export const HasApisCard = ({ variant = 'gridItem' }: Props) => {
 
   if (error || !entities) {
     return (
-      <InfoCard variant={variant} title="APIs">
+      <InfoCard variant={variant} title={title}>
         <WarningPanel
           severity="error"
           title="Could not load APIs"
@@ -73,7 +85,7 @@ export const HasApisCard = ({ variant = 'gridItem' }: Props) => {
 
   return (
     <EntityTable
-      title="APIs"
+      title={title}
       variant={variant}
       emptyContent={
         <div style={{ textAlign: 'center' }}>
@@ -89,6 +101,7 @@ export const HasApisCard = ({ variant = 'gridItem' }: Props) => {
         </div>
       }
       columns={columns}
+      tableOptions={tableOptions}
       entities={entities as ApiEntity[]}
     />
   );

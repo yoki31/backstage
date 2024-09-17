@@ -13,72 +13,105 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 import React, { useContext, useState } from 'react';
-import {
-  NavLink,
-  resolvePath,
-  useLocation,
-  useResolvedPath,
-} from 'react-router-dom';
+import { resolvePath, useLocation, useResolvedPath } from 'react-router-dom';
 import { makeStyles } from '@material-ui/core/styles';
+import Tooltip from '@material-ui/core/Tooltip';
 import Typography from '@material-ui/core/Typography';
-import Link from '@material-ui/core/Link';
+import { Link } from '../../components/Link';
 import { IconComponent } from '@backstage/core-plugin-api';
 import classnames from 'classnames';
-import { BackstageTheme } from '@backstage/theme';
 import ArrowDropDownIcon from '@material-ui/icons/ArrowDropDown';
 import ArrowDropUpIcon from '@material-ui/icons/ArrowDropUp';
 import { SidebarItemWithSubmenuContext } from './config';
+import { isLocationMatch } from './utils';
+import Box from '@material-ui/core/Box';
+import Button from '@material-ui/core/Button';
 
-const useStyles = makeStyles<BackstageTheme>(theme => ({
-  item: {
-    height: 48,
-    width: '100%',
-    '&:hover': {
-      background: '#6f6f6f',
-      color: theme.palette.navigation.selectedColor,
+/** @public */
+export type SidebarSubmenuItemClassKey =
+  | 'item'
+  | 'itemContainer'
+  | 'selected'
+  | 'label'
+  | 'subtitle'
+  | 'dropdownArrow'
+  | 'dropdown'
+  | 'dropdownItem'
+  | 'textContent';
+
+const useStyles = makeStyles(
+  theme => ({
+    item: {
+      height: 48,
+      width: '100%',
+      '&:hover': {
+        background:
+          theme.palette.navigation.navItem?.hoverBackground || '#6f6f6f',
+        color: theme.palette.navigation.selectedColor,
+      },
+      display: 'flex',
+      alignItems: 'center',
+      color: theme.palette.navigation.color,
+      padding: theme.spacing(2.5),
+      cursor: 'pointer',
+      position: 'relative',
+      background: 'none',
+      border: 'none',
     },
-    display: 'flex',
-    alignItems: 'center',
-    color: theme.palette.navigation.color,
-    padding: 20,
-    cursor: 'pointer',
-    position: 'relative',
-    background: 'none',
-    border: 'none',
-  },
-  itemContainer: {
-    width: '100%',
-  },
-  selected: {
-    background: '#6f6f6f',
-    color: '#FFF',
-  },
-  label: {
-    margin: 14,
-    marginLeft: 7,
-    fontSize: 14,
-  },
-  dropdownArrow: {
-    position: 'absolute',
-    right: 21,
-  },
-  dropdown: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'end',
-  },
-  dropdownItem: {
-    width: '100%',
-    padding: '10px 0 10px 0',
-  },
-  textContent: {
-    color: theme.palette.navigation.color,
-    display: 'flex',
-    justifyContent: 'center',
-    fontSize: '14px',
-  },
-}));
+    itemContainer: {
+      width: '100%',
+    },
+    selected: {
+      background: '#6f6f6f',
+      color: theme.palette.common.white,
+    },
+    label: {
+      margin: theme.spacing(1.75),
+      marginLeft: theme.spacing(1),
+      fontSize: theme.typography.body2.fontSize,
+      whiteSpace: 'nowrap',
+      overflow: 'hidden',
+      'text-overflow': 'ellipsis',
+      lineHeight: 1,
+    },
+    subtitle: {
+      fontSize: 10,
+      whiteSpace: 'nowrap',
+      overflow: 'hidden',
+      'text-overflow': 'ellipsis',
+    },
+    dropdownArrow: {
+      position: 'absolute',
+      right: 21,
+    },
+    dropdown: {
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'end',
+    },
+    dropdownItem: {
+      width: '100%',
+      padding: '10px 0 10px 0',
+      '&:hover': {
+        background:
+          theme.palette.navigation.navItem?.hoverBackground || '#6f6f6f',
+        color: theme.palette.navigation.selectedColor,
+      },
+    },
+    textContent: {
+      color: theme.palette.navigation.color,
+      paddingLeft: theme.spacing(4),
+      paddingRight: theme.spacing(1),
+      fontSize: theme.typography.body2.fontSize,
+      whiteSpace: 'nowrap',
+      overflow: 'hidden',
+      'text-overflow': 'ellipsis',
+    },
+  }),
+  { name: 'BackstageSidebarSubmenuItem' },
+);
 
 /**
  * Clickable item displayed when submenu item is clicked.
@@ -94,7 +127,9 @@ export type SidebarSubmenuItemDropdownItem = {
 /**
  * Holds submenu item content.
  *
+ * @remarks
  * title: Text content of submenu item
+ * subtitle: A subtitle displayed under the main title
  * to: Path to navigate to when item is clicked
  * icon: Icon displayed on the left of text content
  * dropdownItems: Optional array of dropdown items displayed when submenu item is clicked.
@@ -103,9 +138,12 @@ export type SidebarSubmenuItemDropdownItem = {
  */
 export type SidebarSubmenuItemProps = {
   title: string;
-  to: string;
-  icon: IconComponent;
+  subtitle?: string;
+  to?: string;
+  icon?: IconComponent;
   dropdownItems?: SidebarSubmenuItemDropdownItem[];
+  exact?: boolean;
+  initialShowDropdown?: boolean;
 };
 
 /**
@@ -114,84 +152,126 @@ export type SidebarSubmenuItemProps = {
  * @public
  */
 export const SidebarSubmenuItem = (props: SidebarSubmenuItemProps) => {
-  const { title, to, icon: Icon, dropdownItems } = props;
+  const { title, subtitle, to, icon: Icon, dropdownItems, exact } = props;
   const classes = useStyles();
-  const { pathname: locationPathname } = useLocation();
-  const { pathname: toPathname } = useResolvedPath(to);
   const { setIsHoveredOn } = useContext(SidebarItemWithSubmenuContext);
   const closeSubmenu = () => {
     setIsHoveredOn(false);
   };
+  const toLocation = useResolvedPath(to ?? '');
+  const currentLocation = useLocation();
+  let isActive = isLocationMatch(currentLocation, toLocation, exact);
 
-  let isActive = locationPathname === toPathname;
-
-  const [showDropDown, setShowDropDown] = useState(false);
+  const [showDropDown, setShowDropDown] = useState(
+    props.initialShowDropdown ?? false,
+  );
   const handleClickDropdown = () => {
     setShowDropDown(!showDropDown);
   };
   if (dropdownItems !== undefined) {
     dropdownItems.some(item => {
       const resolvedPath = resolvePath(item.to);
-      isActive = locationPathname === resolvedPath.pathname;
+      isActive = isLocationMatch(currentLocation, resolvedPath, exact);
+      return isActive;
     });
     return (
-      <div className={classes.itemContainer}>
-        <button
-          onClick={handleClickDropdown}
-          className={classnames(
-            classes.item,
-            isActive ? classes.selected : undefined,
-          )}
-        >
-          <Icon fontSize="small" />
-          <Typography variant="subtitle1" className={classes.label}>
-            {title}
-          </Typography>
-          {showDropDown ? (
-            <ArrowDropUpIcon className={classes.dropdownArrow} />
-          ) : (
-            <ArrowDropDownIcon className={classes.dropdownArrow} />
-          )}
-        </button>
-        {dropdownItems && showDropDown && (
-          <div className={classes.dropdown}>
-            {dropdownItems.map((object, key) => (
-              <Link
-                component={NavLink}
-                to={object.to}
-                underline="none"
-                className={classes.dropdownItem}
-                onClick={closeSubmenu}
-                key={key}
-              >
-                <Typography className={classes.textContent}>
-                  {object.title}
+      <Box className={classes.itemContainer}>
+        <Tooltip title={title} enterDelay={500} enterNextDelay={500}>
+          <Button
+            role="button"
+            onClick={handleClickDropdown}
+            onTouchStart={e => e.stopPropagation()}
+            className={classnames(
+              classes.item,
+              isActive ? classes.selected : undefined,
+            )}
+          >
+            {Icon && <Icon fontSize="small" />}
+            <Typography
+              variant="subtitle1"
+              component="span"
+              className={classes.label}
+            >
+              {title}
+              <br />
+              {subtitle && (
+                <Typography
+                  variant="caption"
+                  component="span"
+                  className={classes.subtitle}
+                >
+                  {subtitle}
                 </Typography>
-              </Link>
+              )}
+            </Typography>
+            {showDropDown ? (
+              <ArrowDropUpIcon className={classes.dropdownArrow} />
+            ) : (
+              <ArrowDropDownIcon className={classes.dropdownArrow} />
+            )}
+          </Button>
+        </Tooltip>
+        {dropdownItems && showDropDown && (
+          <Box className={classes.dropdown}>
+            {dropdownItems.map((object, key) => (
+              <Tooltip
+                key={key}
+                title={object.title}
+                enterDelay={500}
+                enterNextDelay={500}
+              >
+                <Link
+                  to={object.to}
+                  underline="none"
+                  className={classes.dropdownItem}
+                  onClick={closeSubmenu}
+                  onTouchStart={e => e.stopPropagation()}
+                >
+                  <Typography component="span" className={classes.textContent}>
+                    {object.title}
+                  </Typography>
+                </Link>
+              </Tooltip>
             ))}
-          </div>
+          </Box>
         )}
-      </div>
+      </Box>
     );
   }
 
   return (
-    <div className={classes.itemContainer}>
-      <Link
-        component={NavLink}
-        to={to}
-        underline="none"
-        className={classnames(
-          classes.item,
-          isActive ? classes.selected : undefined,
-        )}
-        onClick={closeSubmenu}
-      >
-        <Icon fontSize="small" />
-        <Typography variant="subtitle1" className={classes.label}>
-          {title}
-        </Typography>
-      </Link>
-    </div>
+    <Box className={classes.itemContainer}>
+      <Tooltip title={title} enterDelay={500} enterNextDelay={500}>
+        <Link
+          to={to!}
+          underline="none"
+          className={classnames(
+            classes.item,
+            isActive ? classes.selected : undefined,
+          )}
+          onClick={closeSubmenu}
+          onTouchStart={e => e.stopPropagation()}
+        >
+          {Icon && <Icon fontSize="small" />}
+          <Typography
+            variant="subtitle1"
+            component="span"
+            className={classes.label}
+          >
+            {title}
+            <br />
+            {subtitle && (
+              <Typography
+                variant="caption"
+                component="span"
+                className={classes.subtitle}
+              >
+                {subtitle}
+              </Typography>
+            )}
+          </Typography>
+        </Link>
+      </Tooltip>
+    </Box>
   );
 };

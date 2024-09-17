@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Backstage Authors
+ * Copyright 2022 The Backstage Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,27 +13,54 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { Entity, EntityName } from '@backstage/catalog-model';
+import {
+  Entity,
+  CompoundEntityRef,
+  stringifyEntityRef,
+} from '@backstage/catalog-model';
 import React from 'react';
 import { EntityRefLink } from './EntityRefLink';
 import { LinkProps } from '@backstage/core-components';
 
-export type EntityRefLinksProps = {
-  entityRefs: (Entity | EntityName)[];
+/**
+ * Props for {@link EntityRefLink}.
+ *
+ * @public
+ */
+export type EntityRefLinksProps<
+  TRef extends string | CompoundEntityRef | Entity,
+> = {
   defaultKind?: string;
+  entityRefs: TRef[];
+  hideIcons?: boolean;
+  /** @deprecated This option is no longer used; presentation is handled by entityPresentationApiRef instead */
+  fetchEntities?: boolean;
+  /** @deprecated This option is no longer used; presentation is handled by entityPresentationApiRef instead */
+  getTitle?(entity: TRef): string | undefined;
 } & Omit<LinkProps, 'to'>;
 
-export const EntityRefLinks = ({
-  entityRefs,
-  defaultKind,
-  ...linkProps
-}: EntityRefLinksProps) => (
-  <>
-    {entityRefs.map((r, i) => (
-      <React.Fragment key={i}>
-        {i > 0 && ', '}
-        <EntityRefLink {...linkProps} entityRef={r} defaultKind={defaultKind} />
-      </React.Fragment>
-    ))}
-  </>
-);
+/**
+ * Shows a list of clickable links to entities.
+ *
+ * @public
+ */
+export function EntityRefLinks<
+  TRef extends string | CompoundEntityRef | Entity,
+>(props: EntityRefLinksProps<TRef>) {
+  const { entityRefs, hideIcons, ...linkProps } = props;
+
+  return (
+    <>
+      {entityRefs.map((r: TRef, i: number) => {
+        const entityRefString =
+          typeof r === 'string' ? r : stringifyEntityRef(r);
+        return (
+          <React.Fragment key={`${i}.${entityRefString}`}>
+            {i > 0 && ', '}
+            <EntityRefLink {...linkProps} entityRef={r} hideIcon={hideIcons} />
+          </React.Fragment>
+        );
+      })}
+    </>
+  );
+}

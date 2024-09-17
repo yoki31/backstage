@@ -17,13 +17,14 @@
 import { ApiRef, createApiRef } from '../system';
 
 /**
- * Fetaure flag descriptor.
+ * Feature flag descriptor.
  *
  * @public
  */
 export type FeatureFlag = {
   name: string;
   pluginId: string;
+  description?: string;
 };
 
 /**

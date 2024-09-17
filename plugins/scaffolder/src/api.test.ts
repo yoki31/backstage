@@ -16,23 +16,32 @@
 
 import { ConfigReader } from '@backstage/core-app-api';
 import { ScmIntegrations } from '@backstage/integration';
-import { setupRequestMockHandlers } from '@backstage/test-utils';
+import { MockFetchApi, registerMswTestHooks } from '@backstage/test-utils';
 import { rest } from 'msw';
 import { setupServer } from 'msw/node';
 import { ScaffolderClient } from './api';
+import { fetchEventSource } from '@microsoft/fetch-event-source';
 
-const MockedEventSource = global.EventSource as jest.MockedClass<
-  typeof EventSource
+jest.mock('@microsoft/fetch-event-source');
+const mockFetchEventSource = fetchEventSource as jest.MockedFunction<
+  typeof fetchEventSource
 >;
 
 const server = setupServer();
 
 describe('api', () => {
-  setupRequestMockHandlers(server);
+  registerMswTestHooks(server);
   const mockBaseUrl = 'http://backstage/api';
 
   const discoveryApi = { getBaseUrl: async () => mockBaseUrl };
-  const identityApi = {} as any;
+  const fetchApi = new MockFetchApi();
+  const identityApi = {
+    getBackstageIdentity: jest.fn(),
+    getProfileInfo: jest.fn(),
+    getCredentials: jest.fn(),
+    signOut: jest.fn(),
+  };
+
   const scmIntegrationsApi = ScmIntegrations.fromConfig(
     new ConfigReader({
       integrations: {
@@ -50,8 +59,12 @@ describe('api', () => {
     apiClient = new ScaffolderClient({
       scmIntegrationsApi,
       discoveryApi,
+      fetchApi,
       identityApi,
     });
+
+    jest.restoreAllMocks();
+    identityApi.getBackstageIdentity.mockReturnValue({});
   });
 
   it('should return default and custom integrations', async () => {
@@ -62,7 +75,9 @@ describe('api', () => {
       'dev.azure.com',
       'bitbucket.org',
     ];
-    const integrations = await apiClient.getIntegrationsList({ allowedHosts });
+    const { integrations } = await apiClient.getIntegrationsList({
+      allowedHosts,
+    });
     integrations.forEach(integration =>
       expect(allowedHosts).toContain(integration.host),
     );
@@ -71,23 +86,23 @@ describe('api', () => {
   describe('streamEvents', () => {
     describe('eventsource', () => {
       it('should work', async () => {
-        MockedEventSource.prototype.addEventListener.mockImplementation(
-          (type, fn) => {
-            if (typeof fn !== 'function') {
-              return;
-            }
-
-            if (type === 'log') {
-              fn({
-                data: '{"id":1,"taskId":"a-random-id","type":"log","createdAt":"","body":{"message":"My log message"}}',
-              } as any);
-            } else if (type === 'completion') {
-              fn({
-                data: '{"id":2,"taskId":"a-random-id","type":"completion","createdAt":"","body":{"message":"Finished!"}}',
-              } as any);
-            }
-          },
-        );
+        mockFetchEventSource.mockImplementation(async (_url, options) => {
+          const { onopen, onmessage } = options;
+          await Promise.resolve();
+          await onopen?.({ ok: true } as Response);
+          await Promise.resolve();
+          onmessage?.({
+            id: '',
+            event: 'log',
+            data: '{"id":1,"taskId":"a-random-id","type":"log","createdAt":"","body":{"message":"My log message"}}',
+          });
+          await Promise.resolve();
+          onmessage?.({
+            id: '',
+            event: 'completion',
+            data: '{"id":2,"taskId":"a-random-id","type":"completion","createdAt":"","body":{"message":"Finished!"}}',
+          });
+        });
 
         const next = jest.fn();
 
@@ -97,21 +112,25 @@ describe('api', () => {
             .subscribe({ next, complete });
         });
 
-        expect(MockedEventSource).toBeCalledWith(
+        expect(mockFetchEventSource).toHaveBeenCalledWith(
           'http://backstage/api/v2/tasks/a-random-task-id/eventstream',
-          { withCredentials: true },
+          {
+            fetch: fetchApi.fetch,
+            onmessage: expect.any(Function),
+            onerror: expect.any(Function),
+            signal: expect.any(AbortSignal),
+          },
         );
-        expect(MockedEventSource.prototype.close).toBeCalled();
 
-        expect(next).toBeCalledTimes(2);
-        expect(next).toBeCalledWith({
+        expect(next).toHaveBeenCalledTimes(2);
+        expect(next).toHaveBeenCalledWith({
           id: 1,
           taskId: 'a-random-id',
           type: 'log',
           createdAt: '',
           body: { message: 'My log message' },
         });
-        expect(next).toBeCalledWith({
+        expect(next).toHaveBeenCalledWith({
           id: 2,
           taskId: 'a-random-id',
           type: 'completion',
@@ -126,6 +145,7 @@ describe('api', () => {
         apiClient = new ScaffolderClient({
           scmIntegrationsApi,
           discoveryApi,
+          fetchApi,
           identityApi,
           useLongPollingLogs: true,
         });
@@ -180,15 +200,15 @@ describe('api', () => {
             .subscribe({ next, complete }),
         );
 
-        expect(next).toBeCalledTimes(2);
-        expect(next).toBeCalledWith({
+        expect(next).toHaveBeenCalledTimes(2);
+        expect(next).toHaveBeenCalledWith({
           id: 1,
           taskId: 'a-random-id',
           type: 'log',
           createdAt: '',
           body: { message: 'My log message' },
         });
-        expect(next).toBeCalledWith({
+        expect(next).toHaveBeenCalledWith({
           id: 2,
           taskId: 'a-random-id',
           type: 'completion',
@@ -244,8 +264,8 @@ describe('api', () => {
             });
         });
 
-        expect(next).toBeCalledTimes(1);
-        expect(next).toBeCalledWith({
+        expect(next).toHaveBeenCalledTimes(1);
+        expect(next).toHaveBeenCalledWith({
           id: 1,
           taskId: 'a-random-id',
           type: 'log',
@@ -290,10 +310,10 @@ describe('api', () => {
             .subscribe({ next, complete }),
         );
 
-        expect(called).toBeCalledTimes(2);
+        expect(called).toHaveBeenCalledTimes(2);
 
-        expect(next).toBeCalledTimes(1);
-        expect(next).toBeCalledWith({
+        expect(next).toHaveBeenCalledTimes(1);
+        expect(next).toHaveBeenCalledWith({
           id: 2,
           taskId: 'a-random-id',
           type: 'completion',
@@ -301,6 +321,80 @@ describe('api', () => {
           body: { message: 'Finished!' },
         });
       });
+    });
+  });
+
+  describe('listTasks', () => {
+    it('should list all tasks', async () => {
+      server.use(
+        rest.get(`${mockBaseUrl}/v2/tasks`, (req, res, ctx) => {
+          const createdBy = req.url.searchParams.get('createdBy');
+
+          if (createdBy) {
+            return res(
+              ctx.json([
+                {
+                  createdBy,
+                },
+              ]),
+            );
+          }
+
+          return res(
+            ctx.json([
+              {
+                createdBy: null,
+              },
+              {
+                createdBy: null,
+              },
+            ]),
+          );
+        }),
+      );
+
+      const result = await apiClient.listTasks({ filterByOwnership: 'all' });
+      expect(result).toHaveLength(2);
+    });
+    it('should list task using the current user as owner', async () => {
+      server.use(
+        rest.get(`${mockBaseUrl}/v2/tasks`, (req, res, ctx) => {
+          const createdBy = req.url.searchParams.get('createdBy');
+
+          if (createdBy) {
+            return res(
+              ctx.json({
+                tasks: [
+                  {
+                    createdBy,
+                  },
+                ],
+              }),
+            );
+          }
+
+          return res(
+            ctx.json({
+              tasks: [
+                {
+                  createdBy: null,
+                },
+                {
+                  createdBy: null,
+                },
+              ],
+            }),
+          );
+        }),
+      );
+
+      identityApi.getBackstageIdentity.mockResolvedValueOnce({
+        userEntityRef: 'user:default/foo',
+      });
+
+      const result = await apiClient.listTasks({ filterByOwnership: 'owned' });
+      expect(identityApi.getBackstageIdentity).toHaveBeenCalled();
+      expect(result.tasks).toHaveLength(1);
     });
   });
 });

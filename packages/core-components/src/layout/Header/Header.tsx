@@ -14,17 +14,17 @@
  * limitations under the License.
  */
 
-import { useApi, configApiRef } from '@backstage/core-plugin-api';
-import { BackstageTheme } from '@backstage/theme';
-import { makeStyles } from '@material-ui/core/styles';
+import { configApiRef, useApi } from '@backstage/core-plugin-api';
 import Box from '@material-ui/core/Box';
 import Grid from '@material-ui/core/Grid';
+import { makeStyles } from '@material-ui/core/styles';
 import Tooltip from '@material-ui/core/Tooltip';
 import Typography from '@material-ui/core/Typography';
 import React, { CSSProperties, PropsWithChildren, ReactNode } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link } from '../../components/Link';
 import { Breadcrumbs } from '../Breadcrumbs';
+import { useContent } from '../Sidebar';
 
 /** @public */
 export type HeaderClassKey =
@@ -38,7 +38,7 @@ export type HeaderClassKey =
   | 'breadcrumbType'
   | 'breadcrumbTitle';
 
-const useStyles = makeStyles<BackstageTheme>(
+const useStyles = makeStyles(
   theme => ({
     header: {
       gridArea: 'pageHeader',
@@ -49,11 +49,13 @@ const useStyles = makeStyles<BackstageTheme>(
       zIndex: 100,
       display: 'flex',
       flexDirection: 'row',
-      flexWrap: 'wrap',
       alignItems: 'center',
       backgroundImage: theme.page.backgroundImage,
       backgroundPosition: 'center',
       backgroundSize: 'cover',
+      [theme.breakpoints.down('sm')]: {
+        flexWrap: 'wrap',
+      },
     },
     leftItemsBox: {
       maxWidth: '100%',
@@ -61,28 +63,30 @@ const useStyles = makeStyles<BackstageTheme>(
     },
     rightItemsBox: {
       width: 'auto',
+      alignItems: 'center',
     },
     title: {
-      color: theme.palette.bursts.fontColor,
-      wordBreak: 'break-all',
+      color: theme.page.fontColor,
+      wordBreak: 'break-word',
       fontSize: theme.typography.h3.fontSize,
       marginBottom: 0,
     },
     subtitle: {
-      color: theme.palette.common.white,
+      color: theme.page.fontColor,
       opacity: 0.8,
       display: 'inline-block', // prevents margin collapse of adjacent siblings
       marginTop: theme.spacing(1),
+      maxWidth: '75ch',
     },
     type: {
       textTransform: 'uppercase',
       fontSize: 11,
       opacity: 0.8,
       marginBottom: theme.spacing(1),
-      color: theme.palette.bursts.fontColor,
+      color: theme.page.fontColor,
     },
     breadcrumb: {
-      color: theme.palette.bursts.fontColor,
+      color: theme.page.fontColor,
     },
     breadcrumbType: {
       fontSize: 'inherit',
@@ -153,8 +157,15 @@ const TypeFragment = ({
 };
 
 const TitleFragment = ({ pageTitle, classes, tooltip }: TitleFragmentProps) => {
+  const { contentRef } = useContent();
+
   const FinalTitle = (
-    <Typography className={classes.title} variant="h1">
+    <Typography
+      ref={contentRef}
+      tabIndex={-1}
+      className={classes.title}
+      variant="h1"
+    >
       {pageTitle}
     </Typography>
   );
@@ -189,8 +200,12 @@ const SubtitleFragment = ({ classes, subtitle }: SubtitleFragmentProps) => {
     </Typography>
   );
 };
-
-/** @public */
+/**
+ * Backstage main header with abstract color background in multiple variants
+ *
+ * @public
+ *
+ */
 export function Header(props: PropsWithChildren<Props>) {
   const {
     children,

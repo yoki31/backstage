@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-/* eslint-disable import/no-extraneous-dependencies */
+/* eslint-disable @backstage/no-undeclared-imports */
 
 const { resolve: resolvePath, join: joinPath, dirname } = require('path');
 const fs = require('fs').promises;
@@ -43,6 +43,13 @@ async function listFiles(dir) {
 const projectRoot = resolvePath(__dirname, '..');
 
 async function verifyUrl(basePath, absUrl, docPages) {
+  const url = absUrl
+    .replace(/#.*$/, '')
+    .replace(
+      /https:\/\/github.com\/backstage\/backstage\/(tree|blob)\/master/,
+      '',
+    );
+
   // Avoid having absolute URL links within docs/, so that links work on the site
   if (
     absUrl.match(
@@ -50,15 +57,17 @@ async function verifyUrl(basePath, absUrl, docPages) {
     ) &&
     basePath.match(/^(?:docs|microsite)\//)
   ) {
+    // Exception for linking to the changelogs, since we encourage those to be browsed in GitHub
+    if (absUrl.match(/docs\/releases\/.+-changelog\.md$/)) {
+      if (docPages.has(url.slice(0, -'.md'.length))) {
+        return undefined;
+      }
+      return { url: absUrl, basePath, problem: 'missing' };
+    }
+
     return { url: absUrl, basePath, problem: 'github' };
   }
 
-  const url = absUrl
-    .replace(/#.*$/, '')
-    .replace(
-      /https:\/\/github.com\/backstage\/backstage\/(tree|blob)\/master/,
-      '',
-    );
   if (!url) {
     return undefined;
   }
@@ -66,6 +75,13 @@ async function verifyUrl(basePath, absUrl, docPages) {
   // Only verify existence of local files for now, so skip anything with a schema
   if (url.match(/[a-z]+:/)) {
     return undefined;
+  }
+
+  if (basePath.startsWith('.changeset/')) {
+    if (absUrl.match(/^https?:\/\//)) {
+      return undefined;
+    }
+    return { url, basePath, problem: 'out-of-changeset' };
   }
 
   let path = '';
@@ -121,6 +137,16 @@ async function verifyFile(filePath, docPages) {
     }
   }
 
+  const multiLineLinks =
+    content.match(/\[[^\]\n]+?\n[^\]\n]*?(?:\n[^\]\n]*?)?\]\(/g) || [];
+  badUrls.push(
+    ...multiLineLinks.map(url => ({
+      url,
+      basePath: filePath,
+      problem: 'multi-line',
+    })),
+  );
+
   return badUrls;
 }
 
@@ -155,6 +181,9 @@ async function findExternalDocsLinks(dir) {
 async function main() {
   process.chdir(projectRoot);
 
+  const isCI = Boolean(process.env.CI);
+  const hasReference = existsSync(resolvePath(projectRoot, 'docs/reference'));
+
   const files = await listFiles('.');
   const mdFiles = files.filter(f => f.endsWith('.md'));
   const badUrls = [];
@@ -167,10 +196,19 @@ async function main() {
     badUrls.push(...badFileUrls);
   }
 
+  if (!hasReference) {
+    console.log(
+      "Skipping API reference link validation, no docs/reference/ dir. Reference docs can be built with 'yarn build:api-docs'",
+    );
+  }
+
   if (badUrls.length) {
     console.log(`Found ${badUrls.length} bad links within repo`);
     for (const { url, basePath, problem } of badUrls) {
       if (problem === 'missing') {
+        if (url.startsWith('../reference/') && !isCI && !hasReference) {
+          continue;
+        }
         console.error(
           `Unable to reach ${url} from root or microsite/static/, linked from ${basePath}`,
         );
@@ -186,6 +224,10 @@ async function main() {
             '',
           )}`,
         );
+      } else if (problem === 'out-of-changeset') {
+        console.error('Links in changesets must use absolute URLs');
+        console.error(`  From: ${basePath}`);
+        console.error(`  To: ${url}`);
       } else if (problem === 'doc-missing') {
         const suggestion =
           docPages.get(url) ||
@@ -194,7 +236,7 @@ async function main() {
         console.error(`  From: ${basePath}`);
         console.error(`  To: ${url}`);
         if (suggestion) {
-          console.error(`  Replace With: ${suggestion}`);
+          console.error(`  Replace with: ${suggestion}`);
         }
       } else if (problem === 'not-relative') {
         console.error('Links within /docs/ must be relative');
@@ -206,6 +248,10 @@ async function main() {
         );
         console.error(`  From: ${basePath}`);
         console.error(`  To: ${url}`);
+      } else if (problem === 'multi-line') {
+        console.error(`Links are not allowed to span multiple lines:`);
+        console.error(`  From: ${basePath}`);
+        console.error(`  To: ${url.replace(/\n/g, '\n      ')}`);
       }
     }
     process.exit(1);

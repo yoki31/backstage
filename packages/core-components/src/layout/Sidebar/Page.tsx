@@ -14,66 +14,152 @@
  * limitations under the License.
  */
 
-import { makeStyles } from '@material-ui/core/styles';
+import Box from '@material-ui/core/Box';
+import { makeStyles, Theme } from '@material-ui/core/styles';
+import useMediaQuery from '@material-ui/core/useMediaQuery';
 import React, {
   createContext,
-  PropsWithChildren,
+  useCallback,
+  useContext,
   useEffect,
+  useMemo,
+  useRef,
   useState,
 } from 'react';
-import { sidebarConfig } from './config';
-import { BackstageTheme } from '@backstage/theme';
+
+import { SidebarConfig, SidebarConfigContext } from './config';
 import { LocalStorage } from './localStorage';
+import { SidebarPinStateProvider } from './SidebarPinStateContext';
 
 export type SidebarPageClassKey = 'root';
 
-const useStyles = makeStyles<BackstageTheme, { isPinned: boolean }>(
-  {
+type StyleProps = { sidebarConfig: SidebarConfig; isPinned: boolean };
+
+const useStyles = makeStyles<Theme, StyleProps>(
+  theme => ({
     root: {
       width: '100%',
-      minHeight: '100%',
       transition: 'padding-left 0.1s ease-out',
-      paddingLeft: ({ isPinned }) =>
-        isPinned
-          ? sidebarConfig.drawerWidthOpen
-          : sidebarConfig.drawerWidthClosed,
+      isolation: 'isolate',
+      [theme.breakpoints.up('sm')]: {
+        paddingLeft: (props: StyleProps) =>
+          props.isPinned
+            ? props.sidebarConfig.drawerWidthOpen
+            : props.sidebarConfig.drawerWidthClosed,
+      },
+      [theme.breakpoints.down('xs')]: {
+        paddingBottom: (props: StyleProps) =>
+          props.sidebarConfig.mobileSidebarHeight,
+      },
+      '@media print': {
+        padding: '0px !important',
+      },
     },
-  },
+    content: {
+      zIndex: 0,
+      isolation: 'isolate',
+      '&:focus': {
+        outline: 0,
+      },
+    },
+  }),
   { name: 'BackstageSidebarPage' },
 );
 
-export type SidebarPinStateContextType = {
-  isPinned: boolean;
-  toggleSidebarPinState: () => any;
+/**
+ * Props for SidebarPage
+ *
+ * @public
+ */
+export type SidebarPageProps = {
+  children?: React.ReactNode;
 };
 
-export const SidebarPinStateContext = createContext<SidebarPinStateContextType>(
-  {
-    isPinned: true,
-    toggleSidebarPinState: () => {},
-  },
-);
+type PageContextType = {
+  content: {
+    contentRef?: React.MutableRefObject<HTMLElement | null>;
+  };
+};
 
-export function SidebarPage(props: PropsWithChildren<{}>) {
+const PageContext = createContext<PageContextType>({
+  content: {
+    contentRef: undefined,
+  },
+});
+export function SidebarPage(props: SidebarPageProps) {
   const [isPinned, setIsPinned] = useState(() =>
     LocalStorage.getSidebarPinState(),
+  );
+  const { sidebarConfig } = useContext(SidebarConfigContext);
+
+  const contentRef = useRef(null);
+
+  const pageContext = useMemo(
+    () => ({
+      content: {
+        contentRef,
+      },
+    }),
+    [contentRef],
   );
 
   useEffect(() => {
     LocalStorage.setSidebarPinState(isPinned);
   }, [isPinned]);
 
+  const isMobile = useMediaQuery<Theme>(theme => theme.breakpoints.down('xs'), {
+    noSsr: true,
+  });
+
   const toggleSidebarPinState = () => setIsPinned(!isPinned);
 
-  const classes = useStyles({ isPinned });
+  const classes = useStyles({ isPinned, sidebarConfig });
+
   return (
-    <SidebarPinStateContext.Provider
+    <SidebarPinStateProvider
       value={{
         isPinned,
         toggleSidebarPinState,
+        isMobile,
       }}
     >
-      <div className={classes.root}>{props.children}</div>
-    </SidebarPinStateContext.Provider>
+      <PageContext.Provider value={pageContext}>
+        <Box className={classes.root}>{props.children}</Box>
+      </PageContext.Provider>
+    </SidebarPinStateProvider>
   );
+}
+
+/**
+ * This hook provides a react ref to the main content.
+ * Allows to set an element as the main content and focus on that component.
+ *
+ * *Note: If `contentRef` is not set `focusContent` is noop. `Content` component sets this ref automatically*
+ *
+ * @public
+ * @example
+ * Focus current content
+ * ```tsx
+ *  const { focusContent} = useContent();
+ * ...
+ *  <Button onClick={focusContent}>
+ *     focus main content
+ *  </Button>
+ * ```
+ * @example
+ * Set the reference to an Html element
+ * ```
+ *  const { contentRef } = useContent();
+ * ...
+ *  <article ref={contentRef} tabIndex={-1}>Main Content</article>
+ * ```
+ */
+export function useContent() {
+  const { content } = useContext(PageContext);
+
+  const focusContent = useCallback(() => {
+    content?.contentRef?.current?.focus();
+  }, [content]);
+
+  return { focusContent, contentRef: content?.contentRef };
 }

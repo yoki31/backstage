@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import program from 'commander';
+import { program } from 'commander';
 import chalk from 'chalk';
 import { registerCommands } from './commands';
 import { version } from '../package.json';
@@ -35,24 +35,5 @@ async function main(argv: string[]) {
 
   program.parse(argv);
 }
-
-process.on('unhandledRejection', (rejection: unknown) => {
-  // Try to avoid exiting if the unhandled error is coming from jsdom, i.e. zombie.
-  // Those are typically errors on the page that should be benign, at least in the
-  // context of this test. We have other ways of asserting that the page is being
-  // rendered correctly.
-  if (
-    rejection instanceof Error &&
-    rejection?.stack?.includes('node_modules/jsdom/lib')
-  ) {
-    console.log(`Ignored error inside jsdom, ${rejection?.stack ?? rejection}`);
-  } else {
-    if (rejection instanceof Error) {
-      exitWithError(rejection);
-    } else {
-      exitWithError(new Error(`Unknown rejection: '${rejection}'`));
-    }
-  }
-});
 
 main(process.argv).catch(exitWithError);

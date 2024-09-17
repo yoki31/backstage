@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import { HumanDuration } from '@backstage/types';
+
 export interface Config {
   app: {
     baseUrl: string; // defined in core, but repeated here without doc
@@ -23,7 +25,7 @@ export interface Config {
     /** Backend configuration for when request authentication is enabled */
     auth?: {
       /** Keys shared by all backends for signing and validating backend tokens. */
-      keys: {
+      keys?: {
         /**
          * Secret for generating tokens. Should be a base64 string, recommended
          * length is 24 bytes.
@@ -41,7 +43,7 @@ export interface Config {
       | string
       | {
           /** Address of the interface that the backend should bind to. */
-          address?: string;
+          host?: string;
           /** Port that the backend should listen to. */
           port?: string | number;
         };
@@ -67,15 +69,43 @@ export interface Config {
           };
         };
 
+    /**
+     * An absolute path to a directory that can be used as a working dir, for
+     * example as scratch space for large operations.
+     *
+     * @remarks
+     *
+     * Note that this must be an absolute path.
+     *
+     * If not set, the operating system's designated temporary directory is
+     * commonly used, but that is implementation defined per plugin.
+     *
+     * Plugins are encouraged to heed this config setting if present, to allow
+     * deployment in severely locked-down or limited environments.
+     */
+    workingDirectory?: string;
+
     /** Database connection configuration, select base database type using the `client` field */
     database: {
       /** Default database client to use */
-      client: 'sqlite3' | 'pg';
+      client: 'better-sqlite3' | 'sqlite3' | 'pg';
       /**
-       * Base database connection string or Knex object
-       * @secret
+       * Base database connection string, or object with individual connection properties
+       * @visibility secret
        */
-      connection: string | object;
+      connection:
+        | string
+        | {
+            /**
+             * Password that belongs to the client User
+             * @visibility secret
+             */
+            password?: string;
+            /**
+             * Other connection settings
+             */
+            [key: string]: unknown;
+          };
       /** Database name prefix override */
       prefix?: string;
       /**
@@ -83,6 +113,13 @@ export interface Config {
        * Defaults to true if unspecified.
        */
       ensureExists?: boolean;
+      /**
+       * Whether to ensure the given database schema exists by creating it if it does not.
+       * Defaults to false if unspecified.
+       *
+       * NOTE: Currently only supported by the `pg` client when pluginDivisionMode: schema
+       */
+      ensureSchemaExists?: boolean;
       /**
        * How plugins databases are managed/divided in the provided database instance.
        *
@@ -96,6 +133,8 @@ export interface Config {
        * @default database
        */
       pluginDivisionMode?: 'database' | 'schema';
+      /** Configures the ownership of newly created schemas in pg databases. */
+      role?: string;
       /**
        * Arbitrary config object to pass to knex when initializing
        * (https://knexjs.org/#Installation-client). Most notable is the debug
@@ -106,10 +145,10 @@ export interface Config {
       plugin?: {
         [pluginId: string]: {
           /** Database client override */
-          client?: 'sqlite3' | 'pg';
+          client?: 'better-sqlite3' | 'sqlite3' | 'pg';
           /**
            * Database connection string or Knex object override
-           * @secret
+           * @visibility secret
            */
           connection?: string | object;
           /**
@@ -118,6 +157,13 @@ export interface Config {
            */
           ensureExists?: boolean;
           /**
+           * Whether to ensure the given database schema exists by creating it if it does not.
+           * Defaults to false if unspecified.
+           *
+           * NOTE: Currently only supported by the `pg` client when pluginDivisionMode: schema
+           */
+          ensureSchemaExists?: boolean;
+          /**
            * Arbitrary config object to pass to knex when initializing
            * (https://knexjs.org/#Installation-client). Most notable is the
            * debug and asyncStackTraces booleans.
@@ -125,6 +171,8 @@ export interface Config {
            * This is merged recursively into the base knexConfig
            */
           knexConfig?: object;
+          /** Configures the ownership of newly created schemas in pg databases. */
+          role?: string;
         };
       };
     };
@@ -133,16 +181,38 @@ export interface Config {
     cache?:
       | {
           store: 'memory';
+          /** An optional default TTL (in milliseconds). */
+          defaultTtl?: number | HumanDuration;
+        }
+      | {
+          store: 'redis';
+          /**
+           * A redis connection string in the form `redis://user:pass@host:port`.
+           * @visibility secret
+           */
+          connection: string;
+          /** An optional default TTL (in milliseconds). */
+          defaultTtl?: number | HumanDuration;
+          /**
+           * Whether or not [useRedisSets](https://github.com/jaredwray/keyv/tree/main/packages/redis#useredissets) should be configured to this redis cache.
+           * Defaults to true if unspecified.
+           */
+          useRedisSets?: boolean;
         }
       | {
           store: 'memcache';
           /**
            * A memcache connection string in the form `user:pass@host:port`.
-           * @secret
+           * @visibility secret
            */
           connection: string;
+          /** An optional default TTL (in milliseconds). */
+          defaultTtl?: number | HumanDuration;
         };
 
+    /**
+     * Properties returned upon CORS requests to the backend, including the app-backend.
+     */
     cors?: {
       origin?: string | string[];
       methods?: string | string[];
@@ -153,6 +223,16 @@ export interface Config {
       preflightContinue?: boolean;
       optionsSuccessStatus?: number;
     };
+
+    /**
+     * Content Security Policy options.
+     *
+     * The keys are the plain policy ID, e.g. "upgrade-insecure-requests". The
+     * values are on the format that the helmet library expects them, as an
+     * array of strings. There is also the special value false, which means to
+     * remove the default value that Backstage puts in place for that policy.
+     */
+    csp?: { [policyId: string]: string[] | false };
 
     /**
      * Configuration related to URL reading, used for example for reading catalog info
@@ -181,15 +261,5 @@ export interface Config {
         paths?: string[];
       }>;
     };
-
-    /**
-     * Content Security Policy options.
-     *
-     * The keys are the plain policy ID, e.g. "upgrade-insecure-requests". The
-     * values are on the format that the helmet library expects them, as an
-     * array of strings. There is also the special value false, which means to
-     * remove the default value that Backstage puts in place for that policy.
-     */
-    csp?: { [policyId: string]: string[] | false };
   };
 }

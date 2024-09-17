@@ -14,26 +14,30 @@
  * limitations under the License.
  */
 
-import React from 'react';
-import Typography from '@material-ui/core/Typography';
-import Link from '@material-ui/core/Link';
 import Grid from '@material-ui/core/Grid';
 import { makeStyles } from '@material-ui/core/styles';
-import { BackstageTheme } from '@backstage/theme';
-import { MicDrop } from './MicDrop';
-import { useNavigate } from 'react-router';
+import Typography from '@material-ui/core/Typography';
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Link } from '../../components/Link';
 import { useSupportConfig } from '../../hooks';
+import { MicDrop } from './MicDrop';
+import { StackDetails } from './StackDetails';
+import { coreComponentsTranslationRef } from '../../translation';
+import { useTranslationRef } from '@backstage/core-plugin-api/alpha';
 
 interface IErrorPageProps {
-  status: string;
+  status?: string;
   statusMessage: string;
-  additionalInfo?: string;
+  additionalInfo?: React.ReactNode;
+  supportUrl?: string;
+  stack?: string;
 }
 
 /** @public */
 export type ErrorPageClassKey = 'container' | 'title' | 'subtitle';
 
-const useStyles = makeStyles<BackstageTheme>(
+const useStyles = makeStyles(
   theme => ({
     container: {
       padding: theme.spacing(8),
@@ -45,7 +49,7 @@ const useStyles = makeStyles<BackstageTheme>(
       paddingBottom: theme.spacing(5),
       [theme.breakpoints.down('xs')]: {
         paddingBottom: theme.spacing(4),
-        fontSize: 32,
+        fontSize: theme.typography.h3.fontSize,
       },
     },
     subtitle: {
@@ -55,41 +59,52 @@ const useStyles = makeStyles<BackstageTheme>(
   { name: 'BackstageErrorPage' },
 );
 
-/** @public */
+/**
+ * Error page with status and description
+ *
+ * @public
+ *
+ */
 export function ErrorPage(props: IErrorPageProps) {
-  const { status, statusMessage, additionalInfo } = props;
+  const {
+    status = '',
+    statusMessage,
+    additionalInfo,
+    supportUrl,
+    stack,
+  } = props;
   const classes = useStyles();
   const navigate = useNavigate();
   const support = useSupportConfig();
+  const { t } = useTranslationRef(coreComponentsTranslationRef);
 
   return (
-    <Grid container spacing={0} className={classes.container}>
-      <MicDrop />
+    <Grid container className={classes.container}>
       <Grid item xs={12} sm={8} md={4}>
         <Typography
           data-testid="error"
           variant="body1"
           className={classes.subtitle}
         >
-          ERROR {status}: {statusMessage}
+          {t('errorPage.subtitle', { status, statusMessage })}
         </Typography>
         <Typography variant="body1" className={classes.subtitle}>
           {additionalInfo}
         </Typography>
         <Typography variant="h2" className={classes.title}>
-          Looks like someone dropped the mic!
+          {t('errorPage.title')}
         </Typography>
-        <Typography variant="h6">
-          <Link data-testid="go-back-link" onClick={() => navigate(-1)}>
-            Go back
+        <Typography variant="h6" className={classes.title}>
+          <Link to="#" data-testid="go-back-link" onClick={() => navigate(-1)}>
+            {t('errorPage.goBack')}
           </Link>
           ... or please{' '}
-          <Link href={support.url} rel="noopener noreferrer">
-            contact support
-          </Link>{' '}
-          if you think this is a bug.
+          <Link to={supportUrl || support.url}>contact support</Link> if you
+          think this is a bug.
         </Typography>
+        {stack && <StackDetails stack={stack} />}
       </Grid>
+      <MicDrop />
     </Grid>
   );
 }

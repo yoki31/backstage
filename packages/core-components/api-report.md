@@ -8,26 +8,30 @@
 import { ApiRef } from '@backstage/core-plugin-api';
 import { BackstageIdentityApi } from '@backstage/core-plugin-api';
 import { BackstagePalette } from '@backstage/theme';
-import { BackstageTheme } from '@backstage/theme';
 import { BackstageUserIdentity } from '@backstage/core-plugin-api';
+import { BottomNavigationActionProps } from '@material-ui/core/BottomNavigationAction';
 import { ButtonProps as ButtonProps_2 } from '@material-ui/core/Button';
 import { CardHeaderProps } from '@material-ui/core/CardHeader';
 import { Column } from '@material-table/core';
 import { ComponentClass } from 'react';
 import { ComponentProps } from 'react';
-import { Context } from 'react';
 import { default as CSS_2 } from 'csstype';
 import { CSSProperties } from 'react';
 import { ElementType } from 'react';
 import { ErrorInfo } from 'react';
+import IconButton from '@material-ui/core/IconButton';
 import { IconComponent } from '@backstage/core-plugin-api';
+import { Icons } from '@material-table/core';
 import { IdentityApi } from '@backstage/core-plugin-api';
 import { LinearProgressProps } from '@material-ui/core/LinearProgress';
 import { LinkProps as LinkProps_2 } from '@material-ui/core/Link';
 import { LinkProps as LinkProps_3 } from 'react-router-dom';
+import { ListItemTextProps } from '@material-ui/core/ListItemText';
 import MaterialBreadcrumbs from '@material-ui/core/Breadcrumbs';
 import { MaterialTableProps } from '@material-table/core';
 import { NavLinkProps } from 'react-router-dom';
+import { Options } from 'react-markdown';
+import { Options as Options_2 } from '@material-table/core';
 import { Overrides } from '@material-ui/core/styles/overrides';
 import { ProfileInfo } from '@backstage/core-plugin-api';
 import { ProfileInfoApi } from '@backstage/core-plugin-api';
@@ -38,37 +42,63 @@ import { ReactElement } from 'react';
 import { ReactNode } from 'react';
 import { SessionApi } from '@backstage/core-plugin-api';
 import { SignInPageProps } from '@backstage/core-plugin-api';
-import { SignInResult } from '@backstage/core-plugin-api';
 import { SparklinesLineProps } from 'react-sparklines';
 import { SparklinesProps } from 'react-sparklines';
-import { StyledComponentProps } from '@material-ui/core/styles';
+import { StyledComponentProps } from '@material-ui/core/styles/withStyles';
 import { StyleRules } from '@material-ui/styles';
 import { StyleRules as StyleRules_2 } from '@material-ui/core/styles/withStyles';
 import { TabProps } from '@material-ui/core/Tab';
-import { TextTruncateProps } from 'react-text-truncate';
 import { Theme } from '@material-ui/core/styles';
 import { TooltipProps } from '@material-ui/core/Tooltip';
 import { WithStyles } from '@material-ui/core/styles';
 
 // @public
-export function AlertDisplay(_props: {}): JSX.Element | null;
+export function AlertDisplay(
+  props: AlertDisplayProps,
+): React_2.JSX.Element | null;
 
 // @public
-enum Alignment {
-  DOWN_LEFT = 'DL',
-  DOWN_RIGHT = 'DR',
-  UP_LEFT = 'UL',
-  UP_RIGHT = 'UR',
-}
+export type AlertDisplayProps = {
+  anchorOrigin?: {
+    vertical: 'top' | 'bottom';
+    horizontal: 'left' | 'center' | 'right';
+  };
+  transientTimeoutMs?: number;
+};
 
 // @public
-export function Avatar(props: AvatarProps): JSX.Element;
+export function AppIcon(props: AppIconProps): React_2.JSX.Element;
+
+// @public
+export type AppIconProps = IconComponentProps & {
+  id: string;
+  Fallback?: IconComponent;
+};
+
+// @public
+export const AutoLogout: (props: AutoLogoutProps) => JSX.Element | null;
+
+// @public (undocumented)
+export type AutoLogoutProps = {
+  enabled?: boolean;
+  idleTimeoutMinutes?: number;
+  promptBeforeIdleSeconds?: number;
+  useWorkerTimers?: boolean;
+  logoutIfDisconnected?: boolean;
+};
+
+// @public
+export function Avatar(props: AvatarProps): React_2.JSX.Element;
 
 // @public (undocumented)
 export type AvatarClassKey = 'avatar';
 
 // @public
 export interface AvatarProps {
+  classes?: {
+    [key in 'avatar' | 'avatarText']?: string;
+  };
+  // @deprecated
   customStyles?: CSSProperties;
   displayName?: string;
   picture?: string;
@@ -89,8 +119,8 @@ export type BackstageOverrides = Overrides & {
 // @public (undocumented)
 export type BoldHeaderClassKey = 'root' | 'title' | 'subheader';
 
-// @public (undocumented)
-export function BottomLink(props: BottomLinkProps): JSX.Element;
+// @public
+export function BottomLink(props: BottomLinkProps): React_2.JSX.Element;
 
 // @public (undocumented)
 export type BottomLinkClassKey = 'root' | 'boxTitle' | 'arrow';
@@ -102,74 +132,77 @@ export type BottomLinkProps = {
   onClick?: (event: React_2.MouseEvent<HTMLAnchorElement>) => void;
 };
 
-// Warning: (ae-forgotten-export) The symbol "Props" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "Props_18" needs to be exported by the entry point index.d.ts
 //
-// @public (undocumented)
-export function Breadcrumbs(props: Props_20): JSX.Element;
+// @public
+export function Breadcrumbs(props: Props_18): React_2.JSX.Element;
 
 // @public (undocumented)
 export type BreadcrumbsClickableTextClassKey = 'root';
 
 // @public (undocumented)
+export type BreadcrumbsCurrentPageClassKey = 'root';
+
+// @public (undocumented)
 export type BreadcrumbsStyledBoxClassKey = 'root';
 
-// Warning: (ae-forgotten-export) The symbol "IconComponentProps" needs to be exported by the entry point index.d.ts
-//
-// @public (undocumented)
-export function BrokenImageIcon(props: IconComponentProps): JSX.Element;
-
 // @public
-export function Button(props: ButtonProps): JSX.Element;
+export function BrokenImageIcon(props: IconComponentProps): React_2.JSX.Element;
 
-// @public
-export type ButtonProps = ButtonProps_2 & Omit<LinkProps, 'variant' | 'color'>;
+// @public @deprecated (undocumented)
+export const Button: (props: LinkButtonProps) => JSX.Element;
+
+// @public @deprecated (undocumented)
+export type ButtonProps = LinkButtonProps;
 
 // @public (undocumented)
 export type CardActionsTopRightClassKey = 'root';
 
 // Warning: (ae-forgotten-export) The symbol "CardTabProps" needs to be exported by the entry point index.d.ts
 //
-// @public (undocumented)
-export function CardTab(props: PropsWithChildren<CardTabProps>): JSX.Element;
+// @public
+export function CardTab(
+  props: PropsWithChildren<CardTabProps>,
+): React_2.JSX.Element;
 
 // @public (undocumented)
 export type CardTabClassKey = 'root' | 'selected';
 
 // @public (undocumented)
-export function CatalogIcon(props: IconComponentProps): JSX.Element;
+export function CatalogIcon(props: IconComponentProps): React_2.JSX.Element;
 
 // @public (undocumented)
-export function ChatIcon(props: IconComponentProps): JSX.Element;
+export function ChatIcon(props: IconComponentProps): React_2.JSX.Element;
 
 // @public (undocumented)
 export type ClosedDropdownClassKey = 'icon';
 
 // @public
-export function CodeSnippet(props: CodeSnippetProps): JSX.Element;
+export function CodeSnippet(props: CodeSnippetProps): React_2.JSX.Element;
 
 // @public
 export interface CodeSnippetProps {
   customStyle?: any;
   highlightedNumbers?: number[];
-  // Warning: (tsdoc-reference-missing-identifier) Syntax error in declaration reference: expecting a member identifier
   language: string;
   showCopyCodeButton?: boolean;
   showLineNumbers?: boolean;
   text: string;
 }
 
-// Warning: (ae-forgotten-export) The symbol "Props" needs to be exported by the entry point index.d.ts
-// Warning: (ae-missing-release-tag) "Content" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+// Warning: (ae-forgotten-export) The symbol "Props_12" needs to be exported by the entry point index.d.ts
 //
-// @public (undocumented)
-export function Content(props: PropsWithChildren<Props_13>): JSX.Element;
+// @public
+export function Content(
+  props: PropsWithChildren<Props_12>,
+): React_2.JSX.Element;
 
 // Warning: (ae-forgotten-export) The symbol "ContentHeaderProps" needs to be exported by the entry point index.d.ts
 //
-// @public (undocumented)
+// @public
 export function ContentHeader(
   props: PropsWithChildren<ContentHeaderProps>,
-): JSX.Element;
+): React_2.JSX.Element;
 
 // @public (undocumented)
 export type ContentHeaderClassKey =
@@ -180,17 +213,20 @@ export type ContentHeaderClassKey =
   | 'title';
 
 // @public
-export function CopyTextButton(props: CopyTextButtonProps): JSX.Element;
+export function CopyTextButton(props: CopyTextButtonProps): React_2.JSX.Element;
 
 // @public
 export interface CopyTextButtonProps {
+  'aria-label'?: string;
   text: string;
   tooltipDelay?: number;
   tooltipText?: string;
 }
 
 // @public
-export function CreateButton(props: CreateButtonProps): JSX.Element | null;
+export function CreateButton(
+  props: CreateButtonProps,
+): React_2.JSX.Element | null;
 
 // @public
 export type CreateButtonProps = {
@@ -201,19 +237,12 @@ export type CreateButtonProps = {
 export type CustomProviderClassKey = 'form' | 'button';
 
 // @public (undocumented)
-export function DashboardIcon(props: IconComponentProps): JSX.Element;
-
-// @public
-type DependencyEdge<T = {}> = T & {
-  from: string;
-  to: string;
-  label?: string;
-};
+export function DashboardIcon(props: IconComponentProps): React_2.JSX.Element;
 
 // @public
 export function DependencyGraph<NodeData, EdgeData>(
   props: DependencyGraphProps<NodeData, EdgeData>,
-): JSX.Element;
+): React_2.JSX.Element;
 
 // @public (undocumented)
 export type DependencyGraphDefaultLabelClassKey = 'text';
@@ -231,63 +260,82 @@ export type DependencyGraphNodeClassKey = 'node';
 export interface DependencyGraphProps<NodeData, EdgeData>
   extends React_2.SVGProps<SVGSVGElement> {
   acyclicer?: 'greedy';
-  // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-  align?: Alignment;
-  defs?: SVGDefsElement | SVGDefsElement[];
-  // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-  direction?: Direction;
+  align?: DependencyGraphTypes.Alignment;
+  curve?: 'curveStepBefore' | 'curveMonotoneX';
+  defs?: JSX.Element | JSX.Element[];
+  direction?: DependencyGraphTypes.Direction;
   edgeMargin?: number;
   edgeRanks?: number;
-  edges: DependencyEdge<EdgeData>[];
+  edges: DependencyGraphTypes.DependencyEdge<EdgeData>[];
   edgeWeight?: number;
+  fit?: 'grow' | 'contain';
   labelOffset?: number;
-  // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-  labelPosition?: LabelPosition;
+  labelPosition?: DependencyGraphTypes.LabelPosition;
   nodeMargin?: number;
-  nodes: DependencyNode<NodeData>[];
+  nodes: DependencyGraphTypes.DependencyNode<NodeData>[];
   paddingX?: number;
   paddingY?: number;
-  // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-  ranker?: Ranker;
+  ranker?: DependencyGraphTypes.Ranker;
   rankMargin?: number;
-  renderLabel?: RenderLabelFunction<EdgeData>;
-  renderNode?: RenderNodeFunction<NodeData>;
+  renderLabel?: DependencyGraphTypes.RenderLabelFunction<EdgeData>;
+  renderNode?: DependencyGraphTypes.RenderNodeFunction<NodeData>;
+  showArrowHeads?: boolean;
   zoom?: 'enabled' | 'disabled' | 'enable-on-click';
 }
 
-declare namespace DependencyGraphTypes {
-  export {
-    DependencyEdge,
-    RenderLabelProps,
-    RenderLabelFunction,
-    DependencyNode,
-    RenderNodeProps,
-    RenderNodeFunction,
-    Direction,
-    Alignment,
-    Ranker,
-    LabelPosition,
+// @public
+export namespace DependencyGraphTypes {
+  export enum Alignment {
+    DOWN_LEFT = 'DL',
+    DOWN_RIGHT = 'DR',
+    UP_LEFT = 'UL',
+    UP_RIGHT = 'UR',
+  }
+  export type DependencyEdge<T = {}> = T & {
+    from: string;
+    to: string;
+    label?: string;
   };
-}
-export { DependencyGraphTypes };
-
-// @public
-type DependencyNode<T = {}> = T & {
-  id: string;
-};
-
-// @public
-enum Direction {
-  BOTTOM_TOP = 'BT',
-  LEFT_RIGHT = 'LR',
-  RIGHT_LEFT = 'RL',
-  TOP_BOTTOM = 'TB',
+  export type DependencyNode<T = {}> = T & {
+    id: string;
+  };
+  export enum Direction {
+    BOTTOM_TOP = 'BT',
+    LEFT_RIGHT = 'LR',
+    RIGHT_LEFT = 'RL',
+    TOP_BOTTOM = 'TB',
+  }
+  export enum LabelPosition {
+    // (undocumented)
+    CENTER = 'c',
+    // (undocumented)
+    LEFT = 'l',
+    // (undocumented)
+    RIGHT = 'r',
+  }
+  export enum Ranker {
+    LONGEST_PATH = 'longest-path',
+    NETWORK_SIMPLEX = 'network-simplex',
+    TIGHT_TREE = 'tight-tree',
+  }
+  export type RenderLabelFunction<T = {}> = (
+    props: RenderLabelProps<T>,
+  ) => React_2.ReactNode;
+  export type RenderLabelProps<T = unknown> = {
+    edge: DependencyEdge<T>;
+  };
+  export type RenderNodeFunction<T = {}> = (
+    props: RenderNodeProps<T>,
+  ) => React_2.ReactNode;
+  export type RenderNodeProps<T = unknown> = {
+    node: DependencyNode<T>;
+  };
 }
 
 // Warning: (ae-forgotten-export) The symbol "Props" needs to be exported by the entry point index.d.ts
 //
 // @public (undocumented)
-export const DismissableBanner: (props: Props) => JSX.Element;
+export const DismissableBanner: (props: Props) => React_2.JSX.Element;
 
 // @public (undocumented)
 export type DismissableBannerClassKey =
@@ -303,15 +351,15 @@ export type DismissableBannerClassKey =
 export type DismissbleBannerClassKey = DismissableBannerClassKey;
 
 // @public (undocumented)
-export function DocsIcon(props: IconComponentProps): JSX.Element;
+export function DocsIcon(props: IconComponentProps): React_2.JSX.Element;
 
 // @public (undocumented)
-export function EmailIcon(props: IconComponentProps): JSX.Element;
+export function EmailIcon(props: IconComponentProps): React_2.JSX.Element;
 
-// Warning: (ae-forgotten-export) The symbol "Props" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "Props_2" needs to be exported by the entry point index.d.ts
 //
-// @public (undocumented)
-export function EmptyState(props: Props_2): JSX.Element;
+// @public
+export function EmptyState(props: Props_2): React_2.JSX.Element;
 
 // @public (undocumented)
 export type EmptyStateClassKey = 'root' | 'action' | 'imageContainer';
@@ -325,15 +373,15 @@ export type EmptyStateImageClassKey = 'generalImg';
 export const ErrorBoundary: ComponentClass<ErrorBoundaryProps, State>;
 
 // @public (undocumented)
-export type ErrorBoundaryProps = {
+export type ErrorBoundaryProps = React_2.PropsWithChildren<{
   slackChannel?: string | SlackChannel;
   onError?: (error: Error, errorInfo: string) => null;
-};
+}>;
 
 // Warning: (ae-forgotten-export) The symbol "IErrorPageProps" needs to be exported by the entry point index.d.ts
 //
-// @public (undocumented)
-export function ErrorPage(props: IErrorPageProps): JSX.Element;
+// @public
+export function ErrorPage(props: IErrorPageProps): React_2.JSX.Element;
 
 // @public (undocumented)
 export type ErrorPageClassKey = 'container' | 'title' | 'subtitle';
@@ -341,7 +389,7 @@ export type ErrorPageClassKey = 'container' | 'title' | 'subtitle';
 // @public
 export function ErrorPanel(
   props: PropsWithChildren<ErrorPanelProps>,
-): JSX.Element;
+): React_2.JSX.Element;
 
 // @public (undocumented)
 export type ErrorPanelClassKey = 'text' | 'divider';
@@ -350,8 +398,27 @@ export type ErrorPanelClassKey = 'text' | 'divider';
 export type ErrorPanelProps = {
   error: Error;
   defaultExpanded?: boolean;
+  titleFormat?: string;
   title?: string;
 };
+
+// @public
+export function FavoriteToggle(
+  props: ComponentProps<typeof IconButton> & {
+    id: string;
+    title: string;
+    isFavorite: boolean;
+    onToggle: (value: boolean) => void;
+  },
+): React_2.JSX.Element;
+
+// @public
+export function FavoriteToggleIcon(props: {
+  isFavorite: boolean;
+}): React_2.JSX.Element;
+
+// @public (undocumented)
+export type FavoriteToggleIconClassKey = 'icon' | 'iconBorder';
 
 // @public (undocumented)
 export type FeatureCalloutCircleClassKey =
@@ -363,29 +430,34 @@ export type FeatureCalloutCircleClassKey =
   | 'pulseCircle'
   | 'text';
 
-// Warning: (ae-forgotten-export) The symbol "Props" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "Props_4" needs to be exported by the entry point index.d.ts
 //
-// @public (undocumented)
+// @public
 export function FeatureCalloutCircular(
   props: PropsWithChildren<Props_4>,
-): JSX.Element;
+): React_2.JSX.Element;
 
 // @public (undocumented)
 export type FiltersContainerClassKey = 'root' | 'title';
 
-// @public (undocumented)
-export function Gauge(props: GaugeProps): JSX.Element;
+// @public
+export function Gauge(props: GaugeProps): React_2.JSX.Element;
 
-// Warning: (ae-forgotten-export) The symbol "Props" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "Props_10" needs to be exported by the entry point index.d.ts
 //
-// @public (undocumented)
-export function GaugeCard(props: Props_10): JSX.Element;
+// @public
+export function GaugeCard(props: Props_10): React_2.JSX.Element;
 
 // @public (undocumented)
 export type GaugeCardClassKey = 'root';
 
 // @public (undocumented)
-export type GaugeClassKey = 'root' | 'overlay' | 'circle' | 'colorUnknown';
+export type GaugeClassKey =
+  | 'root'
+  | 'overlay'
+  | 'description'
+  | 'circle'
+  | 'colorUnknown';
 
 // @public (undocumented)
 export type GaugeProps = {
@@ -394,7 +466,11 @@ export type GaugeProps = {
   inverse?: boolean;
   unit?: string;
   max?: number;
+  size?: 'normal' | 'small';
+  description?: ReactNode;
   getColor?: GaugePropsGetColor;
+  relativeToMax?: boolean;
+  decimalDigits?: number;
 };
 
 // @public (undocumented)
@@ -409,15 +485,34 @@ export type GaugePropsGetColorOptions = {
 };
 
 // @public (undocumented)
-export function GitHubIcon(props: IconComponentProps): JSX.Element;
+export function GitHubIcon(props: IconComponentProps): React_2.JSX.Element;
 
 // @public (undocumented)
-export function GroupIcon(props: IconComponentProps): JSX.Element;
+export function GroupIcon(props: IconComponentProps): React_2.JSX.Element;
 
-// Warning: (ae-forgotten-export) The symbol "Props" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "Props_13" needs to be exported by the entry point index.d.ts
 //
+// @public
+export function Header(props: PropsWithChildren<Props_13>): React_2.JSX.Element;
+
 // @public (undocumented)
-export function Header(props: PropsWithChildren<Props_14>): JSX.Element;
+export function HeaderActionMenu(
+  props: HeaderActionMenuProps,
+): React_2.JSX.Element;
+
+// @public (undocumented)
+export type HeaderActionMenuItem = {
+  label?: ListItemTextProps['primary'];
+  secondaryLabel?: ListItemTextProps['secondary'];
+  icon?: ReactElement;
+  disabled?: boolean;
+  onClick?: (event: React_2.MouseEvent<HTMLElement>) => void;
+};
+
+// @public (undocumented)
+export type HeaderActionMenuProps = {
+  actionItems: HeaderActionMenuItem[];
+};
 
 // @public (undocumented)
 export type HeaderClassKey =
@@ -431,26 +526,26 @@ export type HeaderClassKey =
   | 'breadcrumbType'
   | 'breadcrumbTitle';
 
-// Warning: (ae-forgotten-export) The symbol "Props" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "Props_5" needs to be exported by the entry point index.d.ts
 //
-// @public (undocumented)
-export function HeaderIconLinkRow(props: Props_5): JSX.Element;
+// @public
+export function HeaderIconLinkRow(props: Props_5): React_2.JSX.Element;
 
 // @public (undocumented)
 export type HeaderIconLinkRowClassKey = 'links';
 
 // Warning: (ae-forgotten-export) The symbol "HeaderLabelProps" needs to be exported by the entry point index.d.ts
 //
-// @public (undocumented)
-export function HeaderLabel(props: HeaderLabelProps): JSX.Element;
+// @public
+export function HeaderLabel(props: HeaderLabelProps): React_2.JSX.Element;
 
 // @public (undocumented)
 export type HeaderLabelClassKey = 'root' | 'label' | 'value';
 
 // Warning: (ae-forgotten-export) The symbol "HeaderTabsProps" needs to be exported by the entry point index.d.ts
 //
-// @public (undocumented)
-export function HeaderTabs(props: HeaderTabsProps): JSX.Element;
+// @public
+export function HeaderTabs(props: HeaderTabsProps): React_2.JSX.Element;
 
 // @public (undocumented)
 export type HeaderTabsClassKey =
@@ -460,17 +555,14 @@ export type HeaderTabsClassKey =
   | 'tabRoot';
 
 // @public (undocumented)
-export function HelpIcon(props: IconComponentProps): JSX.Element;
+export function HelpIcon(props: IconComponentProps): React_2.JSX.Element;
 
-// @public @deprecated
-export function HomepageTimer(_props: {}): JSX.Element | null;
-
-// Warning: (ae-forgotten-export) The symbol "Props" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "Props_6" needs to be exported by the entry point index.d.ts
 //
-// @public (undocumented)
+// @public
 export function HorizontalScrollGrid(
   props: PropsWithChildren<Props_6>,
-): JSX.Element;
+): React_2.JSX.Element;
 
 // @public (undocumented)
 export type HorizontalScrollGridClassKey =
@@ -484,6 +576,20 @@ export type HorizontalScrollGridClassKey =
   | 'buttonLeft'
   | 'buttonRight';
 
+// @public
+export type IconComponentProps = ComponentProps<IconComponent>;
+
+// @public (undocumented)
+export function IconLinkVertical({
+  color,
+  disabled,
+  href,
+  icon,
+  label,
+  onClick,
+  title,
+}: IconLinkVerticalProps): React_2.JSX.Element;
+
 // @public (undocumented)
 export type IconLinkVerticalClassKey =
   | 'link'
@@ -492,7 +598,7 @@ export type IconLinkVerticalClassKey =
   | 'secondary'
   | 'label';
 
-// Warning: (ae-missing-release-tag) "IconLinkVerticalProps" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+// Warning: (ae-missing-release-tag) "IconLinkVerticalProps" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
 export type IconLinkVerticalProps = {
@@ -505,10 +611,13 @@ export type IconLinkVerticalProps = {
   title?: string;
 };
 
-// Warning: (ae-forgotten-export) The symbol "Props" needs to be exported by the entry point index.d.ts
-//
 // @public (undocumented)
-export function InfoCard(props: Props_15): JSX.Element;
+export type IdentityProviders = ('guest' | 'custom' | SignInProviderConfig)[];
+
+// Warning: (ae-forgotten-export) The symbol "Props_14" needs to be exported by the entry point index.d.ts
+//
+// @public
+export function InfoCard(props: Props_14): JSX.Element;
 
 // @public (undocumented)
 export type InfoCardClassKey =
@@ -523,21 +632,14 @@ export type InfoCardClassKey =
 // @public (undocumented)
 export type InfoCardVariants = 'flex' | 'fullHeight' | 'gridItem';
 
-// Warning: (ae-forgotten-export) The symbol "IntroCardProps" needs to be exported by the entry point index.d.ts
-//
-// @public (undocumented)
-export function IntroCard(props: IntroCardProps): JSX.Element;
-
-// Warning: (tsdoc-malformed-html-name) Invalid HTML element: Expecting an HTML name
-// Warning: (tsdoc-escape-greater-than) The ">" character should be escaped using a backslash to avoid confusion with an HTML tag
 // Warning: (ae-forgotten-export) The symbol "ItemCardProps" needs to be exported by the entry point index.d.ts
-// Warning: (ae-missing-release-tag) "ItemCard" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+// Warning: (ae-missing-release-tag) "ItemCard" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public @deprecated
-export function ItemCard(props: ItemCardProps): JSX.Element;
+export function ItemCard(props: ItemCardProps): React_2.JSX.Element;
 
 // @public
-export function ItemCardGrid(props: ItemCardGridProps): JSX.Element;
+export function ItemCardGrid(props: ItemCardGridProps): React_2.JSX.Element;
 
 // @public (undocumented)
 export type ItemCardGridClassKey = 'root';
@@ -550,12 +652,12 @@ export type ItemCardGridProps = Partial<WithStyles<typeof styles>> & {
 };
 
 // @public
-export function ItemCardHeader(props: ItemCardHeaderProps): JSX.Element;
+export function ItemCardHeader(props: ItemCardHeaderProps): React_2.JSX.Element;
 
 // @public (undocumented)
 export type ItemCardHeaderClassKey = 'root';
 
-// Warning: (ae-forgotten-export) The symbol "styles" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "styles_2" needs to be exported by the entry point index.d.ts
 //
 // @public (undocumented)
 export type ItemCardHeaderProps = Partial<WithStyles<typeof styles_2>> & {
@@ -564,53 +666,55 @@ export type ItemCardHeaderProps = Partial<WithStyles<typeof styles_2>> & {
   children?: React_2.ReactNode;
 };
 
-// @public
-enum LabelPosition {
-  // (undocumented)
-  CENTER = 'c',
-  // (undocumented)
-  LEFT = 'l',
-  // (undocumented)
-  RIGHT = 'r',
-}
-
-// Warning: (ae-forgotten-export) The symbol "Props" needs to be exported by the entry point index.d.ts
-// Warning: (ae-missing-release-tag) "Lifecycle" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+// Warning: (ae-forgotten-export) The symbol "Props_7" needs to be exported by the entry point index.d.ts
+// Warning: (ae-missing-release-tag) "Lifecycle" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
-export function Lifecycle(props: Props_7): JSX.Element;
+export function Lifecycle(props: Props_7): React_2.JSX.Element;
 
-// Warning: (ae-missing-release-tag) "LifecycleClassKey" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+// Warning: (ae-missing-release-tag) "LifecycleClassKey" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
 export type LifecycleClassKey = 'alpha' | 'beta';
 
-// Warning: (ae-forgotten-export) The symbol "Props" needs to be exported by the entry point index.d.ts
-// Warning: (ae-missing-release-tag) "LinearGauge" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+// Warning: (ae-forgotten-export) The symbol "Props_11" needs to be exported by the entry point index.d.ts
+// Warning: (ae-missing-release-tag) "LinearGauge" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
-export function LinearGauge(props: Props_11): JSX.Element | null;
+export function LinearGauge(props: Props_11): React_2.JSX.Element | null;
 
-// Warning: (ae-missing-release-tag) "LinkType" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+// Warning: (ae-missing-release-tag) "Link" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
-// @public (undocumented)
-export function Link(props: LinkProps): JSX.Element;
+// @public
+export const Link: (props: LinkProps) => JSX.Element;
 
-// Warning: (ae-missing-release-tag) "LinkProps" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+// @public
+export const LinkButton: (props: LinkButtonProps) => JSX.Element;
+
+// @public
+export type LinkButtonProps = ButtonProps_2 &
+  Omit<LinkProps, 'variant' | 'color'>;
+
+// @public (undocumented)
+export type LinkClassKey = 'visuallyHidden' | 'externalLink';
+
+// Warning: (ae-missing-release-tag) "LinkProps" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
-export type LinkProps = LinkProps_2 &
-  LinkProps_3 & {
+export type LinkProps = Omit<LinkProps_2, 'to'> &
+  Omit<LinkProps_3, 'to'> & {
+    to: string;
     component?: ElementType<any>;
+    noTrack?: boolean;
   };
 
-// Warning: (ae-missing-release-tag) "LoginRequestListItemClassKey" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+// Warning: (ae-missing-release-tag) "LoginRequestListItemClassKey" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
 export type LoginRequestListItemClassKey = 'root';
 
 // @public
-export function LogViewer(props: LogViewerProps): JSX.Element;
+export function LogViewer(props: LogViewerProps): React_2.JSX.Element;
 
 // @public
 export type LogViewerClassKey =
@@ -653,59 +757,65 @@ export interface LogViewerProps {
   text: string;
 }
 
-// Warning: (ae-forgotten-export) The symbol "Props" needs to be exported by the entry point index.d.ts
-// Warning: (ae-missing-release-tag) "MarkdownContent" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+// Warning: (ae-forgotten-export) The symbol "Props_8" needs to be exported by the entry point index.d.ts
+// Warning: (ae-missing-release-tag) "MarkdownContent" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public
-export function MarkdownContent(props: Props_8): JSX.Element;
+export function MarkdownContent(props: Props_8): React_2.JSX.Element;
 
-// Warning: (ae-missing-release-tag) "MarkdownContentClassKey" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+// Warning: (ae-missing-release-tag) "MarkdownContentClassKey" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
 export type MarkdownContentClassKey = 'markdown';
 
-// Warning: (ae-missing-release-tag) "MetadataTableCellClassKey" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+// Warning: (ae-missing-release-tag) "MetadataTableCellClassKey" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
 export type MetadataTableCellClassKey = 'root';
 
-// Warning: (ae-missing-release-tag) "MetadataTableListClassKey" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+// Warning: (ae-missing-release-tag) "MetadataTableListClassKey" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
 export type MetadataTableListClassKey = 'root';
 
-// Warning: (ae-missing-release-tag) "MetadataTableListItemClassKey" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+// Warning: (ae-missing-release-tag) "MetadataTableListItemClassKey" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
 export type MetadataTableListItemClassKey = 'root' | 'random';
 
-// Warning: (ae-missing-release-tag) "MetadataTableTitleCellClassKey" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+// Warning: (ae-missing-release-tag) "MetadataTableTitleCellClassKey" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
 export type MetadataTableTitleCellClassKey = 'root';
 
-// Warning: (ae-missing-release-tag) "MicDropClassKey" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+// Warning: (ae-missing-release-tag) "MicDropClassKey" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
 export type MicDropClassKey = 'micDrop';
 
-// Warning: (ae-forgotten-export) The symbol "Props" needs to be exported by the entry point index.d.ts
-// Warning: (ae-missing-release-tag) "MissingAnnotationEmptyState" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+// Warning: (ae-forgotten-export) The symbol "Props_3" needs to be exported by the entry point index.d.ts
+//
+// @public @deprecated (undocumented)
+export function MissingAnnotationEmptyState(
+  props: Props_3,
+): React_2.JSX.Element;
+
+// @public
+export const MobileSidebar: (
+  props: MobileSidebarProps,
+) => React_2.JSX.Element | null;
+
+// @public
+export type MobileSidebarProps = {
+  children?: React_2.ReactNode;
+};
+
+// Warning: (ae-missing-release-tag) "OAuthRequestDialog" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
-export function MissingAnnotationEmptyState(props: Props_3): JSX.Element;
+export function OAuthRequestDialog(_props: {}): React_2.JSX.Element;
 
-// Warning: (ae-missing-release-tag) "MissingAnnotationEmptyStateClassKey" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
-// @public (undocumented)
-export type MissingAnnotationEmptyStateClassKey = 'code';
-
-// Warning: (ae-missing-release-tag) "OAuthRequestDialog" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
-// @public (undocumented)
-export function OAuthRequestDialog(_props: {}): JSX.Element;
-
-// Warning: (ae-missing-release-tag) "OAuthRequestDialogClassKey" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+// Warning: (ae-missing-release-tag) "OAuthRequestDialogClassKey" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
 export type OAuthRequestDialogClassKey =
@@ -714,113 +824,81 @@ export type OAuthRequestDialogClassKey =
   | 'contentList'
   | 'actionButtons';
 
-// Warning: (ae-missing-release-tag) "OpenedDropdownClassKey" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+// Warning: (ae-missing-release-tag) "OpenedDropdownClassKey" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
 export type OpenedDropdownClassKey = 'icon';
 
-// Warning: (ae-forgotten-export) The symbol "Props" needs to be exported by the entry point index.d.ts
-// Warning: (ae-missing-release-tag) "OverflowTooltip" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+// Warning: (ae-forgotten-export) The symbol "Props_9" needs to be exported by the entry point index.d.ts
+// Warning: (ae-missing-release-tag) "OverflowTooltip" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
-export function OverflowTooltip(props: Props_9): JSX.Element;
+export function OverflowTooltip(props: Props_9): React_2.JSX.Element;
 
-// Warning: (ae-missing-release-tag) "OverflowTooltipClassKey" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+// Warning: (ae-missing-release-tag) "OverflowTooltipClassKey" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
 export type OverflowTooltipClassKey = 'container';
 
-// Warning: (ae-forgotten-export) The symbol "Props" needs to be exported by the entry point index.d.ts
-// Warning: (ae-missing-release-tag) "Page" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+// Warning: (ae-forgotten-export) The symbol "Props_15" needs to be exported by the entry point index.d.ts
+// Warning: (ae-missing-release-tag) "Page" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
-export function Page(props: PropsWithChildren<Props_16>): JSX.Element;
+export function Page(props: Props_15): React_2.JSX.Element;
 
-// Warning: (ae-missing-release-tag) "PageClassKey" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+// Warning: (ae-missing-release-tag) "PageClassKey" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
 export type PageClassKey = 'root';
 
 // Warning: (ae-forgotten-export) The symbol "PageWithHeaderProps" needs to be exported by the entry point index.d.ts
-// Warning: (ae-missing-release-tag) "PageWithHeader" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+// Warning: (ae-missing-release-tag) "PageWithHeader" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
 export function PageWithHeader(
   props: PropsWithChildren<PageWithHeaderProps>,
-): JSX.Element;
+): React_2.JSX.Element;
 
-// Warning: (ae-missing-release-tag) "Progress" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+// Warning: (ae-missing-release-tag) "Progress" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
 export function Progress(
   props: PropsWithChildren<LinearProgressProps>,
-): JSX.Element;
+): React_2.JSX.Element;
 
-// Warning: (ae-missing-release-tag) "Ranker" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public
-enum Ranker {
-  LONGEST_PATH = 'longest-path',
-  NETWORK_SIMPLEX = 'network-simplex',
-  TIGHT_TREE = 'tight-tree',
-}
+export const ProxiedSignInPage: (
+  props: ProxiedSignInPageProps,
+) => React_2.JSX.Element | null;
 
-// Warning: (ae-missing-release-tag) "RenderLabelFunction" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public
-type RenderLabelFunction<T = {}> = (
-  props: RenderLabelProps<T>,
-) => React_2.ReactNode;
-
-// Warning: (ae-missing-release-tag) "RenderLabelProps" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
-// @public
-type RenderLabelProps<T = unknown> = {
-  edge: DependencyEdge<T>;
+export type ProxiedSignInPageProps = SignInPageProps & {
+  provider: string;
+  headers?: HeadersInit | (() => HeadersInit) | (() => Promise<HeadersInit>);
 };
 
-// Warning: (ae-missing-release-tag) "RenderNodeFunction" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-missing-release-tag) "ResponseErrorPanel" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public
-type RenderNodeFunction<T = {}> = (
-  props: RenderNodeProps<T>,
-) => React_2.ReactNode;
+export function ResponseErrorPanel(props: ErrorPanelProps): React_2.JSX.Element;
 
-// Warning: (ae-missing-release-tag) "RenderNodeProps" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
-// @public
-type RenderNodeProps<T = unknown> = {
-  node: DependencyNode<T>;
-};
-
-// Warning: (ae-missing-release-tag) "ResponseErrorPanel" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
-// @public
-export function ResponseErrorPanel(props: ErrorPanelProps): JSX.Element;
-
-// Warning: (ae-missing-release-tag) "ResponseErrorPanelClassKey" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+// Warning: (ae-missing-release-tag) "ResponseErrorPanelClassKey" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
 export type ResponseErrorPanelClassKey = 'text' | 'divider';
 
-// Warning: (ae-missing-release-tag) "RoutedTabs" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+// Warning: (ae-missing-release-tag) "RoutedTabs" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
-export function RoutedTabs(props: { routes: SubRoute_2[] }): JSX.Element;
+export function RoutedTabs(props: {
+  routes: SubRoute_2[];
+}): React_2.JSX.Element;
 
 // Warning: (ae-forgotten-export) The symbol "SelectProps" needs to be exported by the entry point index.d.ts
-// Warning: (ae-missing-release-tag) "SelectComponent" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
-export function Select(props: SelectProps): JSX.Element;
+export function Select(props: SelectProps): React_2.JSX.Element;
 
-// Warning: (ae-missing-release-tag) "SelectClassKey" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 export type SelectClassKey =
   | 'formControl'
@@ -830,29 +908,31 @@ export type SelectClassKey =
   | 'checkbox'
   | 'root';
 
-// Warning: (ae-missing-release-tag) "SelectInputBaseClassKey" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
+// @public (undocumented)
+export type SelectedItems = string | string[] | number | number[];
+
 // @public (undocumented)
 export type SelectInputBaseClassKey = 'root' | 'input';
 
-// Warning: (ae-forgotten-export) The symbol "Props" needs to be exported by the entry point index.d.ts
-// Warning: (ae-missing-release-tag) "Sidebar" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
-export function Sidebar(props: PropsWithChildren<Props_17>): JSX.Element;
+export type SelectItem = {
+  label: string;
+  value: string | number;
+};
 
-// Warning: (ae-missing-release-tag) "SIDEBAR_INTRO_LOCAL_STORAGE" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+// @public
+export const Sidebar: (props: SidebarProps) => React_2.JSX.Element;
+
+// Warning: (ae-missing-release-tag) "SIDEBAR_INTRO_LOCAL_STORAGE" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
 export const SIDEBAR_INTRO_LOCAL_STORAGE =
   '@backstage/core/sidebar-intro-dismissed';
 
-// Warning: (ae-missing-release-tag) "SidebarClassKey" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
-export type SidebarClassKey = 'root' | 'drawer' | 'drawerOpen';
+export type SidebarClassKey = 'drawer' | 'drawerOpen';
 
-// Warning: (ae-missing-release-tag) "sidebarConfig" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+// Warning: (ae-missing-release-tag) "sidebarConfig" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
 export const sidebarConfig: {
@@ -868,322 +948,59 @@ export const sidebarConfig: {
   selectedIndicatorWidth: number;
   userBadgePadding: number;
   userBadgeDiameter: number;
+  mobileSidebarHeight: number;
 };
 
-// Warning: (ae-missing-release-tag) "SidebarContext" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
-// @public (undocumented)
-export const SidebarContext: Context<SidebarContextType>;
+// @public @deprecated
+export const SidebarContext: React_2.Context<SidebarContextType>;
 
-// Warning: (ae-missing-release-tag) "SidebarContextType" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
-// @public (undocumented)
+// @public @deprecated
 export type SidebarContextType = {
   isOpen: boolean;
   setOpen: (open: boolean) => void;
 };
 
-// Warning: (ae-missing-release-tag) "SidebarDivider" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+// Warning: (ae-missing-release-tag) "SidebarDivider" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
 export const SidebarDivider: React_2.ComponentType<
-  Pick<
-    React_2.DetailedHTMLProps<
-      React_2.HTMLAttributes<HTMLHRElement>,
-      HTMLHRElement
-    >,
-    | 'hidden'
-    | 'dir'
-    | 'slot'
-    | 'style'
-    | 'title'
-    | 'color'
-    | 'translate'
-    | 'prefix'
-    | 'children'
-    | 'id'
-    | 'defaultChecked'
-    | 'defaultValue'
-    | 'suppressContentEditableWarning'
-    | 'suppressHydrationWarning'
-    | 'accessKey'
-    | 'contentEditable'
-    | 'contextMenu'
-    | 'draggable'
-    | 'lang'
-    | 'placeholder'
-    | 'spellCheck'
-    | 'tabIndex'
-    | 'radioGroup'
-    | 'role'
-    | 'about'
-    | 'datatype'
-    | 'inlist'
-    | 'property'
-    | 'resource'
-    | 'typeof'
-    | 'vocab'
-    | 'autoCapitalize'
-    | 'autoCorrect'
-    | 'autoSave'
-    | 'itemProp'
-    | 'itemScope'
-    | 'itemType'
-    | 'itemID'
-    | 'itemRef'
-    | 'results'
-    | 'security'
-    | 'unselectable'
-    | 'inputMode'
-    | 'is'
-    | 'aria-activedescendant'
-    | 'aria-atomic'
-    | 'aria-autocomplete'
-    | 'aria-busy'
-    | 'aria-checked'
-    | 'aria-colcount'
-    | 'aria-colindex'
-    | 'aria-colspan'
-    | 'aria-controls'
-    | 'aria-current'
-    | 'aria-describedby'
-    | 'aria-details'
-    | 'aria-disabled'
-    | 'aria-dropeffect'
-    | 'aria-errormessage'
-    | 'aria-expanded'
-    | 'aria-flowto'
-    | 'aria-grabbed'
-    | 'aria-haspopup'
-    | 'aria-hidden'
-    | 'aria-invalid'
-    | 'aria-keyshortcuts'
-    | 'aria-label'
-    | 'aria-labelledby'
-    | 'aria-level'
-    | 'aria-live'
-    | 'aria-modal'
-    | 'aria-multiline'
-    | 'aria-multiselectable'
-    | 'aria-orientation'
-    | 'aria-owns'
-    | 'aria-placeholder'
-    | 'aria-posinset'
-    | 'aria-pressed'
-    | 'aria-readonly'
-    | 'aria-relevant'
-    | 'aria-required'
-    | 'aria-roledescription'
-    | 'aria-rowcount'
-    | 'aria-rowindex'
-    | 'aria-rowspan'
-    | 'aria-selected'
-    | 'aria-setsize'
-    | 'aria-sort'
-    | 'aria-valuemax'
-    | 'aria-valuemin'
-    | 'aria-valuenow'
-    | 'aria-valuetext'
-    | 'dangerouslySetInnerHTML'
-    | 'onCopy'
-    | 'onCopyCapture'
-    | 'onCut'
-    | 'onCutCapture'
-    | 'onPaste'
-    | 'onPasteCapture'
-    | 'onCompositionEnd'
-    | 'onCompositionEndCapture'
-    | 'onCompositionStart'
-    | 'onCompositionStartCapture'
-    | 'onCompositionUpdate'
-    | 'onCompositionUpdateCapture'
-    | 'onFocus'
-    | 'onFocusCapture'
-    | 'onBlur'
-    | 'onBlurCapture'
-    | 'onChange'
-    | 'onChangeCapture'
-    | 'onBeforeInput'
-    | 'onBeforeInputCapture'
-    | 'onInput'
-    | 'onInputCapture'
-    | 'onReset'
-    | 'onResetCapture'
-    | 'onSubmit'
-    | 'onSubmitCapture'
-    | 'onInvalid'
-    | 'onInvalidCapture'
-    | 'onLoad'
-    | 'onLoadCapture'
-    | 'onError'
-    | 'onErrorCapture'
-    | 'onKeyDown'
-    | 'onKeyDownCapture'
-    | 'onKeyPress'
-    | 'onKeyPressCapture'
-    | 'onKeyUp'
-    | 'onKeyUpCapture'
-    | 'onAbort'
-    | 'onAbortCapture'
-    | 'onCanPlay'
-    | 'onCanPlayCapture'
-    | 'onCanPlayThrough'
-    | 'onCanPlayThroughCapture'
-    | 'onDurationChange'
-    | 'onDurationChangeCapture'
-    | 'onEmptied'
-    | 'onEmptiedCapture'
-    | 'onEncrypted'
-    | 'onEncryptedCapture'
-    | 'onEnded'
-    | 'onEndedCapture'
-    | 'onLoadedData'
-    | 'onLoadedDataCapture'
-    | 'onLoadedMetadata'
-    | 'onLoadedMetadataCapture'
-    | 'onLoadStart'
-    | 'onLoadStartCapture'
-    | 'onPause'
-    | 'onPauseCapture'
-    | 'onPlay'
-    | 'onPlayCapture'
-    | 'onPlaying'
-    | 'onPlayingCapture'
-    | 'onProgress'
-    | 'onProgressCapture'
-    | 'onRateChange'
-    | 'onRateChangeCapture'
-    | 'onSeeked'
-    | 'onSeekedCapture'
-    | 'onSeeking'
-    | 'onSeekingCapture'
-    | 'onStalled'
-    | 'onStalledCapture'
-    | 'onSuspend'
-    | 'onSuspendCapture'
-    | 'onTimeUpdate'
-    | 'onTimeUpdateCapture'
-    | 'onVolumeChange'
-    | 'onVolumeChangeCapture'
-    | 'onWaiting'
-    | 'onWaitingCapture'
-    | 'onAuxClick'
-    | 'onAuxClickCapture'
-    | 'onClick'
-    | 'onClickCapture'
-    | 'onContextMenu'
-    | 'onContextMenuCapture'
-    | 'onDoubleClick'
-    | 'onDoubleClickCapture'
-    | 'onDrag'
-    | 'onDragCapture'
-    | 'onDragEnd'
-    | 'onDragEndCapture'
-    | 'onDragEnter'
-    | 'onDragEnterCapture'
-    | 'onDragExit'
-    | 'onDragExitCapture'
-    | 'onDragLeave'
-    | 'onDragLeaveCapture'
-    | 'onDragOver'
-    | 'onDragOverCapture'
-    | 'onDragStart'
-    | 'onDragStartCapture'
-    | 'onDrop'
-    | 'onDropCapture'
-    | 'onMouseDown'
-    | 'onMouseDownCapture'
-    | 'onMouseEnter'
-    | 'onMouseLeave'
-    | 'onMouseMove'
-    | 'onMouseMoveCapture'
-    | 'onMouseOut'
-    | 'onMouseOutCapture'
-    | 'onMouseOver'
-    | 'onMouseOverCapture'
-    | 'onMouseUp'
-    | 'onMouseUpCapture'
-    | 'onSelect'
-    | 'onSelectCapture'
-    | 'onTouchCancel'
-    | 'onTouchCancelCapture'
-    | 'onTouchEnd'
-    | 'onTouchEndCapture'
-    | 'onTouchMove'
-    | 'onTouchMoveCapture'
-    | 'onTouchStart'
-    | 'onTouchStartCapture'
-    | 'onPointerDown'
-    | 'onPointerDownCapture'
-    | 'onPointerMove'
-    | 'onPointerMoveCapture'
-    | 'onPointerUp'
-    | 'onPointerUpCapture'
-    | 'onPointerCancel'
-    | 'onPointerCancelCapture'
-    | 'onPointerEnter'
-    | 'onPointerEnterCapture'
-    | 'onPointerLeave'
-    | 'onPointerLeaveCapture'
-    | 'onPointerOver'
-    | 'onPointerOverCapture'
-    | 'onPointerOut'
-    | 'onPointerOutCapture'
-    | 'onGotPointerCapture'
-    | 'onGotPointerCaptureCapture'
-    | 'onLostPointerCapture'
-    | 'onLostPointerCaptureCapture'
-    | 'onScroll'
-    | 'onScrollCapture'
-    | 'onWheel'
-    | 'onWheelCapture'
-    | 'onAnimationStart'
-    | 'onAnimationStartCapture'
-    | 'onAnimationEnd'
-    | 'onAnimationEndCapture'
-    | 'onAnimationIteration'
-    | 'onAnimationIterationCapture'
-    | 'onTransitionEnd'
-    | 'onTransitionEndCapture'
-    | keyof React_2.ClassAttributes<HTMLHRElement>
-  > &
-    StyledComponentProps<'root'> & {
-      className?: string | undefined;
-    }
+  React_2.ClassAttributes<HTMLHRElement> &
+    React_2.HTMLAttributes<HTMLHRElement> &
+    StyledComponentProps<'root'>
 >;
+
+// Warning: (ae-missing-release-tag) "SidebarDividerClassKey" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public (undocumented)
+export type SidebarDividerClassKey = 'root';
 
 // @public
-export const SidebarExpandButton: () => JSX.Element | null;
+export const SidebarExpandButton: () => React_2.JSX.Element | null;
 
-// Warning: (ae-missing-release-tag) "SidebarIntro" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
-// @public (undocumented)
-export function SidebarIntro(_props: {}): JSX.Element | null;
+// @public
+export const SidebarGroup: (props: SidebarGroupProps) => React_2.JSX.Element;
 
-// @public (undocumented)
-export type SidebarIntroClassKey =
-  | 'introCard'
-  | 'introDismiss'
-  | 'introDismissLink'
-  | 'introDismissText'
-  | 'introDismissIcon';
+// @public
+export interface SidebarGroupProps extends BottomNavigationActionProps {
+  children?: React_2.ReactNode;
+  priority?: number;
+  to?: string;
+}
 
 // Warning: (ae-forgotten-export) The symbol "SidebarItemProps" needs to be exported by the entry point index.d.ts
-// Warning: (ae-missing-release-tag) "SidebarItem" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+// Warning: (ae-missing-release-tag) "SidebarItem" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
-// @public (undocumented)
-export const SidebarItem: React_2.ForwardRefExoticComponent<
-  SidebarItemProps & React_2.RefAttributes<any>
->;
+// @public
+export const SidebarItem: (props: SidebarItemProps) => JSX.Element;
 
-// Warning: (ae-missing-release-tag) "SidebarItemClassKey" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 export type SidebarItemClassKey =
   | 'root'
   | 'buttonItem'
   | 'closed'
   | 'open'
+  | 'highlightable'
+  | 'highlighted'
   | 'label'
   | 'iconContainer'
   | 'searchRoot'
@@ -1191,851 +1008,147 @@ export type SidebarItemClassKey =
   | 'searchFieldHTMLInput'
   | 'searchContainer'
   | 'secondaryAction'
+  | 'closedItemIcon'
+  | 'submenuArrow'
+  | 'expandButton'
+  | 'arrows'
   | 'selected';
 
-// Warning: (ae-missing-release-tag) "SidebarPage" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+// @public
+export type SidebarOpenState = {
+  isOpen: boolean;
+  setOpen: (open: boolean) => void;
+};
+
+// @public
+export function SidebarOpenStateProvider(props: {
+  children: ReactNode;
+  value: SidebarOpenState;
+}): React_2.JSX.Element;
+
+// @public (undocumented)
+export type SidebarOptions = {
+  drawerWidthClosed?: number;
+  drawerWidthOpen?: number;
+};
+
+// Warning: (ae-missing-release-tag) "SidebarPage" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
-export function SidebarPage(props: PropsWithChildren<{}>): JSX.Element;
+export function SidebarPage(props: SidebarPageProps): React_2.JSX.Element;
 
-// Warning: (ae-missing-release-tag) "SidebarPageClassKey" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+// Warning: (ae-missing-release-tag) "SidebarPageClassKey" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
 export type SidebarPageClassKey = 'root';
 
-// Warning: (ae-missing-release-tag) "SidebarPinStateContext" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
-// @public (undocumented)
+// @public
+export type SidebarPageProps = {
+  children?: React_2.ReactNode;
+};
+
+// @public
+export type SidebarPinState = {
+  isPinned: boolean;
+  toggleSidebarPinState: () => any;
+  isMobile?: boolean;
+};
+
+// @public @deprecated
 export const SidebarPinStateContext: React_2.Context<SidebarPinStateContextType>;
 
-// Warning: (ae-missing-release-tag) "SidebarPinStateContextType" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
-// @public (undocumented)
+// @public @deprecated
 export type SidebarPinStateContextType = {
   isPinned: boolean;
   toggleSidebarPinState: () => any;
+  isMobile?: boolean;
 };
 
-// Warning: (ae-missing-release-tag) "SidebarScrollWrapper" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+// @public
+export function SidebarPinStateProvider(props: {
+  children: ReactNode;
+  value: SidebarPinStateContextType;
+}): React_2.JSX.Element;
+
+// @public (undocumented)
+export type SidebarProps = {
+  openDelayMs?: number;
+  closeDelayMs?: number;
+  sidebarOptions?: SidebarOptions;
+  submenuOptions?: SubmenuOptions;
+  disableExpandOnHover?: boolean;
+  children?: React_2.ReactNode;
+};
+
+// Warning: (ae-missing-release-tag) "SidebarScrollWrapper" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
 export const SidebarScrollWrapper: React_2.ComponentType<
-  Pick<
-    React_2.DetailedHTMLProps<
-      React_2.HTMLAttributes<HTMLDivElement>,
-      HTMLDivElement
-    >,
-    | 'hidden'
-    | 'dir'
-    | 'slot'
-    | 'style'
-    | 'title'
-    | 'color'
-    | 'translate'
-    | 'prefix'
-    | 'children'
-    | 'id'
-    | 'defaultChecked'
-    | 'defaultValue'
-    | 'suppressContentEditableWarning'
-    | 'suppressHydrationWarning'
-    | 'accessKey'
-    | 'contentEditable'
-    | 'contextMenu'
-    | 'draggable'
-    | 'lang'
-    | 'placeholder'
-    | 'spellCheck'
-    | 'tabIndex'
-    | 'radioGroup'
-    | 'role'
-    | 'about'
-    | 'datatype'
-    | 'inlist'
-    | 'property'
-    | 'resource'
-    | 'typeof'
-    | 'vocab'
-    | 'autoCapitalize'
-    | 'autoCorrect'
-    | 'autoSave'
-    | 'itemProp'
-    | 'itemScope'
-    | 'itemType'
-    | 'itemID'
-    | 'itemRef'
-    | 'results'
-    | 'security'
-    | 'unselectable'
-    | 'inputMode'
-    | 'is'
-    | 'aria-activedescendant'
-    | 'aria-atomic'
-    | 'aria-autocomplete'
-    | 'aria-busy'
-    | 'aria-checked'
-    | 'aria-colcount'
-    | 'aria-colindex'
-    | 'aria-colspan'
-    | 'aria-controls'
-    | 'aria-current'
-    | 'aria-describedby'
-    | 'aria-details'
-    | 'aria-disabled'
-    | 'aria-dropeffect'
-    | 'aria-errormessage'
-    | 'aria-expanded'
-    | 'aria-flowto'
-    | 'aria-grabbed'
-    | 'aria-haspopup'
-    | 'aria-hidden'
-    | 'aria-invalid'
-    | 'aria-keyshortcuts'
-    | 'aria-label'
-    | 'aria-labelledby'
-    | 'aria-level'
-    | 'aria-live'
-    | 'aria-modal'
-    | 'aria-multiline'
-    | 'aria-multiselectable'
-    | 'aria-orientation'
-    | 'aria-owns'
-    | 'aria-placeholder'
-    | 'aria-posinset'
-    | 'aria-pressed'
-    | 'aria-readonly'
-    | 'aria-relevant'
-    | 'aria-required'
-    | 'aria-roledescription'
-    | 'aria-rowcount'
-    | 'aria-rowindex'
-    | 'aria-rowspan'
-    | 'aria-selected'
-    | 'aria-setsize'
-    | 'aria-sort'
-    | 'aria-valuemax'
-    | 'aria-valuemin'
-    | 'aria-valuenow'
-    | 'aria-valuetext'
-    | 'dangerouslySetInnerHTML'
-    | 'onCopy'
-    | 'onCopyCapture'
-    | 'onCut'
-    | 'onCutCapture'
-    | 'onPaste'
-    | 'onPasteCapture'
-    | 'onCompositionEnd'
-    | 'onCompositionEndCapture'
-    | 'onCompositionStart'
-    | 'onCompositionStartCapture'
-    | 'onCompositionUpdate'
-    | 'onCompositionUpdateCapture'
-    | 'onFocus'
-    | 'onFocusCapture'
-    | 'onBlur'
-    | 'onBlurCapture'
-    | 'onChange'
-    | 'onChangeCapture'
-    | 'onBeforeInput'
-    | 'onBeforeInputCapture'
-    | 'onInput'
-    | 'onInputCapture'
-    | 'onReset'
-    | 'onResetCapture'
-    | 'onSubmit'
-    | 'onSubmitCapture'
-    | 'onInvalid'
-    | 'onInvalidCapture'
-    | 'onLoad'
-    | 'onLoadCapture'
-    | 'onError'
-    | 'onErrorCapture'
-    | 'onKeyDown'
-    | 'onKeyDownCapture'
-    | 'onKeyPress'
-    | 'onKeyPressCapture'
-    | 'onKeyUp'
-    | 'onKeyUpCapture'
-    | 'onAbort'
-    | 'onAbortCapture'
-    | 'onCanPlay'
-    | 'onCanPlayCapture'
-    | 'onCanPlayThrough'
-    | 'onCanPlayThroughCapture'
-    | 'onDurationChange'
-    | 'onDurationChangeCapture'
-    | 'onEmptied'
-    | 'onEmptiedCapture'
-    | 'onEncrypted'
-    | 'onEncryptedCapture'
-    | 'onEnded'
-    | 'onEndedCapture'
-    | 'onLoadedData'
-    | 'onLoadedDataCapture'
-    | 'onLoadedMetadata'
-    | 'onLoadedMetadataCapture'
-    | 'onLoadStart'
-    | 'onLoadStartCapture'
-    | 'onPause'
-    | 'onPauseCapture'
-    | 'onPlay'
-    | 'onPlayCapture'
-    | 'onPlaying'
-    | 'onPlayingCapture'
-    | 'onProgress'
-    | 'onProgressCapture'
-    | 'onRateChange'
-    | 'onRateChangeCapture'
-    | 'onSeeked'
-    | 'onSeekedCapture'
-    | 'onSeeking'
-    | 'onSeekingCapture'
-    | 'onStalled'
-    | 'onStalledCapture'
-    | 'onSuspend'
-    | 'onSuspendCapture'
-    | 'onTimeUpdate'
-    | 'onTimeUpdateCapture'
-    | 'onVolumeChange'
-    | 'onVolumeChangeCapture'
-    | 'onWaiting'
-    | 'onWaitingCapture'
-    | 'onAuxClick'
-    | 'onAuxClickCapture'
-    | 'onClick'
-    | 'onClickCapture'
-    | 'onContextMenu'
-    | 'onContextMenuCapture'
-    | 'onDoubleClick'
-    | 'onDoubleClickCapture'
-    | 'onDrag'
-    | 'onDragCapture'
-    | 'onDragEnd'
-    | 'onDragEndCapture'
-    | 'onDragEnter'
-    | 'onDragEnterCapture'
-    | 'onDragExit'
-    | 'onDragExitCapture'
-    | 'onDragLeave'
-    | 'onDragLeaveCapture'
-    | 'onDragOver'
-    | 'onDragOverCapture'
-    | 'onDragStart'
-    | 'onDragStartCapture'
-    | 'onDrop'
-    | 'onDropCapture'
-    | 'onMouseDown'
-    | 'onMouseDownCapture'
-    | 'onMouseEnter'
-    | 'onMouseLeave'
-    | 'onMouseMove'
-    | 'onMouseMoveCapture'
-    | 'onMouseOut'
-    | 'onMouseOutCapture'
-    | 'onMouseOver'
-    | 'onMouseOverCapture'
-    | 'onMouseUp'
-    | 'onMouseUpCapture'
-    | 'onSelect'
-    | 'onSelectCapture'
-    | 'onTouchCancel'
-    | 'onTouchCancelCapture'
-    | 'onTouchEnd'
-    | 'onTouchEndCapture'
-    | 'onTouchMove'
-    | 'onTouchMoveCapture'
-    | 'onTouchStart'
-    | 'onTouchStartCapture'
-    | 'onPointerDown'
-    | 'onPointerDownCapture'
-    | 'onPointerMove'
-    | 'onPointerMoveCapture'
-    | 'onPointerUp'
-    | 'onPointerUpCapture'
-    | 'onPointerCancel'
-    | 'onPointerCancelCapture'
-    | 'onPointerEnter'
-    | 'onPointerEnterCapture'
-    | 'onPointerLeave'
-    | 'onPointerLeaveCapture'
-    | 'onPointerOver'
-    | 'onPointerOverCapture'
-    | 'onPointerOut'
-    | 'onPointerOutCapture'
-    | 'onGotPointerCapture'
-    | 'onGotPointerCaptureCapture'
-    | 'onLostPointerCapture'
-    | 'onLostPointerCaptureCapture'
-    | 'onScroll'
-    | 'onScrollCapture'
-    | 'onWheel'
-    | 'onWheelCapture'
-    | 'onAnimationStart'
-    | 'onAnimationStartCapture'
-    | 'onAnimationEnd'
-    | 'onAnimationEndCapture'
-    | 'onAnimationIteration'
-    | 'onAnimationIterationCapture'
-    | 'onTransitionEnd'
-    | 'onTransitionEndCapture'
-    | keyof React_2.ClassAttributes<HTMLDivElement>
-  > &
-    StyledComponentProps<'root'> & {
-      className?: string | undefined;
-    }
+  React_2.ClassAttributes<HTMLDivElement> &
+    React_2.HTMLAttributes<HTMLDivElement> &
+    StyledComponentProps<'root'>
 >;
 
 // Warning: (ae-forgotten-export) The symbol "SidebarSearchFieldProps" needs to be exported by the entry point index.d.ts
-// Warning: (ae-missing-release-tag) "SidebarSearchField" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+// Warning: (ae-missing-release-tag) "SidebarSearchField" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
-export function SidebarSearchField(props: SidebarSearchFieldProps): JSX.Element;
+export function SidebarSearchField(
+  props: SidebarSearchFieldProps,
+): React_2.JSX.Element;
 
-// Warning: (ae-missing-release-tag) "SidebarSpace" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+// Warning: (ae-missing-release-tag) "SidebarSpace" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
 export const SidebarSpace: React_2.ComponentType<
-  Pick<
-    React_2.DetailedHTMLProps<
-      React_2.HTMLAttributes<HTMLDivElement>,
-      HTMLDivElement
-    >,
-    | 'hidden'
-    | 'dir'
-    | 'slot'
-    | 'style'
-    | 'title'
-    | 'color'
-    | 'translate'
-    | 'prefix'
-    | 'children'
-    | 'id'
-    | 'defaultChecked'
-    | 'defaultValue'
-    | 'suppressContentEditableWarning'
-    | 'suppressHydrationWarning'
-    | 'accessKey'
-    | 'contentEditable'
-    | 'contextMenu'
-    | 'draggable'
-    | 'lang'
-    | 'placeholder'
-    | 'spellCheck'
-    | 'tabIndex'
-    | 'radioGroup'
-    | 'role'
-    | 'about'
-    | 'datatype'
-    | 'inlist'
-    | 'property'
-    | 'resource'
-    | 'typeof'
-    | 'vocab'
-    | 'autoCapitalize'
-    | 'autoCorrect'
-    | 'autoSave'
-    | 'itemProp'
-    | 'itemScope'
-    | 'itemType'
-    | 'itemID'
-    | 'itemRef'
-    | 'results'
-    | 'security'
-    | 'unselectable'
-    | 'inputMode'
-    | 'is'
-    | 'aria-activedescendant'
-    | 'aria-atomic'
-    | 'aria-autocomplete'
-    | 'aria-busy'
-    | 'aria-checked'
-    | 'aria-colcount'
-    | 'aria-colindex'
-    | 'aria-colspan'
-    | 'aria-controls'
-    | 'aria-current'
-    | 'aria-describedby'
-    | 'aria-details'
-    | 'aria-disabled'
-    | 'aria-dropeffect'
-    | 'aria-errormessage'
-    | 'aria-expanded'
-    | 'aria-flowto'
-    | 'aria-grabbed'
-    | 'aria-haspopup'
-    | 'aria-hidden'
-    | 'aria-invalid'
-    | 'aria-keyshortcuts'
-    | 'aria-label'
-    | 'aria-labelledby'
-    | 'aria-level'
-    | 'aria-live'
-    | 'aria-modal'
-    | 'aria-multiline'
-    | 'aria-multiselectable'
-    | 'aria-orientation'
-    | 'aria-owns'
-    | 'aria-placeholder'
-    | 'aria-posinset'
-    | 'aria-pressed'
-    | 'aria-readonly'
-    | 'aria-relevant'
-    | 'aria-required'
-    | 'aria-roledescription'
-    | 'aria-rowcount'
-    | 'aria-rowindex'
-    | 'aria-rowspan'
-    | 'aria-selected'
-    | 'aria-setsize'
-    | 'aria-sort'
-    | 'aria-valuemax'
-    | 'aria-valuemin'
-    | 'aria-valuenow'
-    | 'aria-valuetext'
-    | 'dangerouslySetInnerHTML'
-    | 'onCopy'
-    | 'onCopyCapture'
-    | 'onCut'
-    | 'onCutCapture'
-    | 'onPaste'
-    | 'onPasteCapture'
-    | 'onCompositionEnd'
-    | 'onCompositionEndCapture'
-    | 'onCompositionStart'
-    | 'onCompositionStartCapture'
-    | 'onCompositionUpdate'
-    | 'onCompositionUpdateCapture'
-    | 'onFocus'
-    | 'onFocusCapture'
-    | 'onBlur'
-    | 'onBlurCapture'
-    | 'onChange'
-    | 'onChangeCapture'
-    | 'onBeforeInput'
-    | 'onBeforeInputCapture'
-    | 'onInput'
-    | 'onInputCapture'
-    | 'onReset'
-    | 'onResetCapture'
-    | 'onSubmit'
-    | 'onSubmitCapture'
-    | 'onInvalid'
-    | 'onInvalidCapture'
-    | 'onLoad'
-    | 'onLoadCapture'
-    | 'onError'
-    | 'onErrorCapture'
-    | 'onKeyDown'
-    | 'onKeyDownCapture'
-    | 'onKeyPress'
-    | 'onKeyPressCapture'
-    | 'onKeyUp'
-    | 'onKeyUpCapture'
-    | 'onAbort'
-    | 'onAbortCapture'
-    | 'onCanPlay'
-    | 'onCanPlayCapture'
-    | 'onCanPlayThrough'
-    | 'onCanPlayThroughCapture'
-    | 'onDurationChange'
-    | 'onDurationChangeCapture'
-    | 'onEmptied'
-    | 'onEmptiedCapture'
-    | 'onEncrypted'
-    | 'onEncryptedCapture'
-    | 'onEnded'
-    | 'onEndedCapture'
-    | 'onLoadedData'
-    | 'onLoadedDataCapture'
-    | 'onLoadedMetadata'
-    | 'onLoadedMetadataCapture'
-    | 'onLoadStart'
-    | 'onLoadStartCapture'
-    | 'onPause'
-    | 'onPauseCapture'
-    | 'onPlay'
-    | 'onPlayCapture'
-    | 'onPlaying'
-    | 'onPlayingCapture'
-    | 'onProgress'
-    | 'onProgressCapture'
-    | 'onRateChange'
-    | 'onRateChangeCapture'
-    | 'onSeeked'
-    | 'onSeekedCapture'
-    | 'onSeeking'
-    | 'onSeekingCapture'
-    | 'onStalled'
-    | 'onStalledCapture'
-    | 'onSuspend'
-    | 'onSuspendCapture'
-    | 'onTimeUpdate'
-    | 'onTimeUpdateCapture'
-    | 'onVolumeChange'
-    | 'onVolumeChangeCapture'
-    | 'onWaiting'
-    | 'onWaitingCapture'
-    | 'onAuxClick'
-    | 'onAuxClickCapture'
-    | 'onClick'
-    | 'onClickCapture'
-    | 'onContextMenu'
-    | 'onContextMenuCapture'
-    | 'onDoubleClick'
-    | 'onDoubleClickCapture'
-    | 'onDrag'
-    | 'onDragCapture'
-    | 'onDragEnd'
-    | 'onDragEndCapture'
-    | 'onDragEnter'
-    | 'onDragEnterCapture'
-    | 'onDragExit'
-    | 'onDragExitCapture'
-    | 'onDragLeave'
-    | 'onDragLeaveCapture'
-    | 'onDragOver'
-    | 'onDragOverCapture'
-    | 'onDragStart'
-    | 'onDragStartCapture'
-    | 'onDrop'
-    | 'onDropCapture'
-    | 'onMouseDown'
-    | 'onMouseDownCapture'
-    | 'onMouseEnter'
-    | 'onMouseLeave'
-    | 'onMouseMove'
-    | 'onMouseMoveCapture'
-    | 'onMouseOut'
-    | 'onMouseOutCapture'
-    | 'onMouseOver'
-    | 'onMouseOverCapture'
-    | 'onMouseUp'
-    | 'onMouseUpCapture'
-    | 'onSelect'
-    | 'onSelectCapture'
-    | 'onTouchCancel'
-    | 'onTouchCancelCapture'
-    | 'onTouchEnd'
-    | 'onTouchEndCapture'
-    | 'onTouchMove'
-    | 'onTouchMoveCapture'
-    | 'onTouchStart'
-    | 'onTouchStartCapture'
-    | 'onPointerDown'
-    | 'onPointerDownCapture'
-    | 'onPointerMove'
-    | 'onPointerMoveCapture'
-    | 'onPointerUp'
-    | 'onPointerUpCapture'
-    | 'onPointerCancel'
-    | 'onPointerCancelCapture'
-    | 'onPointerEnter'
-    | 'onPointerEnterCapture'
-    | 'onPointerLeave'
-    | 'onPointerLeaveCapture'
-    | 'onPointerOver'
-    | 'onPointerOverCapture'
-    | 'onPointerOut'
-    | 'onPointerOutCapture'
-    | 'onGotPointerCapture'
-    | 'onGotPointerCaptureCapture'
-    | 'onLostPointerCapture'
-    | 'onLostPointerCaptureCapture'
-    | 'onScroll'
-    | 'onScrollCapture'
-    | 'onWheel'
-    | 'onWheelCapture'
-    | 'onAnimationStart'
-    | 'onAnimationStartCapture'
-    | 'onAnimationEnd'
-    | 'onAnimationEndCapture'
-    | 'onAnimationIteration'
-    | 'onAnimationIterationCapture'
-    | 'onTransitionEnd'
-    | 'onTransitionEndCapture'
-    | keyof React_2.ClassAttributes<HTMLDivElement>
-  > &
-    StyledComponentProps<'root'> & {
-      className?: string | undefined;
-    }
+  React_2.ClassAttributes<HTMLDivElement> &
+    React_2.HTMLAttributes<HTMLDivElement> &
+    StyledComponentProps<'root'>
 >;
 
-// Warning: (ae-missing-release-tag) "SidebarSpacer" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+// Warning: (ae-missing-release-tag) "SidebarSpaceClassKey" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public (undocumented)
+export type SidebarSpaceClassKey = 'root';
+
+// Warning: (ae-missing-release-tag) "SidebarSpacer" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
 export const SidebarSpacer: React_2.ComponentType<
-  Pick<
-    React_2.DetailedHTMLProps<
-      React_2.HTMLAttributes<HTMLDivElement>,
-      HTMLDivElement
-    >,
-    | 'hidden'
-    | 'dir'
-    | 'slot'
-    | 'style'
-    | 'title'
-    | 'color'
-    | 'translate'
-    | 'prefix'
-    | 'children'
-    | 'id'
-    | 'defaultChecked'
-    | 'defaultValue'
-    | 'suppressContentEditableWarning'
-    | 'suppressHydrationWarning'
-    | 'accessKey'
-    | 'contentEditable'
-    | 'contextMenu'
-    | 'draggable'
-    | 'lang'
-    | 'placeholder'
-    | 'spellCheck'
-    | 'tabIndex'
-    | 'radioGroup'
-    | 'role'
-    | 'about'
-    | 'datatype'
-    | 'inlist'
-    | 'property'
-    | 'resource'
-    | 'typeof'
-    | 'vocab'
-    | 'autoCapitalize'
-    | 'autoCorrect'
-    | 'autoSave'
-    | 'itemProp'
-    | 'itemScope'
-    | 'itemType'
-    | 'itemID'
-    | 'itemRef'
-    | 'results'
-    | 'security'
-    | 'unselectable'
-    | 'inputMode'
-    | 'is'
-    | 'aria-activedescendant'
-    | 'aria-atomic'
-    | 'aria-autocomplete'
-    | 'aria-busy'
-    | 'aria-checked'
-    | 'aria-colcount'
-    | 'aria-colindex'
-    | 'aria-colspan'
-    | 'aria-controls'
-    | 'aria-current'
-    | 'aria-describedby'
-    | 'aria-details'
-    | 'aria-disabled'
-    | 'aria-dropeffect'
-    | 'aria-errormessage'
-    | 'aria-expanded'
-    | 'aria-flowto'
-    | 'aria-grabbed'
-    | 'aria-haspopup'
-    | 'aria-hidden'
-    | 'aria-invalid'
-    | 'aria-keyshortcuts'
-    | 'aria-label'
-    | 'aria-labelledby'
-    | 'aria-level'
-    | 'aria-live'
-    | 'aria-modal'
-    | 'aria-multiline'
-    | 'aria-multiselectable'
-    | 'aria-orientation'
-    | 'aria-owns'
-    | 'aria-placeholder'
-    | 'aria-posinset'
-    | 'aria-pressed'
-    | 'aria-readonly'
-    | 'aria-relevant'
-    | 'aria-required'
-    | 'aria-roledescription'
-    | 'aria-rowcount'
-    | 'aria-rowindex'
-    | 'aria-rowspan'
-    | 'aria-selected'
-    | 'aria-setsize'
-    | 'aria-sort'
-    | 'aria-valuemax'
-    | 'aria-valuemin'
-    | 'aria-valuenow'
-    | 'aria-valuetext'
-    | 'dangerouslySetInnerHTML'
-    | 'onCopy'
-    | 'onCopyCapture'
-    | 'onCut'
-    | 'onCutCapture'
-    | 'onPaste'
-    | 'onPasteCapture'
-    | 'onCompositionEnd'
-    | 'onCompositionEndCapture'
-    | 'onCompositionStart'
-    | 'onCompositionStartCapture'
-    | 'onCompositionUpdate'
-    | 'onCompositionUpdateCapture'
-    | 'onFocus'
-    | 'onFocusCapture'
-    | 'onBlur'
-    | 'onBlurCapture'
-    | 'onChange'
-    | 'onChangeCapture'
-    | 'onBeforeInput'
-    | 'onBeforeInputCapture'
-    | 'onInput'
-    | 'onInputCapture'
-    | 'onReset'
-    | 'onResetCapture'
-    | 'onSubmit'
-    | 'onSubmitCapture'
-    | 'onInvalid'
-    | 'onInvalidCapture'
-    | 'onLoad'
-    | 'onLoadCapture'
-    | 'onError'
-    | 'onErrorCapture'
-    | 'onKeyDown'
-    | 'onKeyDownCapture'
-    | 'onKeyPress'
-    | 'onKeyPressCapture'
-    | 'onKeyUp'
-    | 'onKeyUpCapture'
-    | 'onAbort'
-    | 'onAbortCapture'
-    | 'onCanPlay'
-    | 'onCanPlayCapture'
-    | 'onCanPlayThrough'
-    | 'onCanPlayThroughCapture'
-    | 'onDurationChange'
-    | 'onDurationChangeCapture'
-    | 'onEmptied'
-    | 'onEmptiedCapture'
-    | 'onEncrypted'
-    | 'onEncryptedCapture'
-    | 'onEnded'
-    | 'onEndedCapture'
-    | 'onLoadedData'
-    | 'onLoadedDataCapture'
-    | 'onLoadedMetadata'
-    | 'onLoadedMetadataCapture'
-    | 'onLoadStart'
-    | 'onLoadStartCapture'
-    | 'onPause'
-    | 'onPauseCapture'
-    | 'onPlay'
-    | 'onPlayCapture'
-    | 'onPlaying'
-    | 'onPlayingCapture'
-    | 'onProgress'
-    | 'onProgressCapture'
-    | 'onRateChange'
-    | 'onRateChangeCapture'
-    | 'onSeeked'
-    | 'onSeekedCapture'
-    | 'onSeeking'
-    | 'onSeekingCapture'
-    | 'onStalled'
-    | 'onStalledCapture'
-    | 'onSuspend'
-    | 'onSuspendCapture'
-    | 'onTimeUpdate'
-    | 'onTimeUpdateCapture'
-    | 'onVolumeChange'
-    | 'onVolumeChangeCapture'
-    | 'onWaiting'
-    | 'onWaitingCapture'
-    | 'onAuxClick'
-    | 'onAuxClickCapture'
-    | 'onClick'
-    | 'onClickCapture'
-    | 'onContextMenu'
-    | 'onContextMenuCapture'
-    | 'onDoubleClick'
-    | 'onDoubleClickCapture'
-    | 'onDrag'
-    | 'onDragCapture'
-    | 'onDragEnd'
-    | 'onDragEndCapture'
-    | 'onDragEnter'
-    | 'onDragEnterCapture'
-    | 'onDragExit'
-    | 'onDragExitCapture'
-    | 'onDragLeave'
-    | 'onDragLeaveCapture'
-    | 'onDragOver'
-    | 'onDragOverCapture'
-    | 'onDragStart'
-    | 'onDragStartCapture'
-    | 'onDrop'
-    | 'onDropCapture'
-    | 'onMouseDown'
-    | 'onMouseDownCapture'
-    | 'onMouseEnter'
-    | 'onMouseLeave'
-    | 'onMouseMove'
-    | 'onMouseMoveCapture'
-    | 'onMouseOut'
-    | 'onMouseOutCapture'
-    | 'onMouseOver'
-    | 'onMouseOverCapture'
-    | 'onMouseUp'
-    | 'onMouseUpCapture'
-    | 'onSelect'
-    | 'onSelectCapture'
-    | 'onTouchCancel'
-    | 'onTouchCancelCapture'
-    | 'onTouchEnd'
-    | 'onTouchEndCapture'
-    | 'onTouchMove'
-    | 'onTouchMoveCapture'
-    | 'onTouchStart'
-    | 'onTouchStartCapture'
-    | 'onPointerDown'
-    | 'onPointerDownCapture'
-    | 'onPointerMove'
-    | 'onPointerMoveCapture'
-    | 'onPointerUp'
-    | 'onPointerUpCapture'
-    | 'onPointerCancel'
-    | 'onPointerCancelCapture'
-    | 'onPointerEnter'
-    | 'onPointerEnterCapture'
-    | 'onPointerLeave'
-    | 'onPointerLeaveCapture'
-    | 'onPointerOver'
-    | 'onPointerOverCapture'
-    | 'onPointerOut'
-    | 'onPointerOutCapture'
-    | 'onGotPointerCapture'
-    | 'onGotPointerCaptureCapture'
-    | 'onLostPointerCapture'
-    | 'onLostPointerCaptureCapture'
-    | 'onScroll'
-    | 'onScrollCapture'
-    | 'onWheel'
-    | 'onWheelCapture'
-    | 'onAnimationStart'
-    | 'onAnimationStartCapture'
-    | 'onAnimationEnd'
-    | 'onAnimationEndCapture'
-    | 'onAnimationIteration'
-    | 'onAnimationIterationCapture'
-    | 'onTransitionEnd'
-    | 'onTransitionEndCapture'
-    | keyof React_2.ClassAttributes<HTMLDivElement>
-  > &
-    StyledComponentProps<'root'> & {
-      className?: string | undefined;
-    }
+  React_2.ClassAttributes<HTMLDivElement> &
+    React_2.HTMLAttributes<HTMLDivElement> &
+    StyledComponentProps<'root'>
 >;
 
+// Warning: (ae-missing-release-tag) "SidebarSpacerClassKey" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public (undocumented)
+export type SidebarSpacerClassKey = 'root';
+
 // @public
-export const SidebarSubmenu: (props: SidebarSubmenuProps) => JSX.Element;
+export const SidebarSubmenu: (
+  props: SidebarSubmenuProps,
+) => React_2.JSX.Element;
+
+// @public (undocumented)
+export type SidebarSubmenuClassKey = 'root' | 'drawer' | 'drawerOpen' | 'title';
 
 // @public
 export const SidebarSubmenuItem: (
   props: SidebarSubmenuItemProps,
-) => JSX.Element;
+) => React_2.JSX.Element;
+
+// @public (undocumented)
+export type SidebarSubmenuItemClassKey =
+  | 'item'
+  | 'itemContainer'
+  | 'selected'
+  | 'label'
+  | 'subtitle'
+  | 'dropdownArrow'
+  | 'dropdown'
+  | 'dropdownItem'
+  | 'textContent';
 
 // @public
 export type SidebarSubmenuItemDropdownItem = {
@@ -2046,9 +1159,12 @@ export type SidebarSubmenuItemDropdownItem = {
 // @public
 export type SidebarSubmenuItemProps = {
   title: string;
-  to: string;
-  icon: IconComponent;
+  subtitle?: string;
+  to?: string;
+  icon?: IconComponent;
   dropdownItems?: SidebarSubmenuItemDropdownItem[];
+  exact?: boolean;
+  initialShowDropdown?: boolean;
 };
 
 // @public
@@ -2057,18 +1173,18 @@ export type SidebarSubmenuProps = {
   children: ReactNode;
 };
 
-// Warning: (ae-forgotten-export) The symbol "Props" needs to be exported by the entry point index.d.ts
-// Warning: (ae-missing-release-tag) "SignInPage" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+// Warning: (ae-forgotten-export) The symbol "Props_16" needs to be exported by the entry point index.d.ts
+// Warning: (ae-missing-release-tag) "SignInPage" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
-export function SignInPage(props: Props_18): JSX.Element;
+export function SignInPage(props: Props_16): React_2.JSX.Element;
 
-// Warning: (ae-missing-release-tag) "SignInPageClassKey" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+// Warning: (ae-missing-release-tag) "SignInPageClassKey" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
 export type SignInPageClassKey = 'container' | 'item';
 
-// Warning: (ae-missing-release-tag) "SignInProviderConfig" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+// Warning: (ae-missing-release-tag) "SignInProviderConfig" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
 export type SignInProviderConfig = {
@@ -2079,37 +1195,45 @@ export type SignInProviderConfig = {
 };
 
 // Warning: (ae-forgotten-export) The symbol "StepperProps" needs to be exported by the entry point index.d.ts
-// Warning: (ae-missing-release-tag) "SimpleStepper" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+// Warning: (ae-missing-release-tag) "SimpleStepper" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
 export function SimpleStepper(
   props: PropsWithChildren<StepperProps>,
-): JSX.Element;
+): React_2.JSX.Element;
 
-// Warning: (ae-missing-release-tag) "SimpleStepperFooterClassKey" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+// Warning: (ae-missing-release-tag) "SimpleStepperFooterClassKey" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
 export type SimpleStepperFooterClassKey = 'root';
 
 // Warning: (ae-forgotten-export) The symbol "StepProps" needs to be exported by the entry point index.d.ts
-// Warning: (ae-missing-release-tag) "SimpleStepperStep" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+// Warning: (ae-missing-release-tag) "SimpleStepperStep" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
 export function SimpleStepperStep(
   props: PropsWithChildren<StepProps>,
-): JSX.Element;
+): React_2.JSX.Element;
 
-// Warning: (ae-missing-release-tag) "SimpleStepperStepClassKey" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+// Warning: (ae-missing-release-tag) "SimpleStepperStepClassKey" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
 export type SimpleStepperStepClassKey = 'end';
 
-// Warning: (ae-missing-release-tag) "StatusAborted" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+// @public (undocumented)
+export type StackDetailsClassKey = 'title';
+
+// @public (undocumented)
+export function StarIcon(props: IconComponentProps): React_2.JSX.Element;
+
+// Warning: (ae-missing-release-tag) "StatusAborted" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
-export function StatusAborted(props: PropsWithChildren<{}>): JSX.Element;
+export function StatusAborted(
+  props: PropsWithChildren<{}>,
+): React_2.JSX.Element;
 
-// Warning: (ae-missing-release-tag) "StatusClassKey" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+// Warning: (ae-missing-release-tag) "StatusClassKey" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
 export type StatusClassKey =
@@ -2121,70 +1245,95 @@ export type StatusClassKey =
   | 'running'
   | 'aborted';
 
-// Warning: (ae-missing-release-tag) "StatusError" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+// Warning: (ae-missing-release-tag) "StatusError" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
-export function StatusError(props: PropsWithChildren<{}>): JSX.Element;
+export function StatusError(props: PropsWithChildren<{}>): React_2.JSX.Element;
 
-// Warning: (ae-missing-release-tag) "StatusOK" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+// Warning: (ae-missing-release-tag) "StatusOK" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
-export function StatusOK(props: PropsWithChildren<{}>): JSX.Element;
+export function StatusOK(props: PropsWithChildren<{}>): React_2.JSX.Element;
 
-// Warning: (ae-missing-release-tag) "StatusPending" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+// Warning: (ae-missing-release-tag) "StatusPending" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
-export function StatusPending(props: PropsWithChildren<{}>): JSX.Element;
+export function StatusPending(
+  props: PropsWithChildren<{}>,
+): React_2.JSX.Element;
 
-// Warning: (ae-missing-release-tag) "StatusRunning" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+// Warning: (ae-missing-release-tag) "StatusRunning" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
-export function StatusRunning(props: PropsWithChildren<{}>): JSX.Element;
+export function StatusRunning(
+  props: PropsWithChildren<{}>,
+): React_2.JSX.Element;
 
-// Warning: (ae-missing-release-tag) "StatusWarning" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+// Warning: (ae-missing-release-tag) "StatusWarning" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
-export function StatusWarning(props: PropsWithChildren<{}>): JSX.Element;
+export function StatusWarning(
+  props: PropsWithChildren<{}>,
+): React_2.JSX.Element;
 
-// Warning: (ae-forgotten-export) The symbol "Props" needs to be exported by the entry point index.d.ts
-// Warning: (ae-missing-release-tag) "StructuredMetadataTable" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
-export function StructuredMetadataTable(props: Props_12): JSX.Element;
+export function StructuredMetadataTable(
+  props: StructuredMetadataTableProps,
+): React_2.JSX.Element;
 
-// Warning: (ae-missing-release-tag) "StructuredMetadataTableListClassKey" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+// Warning: (ae-missing-release-tag) "StructuredMetadataTableListClassKey" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
 export type StructuredMetadataTableListClassKey = 'root';
 
-// Warning: (ae-missing-release-tag) "StructuredMetadataTableNestedListClassKey" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+// Warning: (ae-missing-release-tag) "StructuredMetadataTableNestedListClassKey" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
 export type StructuredMetadataTableNestedListClassKey = 'root';
 
+// @public (undocumented)
+export interface StructuredMetadataTableProps {
+  // (undocumented)
+  dense?: boolean;
+  // (undocumented)
+  metadata: {
+    [key: string]: any;
+  };
+  // (undocumented)
+  options?: {
+    titleFormat?: (key: string) => string;
+  };
+}
+
+// @public (undocumented)
+export type SubmenuOptions = {
+  drawerWidthClosed?: number;
+  drawerWidthOpen?: number;
+};
+
 // Warning: (ae-forgotten-export) The symbol "SubvalueCellProps" needs to be exported by the entry point index.d.ts
-// Warning: (ae-missing-release-tag) "SubvalueCell" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+// Warning: (ae-missing-release-tag) "SubvalueCell" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
-export function SubvalueCell(props: SubvalueCellProps): JSX.Element;
+export function SubvalueCell(props: SubvalueCellProps): React_2.JSX.Element;
 
-// Warning: (ae-missing-release-tag) "SubvalueCellClassKey" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+// Warning: (ae-missing-release-tag) "SubvalueCellClassKey" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
 export type SubvalueCellClassKey = 'value' | 'subvalue';
 
 // Warning: (ae-forgotten-export) The symbol "SupportButtonProps" needs to be exported by the entry point index.d.ts
-// Warning: (ae-missing-release-tag) "SupportButton" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+// Warning: (ae-missing-release-tag) "SupportButton" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
-export function SupportButton(props: SupportButtonProps): JSX.Element;
+export function SupportButton(props: SupportButtonProps): React_2.JSX.Element;
 
-// Warning: (ae-missing-release-tag) "SupportButtonClassKey" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+// Warning: (ae-missing-release-tag) "SupportButtonClassKey" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
 export type SupportButtonClassKey = 'popoverList';
 
-// Warning: (ae-missing-release-tag) "SupportConfig" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+// Warning: (ae-missing-release-tag) "SupportConfig" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
 export type SupportConfig = {
@@ -2192,7 +1341,7 @@ export type SupportConfig = {
   items: SupportItem[];
 };
 
-// Warning: (ae-missing-release-tag) "SupportItem" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+// Warning: (ae-missing-release-tag) "SupportItem" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
 export type SupportItem = {
@@ -2201,7 +1350,7 @@ export type SupportItem = {
   links: SupportItemLink[];
 };
 
-// Warning: (ae-missing-release-tag) "SupportItemLink" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+// Warning: (ae-missing-release-tag) "SupportItemLink" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
 export type SupportItemLink = {
@@ -2209,7 +1358,7 @@ export type SupportItemLink = {
   title: string;
 };
 
-// Warning: (ae-missing-release-tag) "Tab" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+// Warning: (ae-missing-release-tag) "Tab" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
 export type Tab = {
@@ -2223,27 +1372,24 @@ export type Tab = {
   >;
 };
 
-// Warning: (ae-missing-release-tag) "TabBarClassKey" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+// Warning: (ae-forgotten-export) The symbol "Props_17" needs to be exported by the entry point index.d.ts
+// Warning: (ae-missing-release-tag) "TabbedCard" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
-export type TabBarClassKey = 'indicator' | 'flexContainer' | 'root';
+export function TabbedCard(
+  props: PropsWithChildren<Props_17>,
+): React_2.JSX.Element;
 
-// Warning: (ae-forgotten-export) The symbol "Props" needs to be exported by the entry point index.d.ts
-// Warning: (ae-missing-release-tag) "TabbedCard" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
-// @public (undocumented)
-export function TabbedCard(props: PropsWithChildren<Props_19>): JSX.Element;
-
-// Warning: (ae-missing-release-tag) "TabbedCardClassKey" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+// Warning: (ae-missing-release-tag) "TabbedCardClassKey" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
 export type TabbedCardClassKey = 'root' | 'indicator';
 
-// Warning: (ae-missing-release-tag) "TabbedLayout" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-// Warning: (ae-missing-release-tag) "TabbedLayout" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+// Warning: (ae-missing-release-tag) "TabbedLayout" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+// Warning: (ae-missing-release-tag) "TabbedLayout" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public
-export function TabbedLayout(props: PropsWithChildren<{}>): JSX.Element;
+export function TabbedLayout(props: PropsWithChildren<{}>): React_2.JSX.Element;
 
 // @public (undocumented)
 export namespace TabbedLayout {
@@ -2253,22 +1399,25 @@ export namespace TabbedLayout {
     Route: (props: SubRoute) => null;
 }
 
-// Warning: (ae-missing-release-tag) "TabIconClassKey" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+// Warning: (ae-missing-release-tag) "Table" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
-export type TabIconClassKey = 'root';
+export function Table<T extends object = {}>(
+  props: TableProps<T>,
+): React_2.JSX.Element;
 
-// Warning: (ae-missing-release-tag) "Table" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
-export function Table<T extends object = {}>(props: TableProps<T>): JSX.Element;
+export namespace Table {
+  var // (undocumented)
+    icons: Readonly<Icons>;
+}
 
-// Warning: (ae-missing-release-tag) "TableClassKey" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+// Warning: (ae-missing-release-tag) "TableClassKey" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
 export type TableClassKey = 'root';
 
-// Warning: (ae-missing-release-tag) "TableColumn" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+// Warning: (ae-missing-release-tag) "TableColumn" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
 export interface TableColumn<T extends object = {}> extends Column<T> {
@@ -2278,7 +1427,7 @@ export interface TableColumn<T extends object = {}> extends Column<T> {
   width?: string;
 }
 
-// Warning: (ae-missing-release-tag) "TableFilter" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+// Warning: (ae-missing-release-tag) "TableFilter" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
 export type TableFilter = {
@@ -2286,17 +1435,22 @@ export type TableFilter = {
   type: 'select' | 'multiple-select';
 };
 
-// Warning: (ae-missing-release-tag) "TableFiltersClassKey" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+// Warning: (ae-missing-release-tag) "TableFiltersClassKey" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
 export type TableFiltersClassKey = 'root' | 'value' | 'heder' | 'filters';
 
-// Warning: (ae-missing-release-tag) "TableHeaderClassKey" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+// Warning: (ae-missing-release-tag) "TableHeaderClassKey" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
 export type TableHeaderClassKey = 'header';
 
-// Warning: (ae-missing-release-tag) "TableProps" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+// Warning: (ae-missing-release-tag) "TableOptions" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public (undocumented)
+export interface TableOptions<T extends object = {}> extends Options_2<T> {}
+
+// Warning: (ae-missing-release-tag) "TableProps" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
 export interface TableProps<T extends object = {}>
@@ -2310,12 +1464,14 @@ export interface TableProps<T extends object = {}>
   // (undocumented)
   initialState?: TableState;
   // (undocumented)
+  isLoading?: boolean;
+  // (undocumented)
   onStateChange?: (state: TableState) => any;
   // (undocumented)
   subtitle?: string;
 }
 
-// Warning: (ae-missing-release-tag) "TableState" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+// Warning: (ae-missing-release-tag) "TableState" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
 export type TableState = {
@@ -2324,23 +1480,12 @@ export type TableState = {
   filters?: SelectedFilters;
 };
 
-// Warning: (ae-missing-release-tag) "TableToolbarClassKey" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+// Warning: (ae-missing-release-tag) "TableToolbarClassKey" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
 export type TableToolbarClassKey = 'root' | 'title' | 'searchField';
 
-// Warning: (ae-forgotten-export) The symbol "TabsProps" needs to be exported by the entry point index.d.ts
-// Warning: (ae-missing-release-tag) "Tabs" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
-// @public (undocumented)
-export function Tabs(props: TabsProps): JSX.Element;
-
-// Warning: (ae-missing-release-tag) "TabsClassKey" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
-// @public (undocumented)
-export type TabsClassKey = 'root' | 'styledTabs' | 'appbar';
-
-// Warning: (ae-missing-release-tag) "TrendLine" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+// Warning: (ae-missing-release-tag) "TrendLine" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
 export function TrendLine(
@@ -2348,10 +1493,19 @@ export function TrendLine(
     Pick<SparklinesLineProps, 'color'> & {
       title?: string;
     },
-): JSX.Element | null;
+): React_2.JSX.Element | null;
+
+// @public (undocumented)
+export function UnstarredIcon(props: IconComponentProps): React_2.JSX.Element;
+
+// @public
+export function useContent(): {
+  focusContent: () => void;
+  contentRef: React_2.MutableRefObject<HTMLElement | null> | undefined;
+};
 
 // Warning: (ae-forgotten-export) The symbol "SetQueryParams" needs to be exported by the entry point index.d.ts
-// Warning: (ae-missing-release-tag) "useQueryParamState" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+// Warning: (ae-missing-release-tag) "useQueryParamState" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
 export function useQueryParamState<T>(
@@ -2360,7 +1514,7 @@ export function useQueryParamState<T>(
 ): [T | undefined, SetQueryParams<T>];
 
 // @public (undocumented)
-export function UserIcon(props: IconComponentProps): JSX.Element;
+export function UserIcon(props: IconComponentProps): React_2.JSX.Element;
 
 // @public
 export class UserIdentity implements IdentityApi {
@@ -2370,7 +1524,12 @@ export class UserIdentity implements IdentityApi {
     profile?: ProfileInfo;
   }): IdentityApi;
   static createGuest(): IdentityApi;
-  static fromLegacy(result: SignInResult): IdentityApi;
+  static fromLegacy(result: {
+    userId: string;
+    profile: ProfileInfo;
+    getIdToken?: () => Promise<string>;
+    signOut?: () => Promise<void>;
+  }): IdentityApi;
   // (undocumented)
   getBackstageIdentity(): Promise<BackstageUserIdentity>;
   // (undocumented)
@@ -2389,33 +1548,27 @@ export class UserIdentity implements IdentityApi {
   signOut(): Promise<void>;
 }
 
-// Warning: (ae-missing-release-tag) "useSupportConfig" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+// @public
+export const useSidebarOpenState: () => SidebarOpenState;
+
+// @public
+export const useSidebarPinState: () => SidebarPinState;
+
+// Warning: (ae-missing-release-tag) "useSupportConfig" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
 export function useSupportConfig(): SupportConfig;
 
 // @public (undocumented)
-export function WarningIcon(props: IconComponentProps): JSX.Element;
+export function WarningIcon(props: IconComponentProps): React_2.JSX.Element;
 
-// Warning: (tsdoc-param-tag-missing-hyphen) The @param block should be followed by a parameter name and then a hyphen
-// Warning: (tsdoc-param-tag-with-invalid-optional-name) The @param should not include a JSDoc-style optional name; it must not be enclosed in '[ ]' brackets.
-// Warning: (tsdoc-param-tag-with-invalid-type) The @param block should not include a JSDoc-style '{type}'
-// Warning: (tsdoc-param-tag-missing-hyphen) The @param block should be followed by a parameter name and then a hyphen
-// Warning: (tsdoc-param-tag-with-invalid-optional-name) The @param should not include a JSDoc-style optional name; it must not be enclosed in '[ ]' brackets.
-// Warning: (tsdoc-param-tag-with-invalid-type) The @param block should not include a JSDoc-style '{type}'
-// Warning: (tsdoc-param-tag-missing-hyphen) The @param block should be followed by a parameter name and then a hyphen
-// Warning: (tsdoc-param-tag-with-invalid-optional-name) The @param should not include a JSDoc-style optional name; it must not be enclosed in '[ ]' brackets.
-// Warning: (tsdoc-param-tag-with-invalid-type) The @param block should not include a JSDoc-style '{type}'
-// Warning: (tsdoc-param-tag-missing-hyphen) The @param block should be followed by a parameter name and then a hyphen
-// Warning: (tsdoc-param-tag-with-invalid-optional-name) The @param should not include a JSDoc-style optional name; it must not be enclosed in '[ ]' brackets.
-// Warning: (tsdoc-param-tag-with-invalid-type) The @param block should not include a JSDoc-style '{type}'
 // Warning: (ae-forgotten-export) The symbol "WarningProps" needs to be exported by the entry point index.d.ts
-// Warning: (ae-missing-release-tag) "WarningPanel" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+// Warning: (ae-missing-release-tag) "WarningPanel" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public
-export function WarningPanel(props: WarningProps): JSX.Element;
+export function WarningPanel(props: WarningProps): React_2.JSX.Element;
 
-// Warning: (ae-missing-release-tag) "WarningPanelClassKey" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+// Warning: (ae-missing-release-tag) "WarningPanelClassKey" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
 export type WarningPanelClassKey =
@@ -2427,9 +1580,9 @@ export type WarningPanelClassKey =
 
 // Warnings were encountered during analysis:
 //
-// src/components/DependencyGraph/types.d.ts:16:5 - (ae-unresolved-link) The @link reference could not be resolved: The package "@backstage/core-components" does not have an export "DependencyNode"
-// src/components/DependencyGraph/types.d.ts:20:5 - (ae-unresolved-link) The @link reference could not be resolved: The package "@backstage/core-components" does not have an export "DependencyNode"
-// src/components/TabbedLayout/RoutedTabs.d.ts:9:5 - (ae-forgotten-export) The symbol "SubRoute" needs to be exported by the entry point index.d.ts
+// src/components/DependencyGraph/types.d.ts:22:9 - (ae-unresolved-link) The @link reference could not be resolved: The package "@backstage/core-components" does not have an export "DependencyNode"
+// src/components/DependencyGraph/types.d.ts:26:9 - (ae-unresolved-link) The @link reference could not be resolved: The package "@backstage/core-components" does not have an export "DependencyNode"
+// src/components/TabbedLayout/RoutedTabs.d.ts:9:5 - (ae-forgotten-export) The symbol "SubRoute_2" needs to be exported by the entry point index.d.ts
 // src/components/Table/Table.d.ts:20:5 - (ae-forgotten-export) The symbol "SelectedFilters" needs to be exported by the entry point index.d.ts
 // src/layout/ErrorBoundary/ErrorBoundary.d.ts:8:5 - (ae-forgotten-export) The symbol "SlackChannel" needs to be exported by the entry point index.d.ts
 ```

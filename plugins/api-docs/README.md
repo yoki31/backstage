@@ -1,5 +1,8 @@
 # API Documentation
 
+> Disclaimer:
+> If you are looking for documentation on the experimental new frontend system support, please go [here](./README-alpha.md).
+
 This is an extension for the catalog plugin that provides components to discover and display API entities.
 APIs define the interface between components, see the [system model](https://backstage.io/docs/features/software-catalog/system-model) for details.
 They are defined in machine readable formats and provide a human readable documentation.
@@ -13,7 +16,7 @@ The plugin provides a standalone list of APIs, as well as an integration into th
 Right now, the following API formats are supported:
 
 - [OpenAPI](https://swagger.io/specification/) 2 & 3
-- [AsyncAPI](https://www.asyncapi.com/docs/specifications/latest/)
+- [AsyncAPI](https://www.asyncapi.com/docs/reference/specification/latest) 2 & 3
 - [GraphQL](https://graphql.org/learn/schema/)
 
 Other formats are displayed as plain text, but this can easily be extended.
@@ -29,8 +32,7 @@ To link that a component provides or consumes an API, see the [`providesApis`](h
 
 ```bash
 # From your Backstage root directory
-cd packages/app
-yarn add @backstage/plugin-api-docs
+yarn --cwd packages/app add @backstage/plugin-api-docs
 ```
 
 2. Add the `ApiExplorerPage` extension to the app:
@@ -157,7 +159,7 @@ The Swagger UI package by expects to have a route to `/oauth2-redirect.html` whi
 the redirect callback for the OAuth2 Authorization Code flow, however, this file is not installed
 by this plugin.
 
-Grab a copy of [oauth2-redirect.html](https://github.com/swagger-api/swagger-ui/blob/master/dist/oauth2-redirect.html)
+Grab a copy of [`oauth2-redirect.html`](https://github.com/swagger-api/swagger-ui/blob/master/dist/oauth2-redirect.html)
 and put it in the `app/public/` directory in order to enable Swagger UI to complete this redirection.
 
 This also may require you to adjust `Content Security Policy` header settings of your Backstage application, so that the script in `oauth2-redirect.html` can be executed. Since the script is static we can add the hash of it directly to our CSP policy, which we do by adding the following to the `csp` section of the app configuration:
@@ -165,6 +167,7 @@ This also may require you to adjust `Content Security Policy` header settings of
 ```yaml
 script-src:
   - "'self'"
+  - "'unsafe-eval'" # this is required for scaffolder usage, and ajv validation.
   - "'sha256-GeDavzSZ8O71Jggf/pQkKbt52dfZkrdNMQ3e+Ox+AkI='" # oauth2-redirect.html
 ```
 
@@ -217,6 +220,155 @@ components:
 security:
   oauth:
     - [read_pets, write_pets]
+```
+
+### Adding `requestInterceptor` to Swagger UI
+
+To configure a [`requestInterceptor` for Swagger UI](https://github.com/swagger-api/swagger-ui/tree/master/flavors/swagger-ui-react#requestinterceptor-proptypesfunc) you'll need to add the following to your `api.tsx`:
+
+```tsx
+...
+import { OpenApiDefinitionWidget, apiDocsConfigRef, defaultDefinitionWidgets } from '@backstage/plugin-api-docs';
+import { ApiEntity } from '@backstage/catalog-model';
+
+export const apis: AnyApiFactory[] = [
+...
+createApiFactory({
+    api: apiDocsConfigRef,
+    deps: {},
+    factory: () => {
+      // Overriding openapi definition widget to add header
+      const requestInterceptor = (req: any) => {
+        req.headers.append('myheader', 'wombats');
+        return req;
+      };
+      const definitionWidgets = defaultDefinitionWidgets().map(obj => {
+        if (obj.type === 'openapi') {
+          return {
+            ...obj,
+            component: (definition) => <OpenApiDefinitionWidget definition={definition} requestInterceptor={requestInterceptor} />,
+          }
+        }
+        return obj;
+      });
+
+      return {
+        getApiDefinitionWidget: (apiEntity: ApiEntity) => {
+          return definitionWidgets.find(d => d.type === apiEntity.spec.type);
+        },
+      };
+    },
+  })
+```
+
+In the same way as the `requestInterceptor` you can override any property of Swagger UI
+
+### Provide Specific Supported Methods to Swagger UI
+
+This can be done through utilising the
+[supportedSubmitMethods prop](https://github.com/swagger-api/swagger-ui/tree/master/flavors/swagger-ui-react#supportedsubmitmethods-proptypesarrayofproptypesoneofget-put-post-delete-options-head-patch-trace).
+If you wish to limit the HTTP methods available for the `Try It Out` feature of an OpenAPI API
+component, you will need to add the following to your `api.tsx`, listing the permitted methods for
+your API in the `supportedSubmitMethods` parameter:
+
+```tsx
+...
+import {
+  OpenApiDefinitionWidget,
+  apiDocsConfigRef,
+  defaultDefinitionWidgets,
+} from '@backstage/plugin-api-docs';
+import { ApiEntity } from '@backstage/catalog-model';
+
+export const apis: AnyApiFactory[] = [
+...
+  createApiFactory({
+    api: apiDocsConfigRef,
+    deps: {},
+    factory: () => {
+      const supportedSubmitMethods = ['get', 'post', 'put', 'delete'];
+      const definitionWidgets = defaultDefinitionWidgets().map(obj => {
+        if (obj.type === 'openapi') {
+          return {
+            ...obj,
+            component: definition => (
+              <OpenApiDefinitionWidget
+                definition={definition}
+                supportedSubmitMethods={supportedSubmitMethods}
+              />
+            ),
+          };
+        }
+        return obj;
+      });
+
+      return {
+        getApiDefinitionWidget: (apiEntity: ApiEntity) => {
+          return definitionWidgets.find(d => d.type === apiEntity.spec.type);
+        }
+      };
+    }
+  })
+]
+
+```
+
+N.B. if you wish to disable the `Try It Out` feature for your API, you can provide an empty list to
+the `supportedSubmitMethods` parameter.
+
+### Custom Resolvers for AsyncApi
+
+You can override the default http/https resolvers, for example to add authentication to requests to internal schema registries by providing the `resolvers` prop to the `AsyncApiDefinitionWidget`. This is an example:
+
+```tsx
+...
+import {
+  AsyncApiDefinitionWidget,
+  apiDocsConfigRef,
+  defaultDefinitionWidgets,
+} from '@backstage/plugin-api-docs';
+import { ApiEntity } from '@backstage/catalog-model';
+
+export const apis: AnyApiFactory[] = [
+...
+  createApiFactory({
+    api: apiDocsConfigRef,
+    deps: {},
+    factory: () => {
+      const myCustomResolver = {
+        schema: 'https',
+        order: 1,
+        canRead: true,
+        async read(uri: any) {
+          const response = await fetch(request, {
+            headers: {
+              X-Custom: 'Custom',
+            },
+          });
+          return response.text();
+        },
+      };
+
+      const definitionWidgets = defaultDefinitionWidgets().map(obj => {
+        if (obj.type === 'asyncapi') {
+          return {
+            ...obj,
+            component: (definition) => (
+              <AsyncApiDefinitionWidget definition={definition} resolvers={[myCustomResolver]} />
+            ),
+          };
+        }
+        return obj;
+      });
+
+      return {
+        getApiDefinitionWidget: (apiEntity: ApiEntity) => {
+          return definitionWidgets.find(d => d.type === apiEntity.spec.type);
+        },
+      };
+    }
+  })
+]
 ```
 
 ## Links

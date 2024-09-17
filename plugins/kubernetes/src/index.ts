@@ -25,7 +25,7 @@ export {
   kubernetesPlugin as plugin,
   EntityKubernetesContent,
 } from './plugin';
+export type { EntityKubernetesContentProps } from './plugin';
 export { Router, isKubernetesAvailable } from './Router';
-export * from './api';
-export * from './kubernetes-auth-provider';
-export * from './utils/clusterLinks';
+// TODO remove this re-export as a breaking change after a couple of releases
+export * from '@backstage/plugin-kubernetes-react';

@@ -14,12 +14,18 @@
  * limitations under the License.
  */
 
+import { type EntityFilterQuery } from '@backstage/catalog-client';
 import { Entity } from '@backstage/catalog-model';
-import { CatalogApi, catalogApiRef } from '@backstage/plugin-catalog-react';
+import {
+  CatalogApi,
+  catalogApiRef,
+  entityPresentationApiRef,
+} from '@backstage/plugin-catalog-react';
 import { renderInTestApp, TestApiProvider } from '@backstage/test-utils';
-import { FieldProps } from '@rjsf/core';
+import { ScaffolderRJSFFieldProps as FieldProps } from '@backstage/plugin-scaffolder-react';
 import React from 'react';
 import { OwnerPicker } from './OwnerPicker';
+import { DefaultEntityPresentationApi } from '@backstage/plugin-catalog';
 
 const makeEntity = (kind: string, namespace: string, name: string): Entity => ({
   apiVersion: 'backstage.io/v1beta1',
@@ -32,21 +38,29 @@ describe('<OwnerPicker />', () => {
   const onChange = jest.fn();
   const schema = {};
   const required = false;
-  let uiSchema: { 'ui:options': { allowedKinds?: string[] } };
+  let uiSchema: {
+    'ui:options': {
+      allowedKinds?: string[];
+      defaultKind?: string;
+      allowArbitraryValues?: boolean;
+      defaultNamespace?: string | false;
+      catalogFilter?: EntityFilterQuery;
+    };
+  };
   const rawErrors: string[] = [];
   const formData = undefined;
 
-  let props: FieldProps;
+  let props: FieldProps<string>;
 
   const catalogApi: jest.Mocked<CatalogApi> = {
     getLocationById: jest.fn(),
     getEntityByName: jest.fn(),
     getEntities: jest.fn(async () => ({ items: entities })),
     addLocation: jest.fn(),
-    getLocationByEntity: jest.fn(),
+    getLocationByRef: jest.fn(),
     removeEntityByUid: jest.fn(),
   } as any;
-  let Wrapper: React.ComponentType;
+  let Wrapper: React.ComponentType<React.PropsWithChildren<{}>>;
 
   beforeEach(() => {
     entities = [
@@ -55,7 +69,15 @@ describe('<OwnerPicker />', () => {
     ];
 
     Wrapper = ({ children }: { children?: React.ReactNode }) => (
-      <TestApiProvider apis={[[catalogApiRef, catalogApi]]}>
+      <TestApiProvider
+        apis={[
+          [catalogApiRef, catalogApi],
+          [
+            entityPresentationApiRef,
+            DefaultEntityPresentationApi.create({ catalogApi }),
+          ],
+        ]}
+      >
         {children}
       </TestApiProvider>
     );
@@ -63,7 +85,7 @@ describe('<OwnerPicker />', () => {
 
   afterEach(() => jest.resetAllMocks());
 
-  describe('without allowedKinds', () => {
+  describe('without catalogFilter and allowedKinds', () => {
     beforeEach(() => {
       uiSchema = { 'ui:options': {} };
       props = {
@@ -85,11 +107,19 @@ describe('<OwnerPicker />', () => {
         </Wrapper>,
       );
 
-      expect(catalogApi.getEntities).toHaveBeenCalledWith({
-        filter: {
-          kind: ['Group', 'User'],
-        },
-      });
+      expect(catalogApi.getEntities).toHaveBeenCalledWith(
+        expect.objectContaining({
+          filter: {
+            kind: ['Group', 'User'],
+          },
+          fields: [
+            'metadata.name',
+            'metadata.namespace',
+            'metadata.title',
+            'kind',
+          ],
+        }),
+      );
     });
   });
 
@@ -108,18 +138,119 @@ describe('<OwnerPicker />', () => {
       catalogApi.getEntities.mockResolvedValue({ items: entities });
     });
 
-    it('searches for users and groups', async () => {
+    it('searches for users', async () => {
       await renderInTestApp(
         <Wrapper>
           <OwnerPicker {...props} />
         </Wrapper>,
       );
 
-      expect(catalogApi.getEntities).toHaveBeenCalledWith({
-        filter: {
-          kind: ['User'],
+      expect(catalogApi.getEntities).toHaveBeenCalledWith(
+        expect.objectContaining({
+          filter: {
+            kind: ['User'],
+          },
+          fields: [
+            'metadata.name',
+            'metadata.namespace',
+            'metadata.title',
+            'kind',
+          ],
+        }),
+      );
+    });
+  });
+
+  describe('with catalogFilter', () => {
+    beforeEach(() => {
+      uiSchema = {
+        'ui:options': {
+          catalogFilter: [
+            {
+              kind: ['Group'],
+              'spec.type': 'team',
+            },
+          ],
         },
-      });
+      };
+      props = {
+        onChange,
+        schema,
+        required,
+        uiSchema,
+        rawErrors,
+        formData,
+      } as unknown as FieldProps<any>;
+
+      catalogApi.getEntities.mockResolvedValue({ items: entities });
+    });
+
+    it('searches for group entities of type team', async () => {
+      await renderInTestApp(
+        <Wrapper>
+          <OwnerPicker {...props} />
+        </Wrapper>,
+      );
+
+      expect(catalogApi.getEntities).toHaveBeenCalledWith(
+        expect.objectContaining({
+          filter: [
+            {
+              kind: ['Group'],
+              'spec.type': 'team',
+            },
+          ],
+        }),
+      );
+    });
+  });
+
+  describe('catalogFilter should take precedence over allowedKinds', () => {
+    beforeEach(() => {
+      uiSchema = {
+        'ui:options': {
+          allowedKinds: ['User'],
+          catalogFilter: [
+            {
+              kind: ['Group', 'User'],
+            },
+            {
+              'spec.type': ['team', 'business-unit'],
+            },
+          ],
+        },
+      };
+      props = {
+        onChange,
+        schema,
+        required,
+        uiSchema,
+        rawErrors,
+        formData,
+      } as unknown as FieldProps<any>;
+
+      catalogApi.getEntities.mockResolvedValue({ items: entities });
+    });
+
+    it('searches for users and groups or teams and business units', async () => {
+      await renderInTestApp(
+        <Wrapper>
+          <OwnerPicker {...props} />
+        </Wrapper>,
+      );
+
+      expect(catalogApi.getEntities).toHaveBeenCalledWith(
+        expect.objectContaining({
+          filter: [
+            {
+              kind: ['Group', 'User'],
+            },
+            {
+              'spec.type': ['team', 'business-unit'],
+            },
+          ],
+        }),
+      );
     });
   });
 });

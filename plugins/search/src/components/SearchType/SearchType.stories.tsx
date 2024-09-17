@@ -13,24 +13,72 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import React, { useState } from 'react';
 
-import { SearchType } from '../index';
-import { SearchContext } from '../SearchContext';
+import Grid from '@material-ui/core/Grid';
+import Paper from '@material-ui/core/Paper';
+import CatalogIcon from '@material-ui/icons/MenuBook';
+import DocsIcon from '@material-ui/icons/Description';
+import UsersGroupsIcon from '@material-ui/icons/Person';
+import React, { ComponentType, PropsWithChildren } from 'react';
+import { SearchType } from './SearchType';
+import { TestApiProvider } from '@backstage/test-utils';
+import {
+  searchApiRef,
+  MockSearchApi,
+  SearchContextProvider,
+} from '@backstage/plugin-search-react';
 
 export default {
   title: 'Plugins/Search/SearchType',
   component: SearchType,
+  decorators: [
+    (Story: ComponentType<PropsWithChildren<{}>>) => (
+      <TestApiProvider apis={[[searchApiRef, new MockSearchApi()]]}>
+        <SearchContextProvider>
+          <Grid container direction="row">
+            <Grid item xs={4}>
+              <Story />
+            </Grid>
+          </Grid>
+        </SearchContextProvider>
+      </TestApiProvider>
+    ),
+  ],
 };
 
 const values = ['value-1', 'value-2', 'value-3'];
 
 export const Default = () => {
-  const [types, setTypes] = useState<string[]>([]);
-
   return (
-    <SearchContext.Provider value={{ types, setTypes } as any}>
+    <Paper style={{ padding: 10 }}>
       <SearchType name="Search type" values={values} defaultValue={values[0]} />
-    </SearchContext.Provider>
+    </Paper>
+  );
+};
+
+export const Accordion = () => {
+  return (
+    <SearchType.Accordion
+      name="Result Types"
+      defaultValue="value-1"
+      types={[
+        { value: 'value-1', name: 'Value One', icon: <CatalogIcon /> },
+        { value: 'value-2', name: 'Value Two', icon: <DocsIcon /> },
+        { value: 'value-3', name: 'Value Three', icon: <UsersGroupsIcon /> },
+      ]}
+    />
+  );
+};
+
+export const Tabs = () => {
+  return (
+    <SearchType.Tabs
+      defaultValue="value-1"
+      types={[
+        { value: 'value-1', name: 'Value One' },
+        { value: 'value-2', name: 'Value Two' },
+        { value: 'value-3', name: 'Value Three' },
+      ]}
+    />
   );
 };

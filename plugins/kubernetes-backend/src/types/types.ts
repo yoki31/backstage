@@ -14,142 +14,106 @@
  * limitations under the License.
  */
 
-import { Logger } from 'winston';
-import type {
-  FetchResponse,
-  KubernetesFetchError,
-  KubernetesRequestBody,
-  ObjectsByEntityResponse,
-} from '@backstage/plugin-kubernetes-common';
-import { PodStatus } from '@kubernetes/client-node/dist/top';
+import { Config } from '@backstage/config';
+import type { KubernetesRequestBody } from '@backstage/plugin-kubernetes-common';
+import * as k8sTypes from '@backstage/plugin-kubernetes-node';
+import { LoggerService } from '@backstage/backend-plugin-api';
 
-export interface ObjectFetchParams {
-  serviceId: string;
-  clusterDetails:
-    | AWSClusterDetails
-    | GKEClusterDetails
-    | ServiceAccountClusterDetails
-    | ClusterDetails;
-  objectTypesToFetch: Set<ObjectToFetch>;
-  labelSelector: string;
-  customResources: CustomResource[];
-}
+/**
+ *
+ * @public
+ */
+export type ServiceLocatorMethod =
+  | 'multiTenant'
+  | 'singleTenant'
+  | 'catalogRelation'
+  | 'http'; // TODO implement http
 
-// Fetches information from a kubernetes cluster using the cluster details object
-// to target a specific cluster
-export interface KubernetesFetcher {
-  fetchObjectsForService(
-    params: ObjectFetchParams,
-  ): Promise<FetchResponseWrapper>;
-  fetchPodMetricsByNamespace(
-    clusterDetails: ClusterDetails,
-    namespace: string,
-  ): Promise<PodStatus[]>;
-}
-
-export interface FetchResponseWrapper {
-  errors: KubernetesFetchError[];
-  responses: FetchResponse[];
-}
-
-// TODO fairly sure there's a easier way to do this
-
-export interface ObjectToFetch {
-  objectType: KubernetesObjectTypes;
-  group: string;
-  apiVersion: string;
-  plural: string;
-}
-
-export interface CustomResource extends ObjectToFetch {
-  objectType: 'customresources';
-}
-
-export type KubernetesObjectTypes =
-  | 'pods'
-  | 'services'
-  | 'configmaps'
-  | 'deployments'
-  | 'replicasets'
-  | 'horizontalpodautoscalers'
-  | 'jobs'
-  | 'cronjobs'
-  | 'ingresses'
-  | 'customresources';
-
-// Used to load cluster details from different sources
-export interface KubernetesClustersSupplier {
-  getClusters(): Promise<ClusterDetails[]>;
-}
-
-// Used to locate which cluster(s) a service is running on
-export interface KubernetesServiceLocator {
-  getClustersByServiceId(serviceId: string): Promise<ClusterDetails[]>;
-}
-
-export type ServiceLocatorMethod = 'multiTenant' | 'http'; // TODO implement http
-
-export interface ClusterDetails {
-  /**
-   * Specifies the name of the Kubernetes cluster.
-   */
-  name: string;
-  url: string;
-  authProvider: string;
-  serviceAccountToken?: string | undefined;
-  skipTLSVerify?: boolean;
-  /**
-   * Whether to skip the lookup to the metrics server to retrieve pod resource usage.
-   * It is not guaranteed that the Kubernetes distro has the metrics server installed.
-   */
-  skipMetricsLookup?: boolean;
-  caData?: string | undefined;
-  /**
-   * Specifies the link to the Kubernetes dashboard managing this cluster.
-   * @remarks
-   * Note that you should specify the app used for the dashboard
-   * using the dashboardApp property, in order to properly format
-   * links to kubernetes resources,  otherwise it will assume that you're running the standard one.
-   * @see dashboardApp
-   */
-  dashboardUrl?: string;
-  /**
-   * Specifies the app that provides the Kubernetes dashboard.
-   * This will be used for formatting links to kubernetes objects inside the dashboard.
-   * @remarks
-   * The existing apps are: standard, rancher, openshift, gke, aks, eks
-   * Note that it will default to the regular dashboard provided by the Kubernetes project (standard).
-   * Note that you can add your own formatter by registering it to the clusterLinksFormatters dictionary.
-   * @defaultValue standard
-   * @see dashboardUrl
-   * @example
-   * ```ts
-   * import { clusterLinksFormatters } from '@backstage/plugin-kubernetes';
-   * clusterLinksFormatters.myDashboard = (options) => ...;
-   * ```
-   */
-  dashboardApp?: string;
-}
-
-export interface GKEClusterDetails extends ClusterDetails {}
-export interface ServiceAccountClusterDetails extends ClusterDetails {}
-export interface AWSClusterDetails extends ClusterDetails {
-  assumeRole?: string;
-  externalId?: string;
-}
-
+/**
+ *
+ * @public
+ */
 export interface KubernetesObjectsProviderOptions {
-  logger: Logger;
-  fetcher: KubernetesFetcher;
-  serviceLocator: KubernetesServiceLocator;
-  customResources: CustomResource[];
-  objectTypesToFetch?: ObjectToFetch[];
+  logger: LoggerService;
+  config: Config;
+  fetcher: k8sTypes.KubernetesFetcher;
+  serviceLocator: k8sTypes.KubernetesServiceLocator;
+  customResources: k8sTypes.CustomResource[];
+  objectTypesToFetch?: k8sTypes.ObjectToFetch[];
 }
 
+/**
+ *
+ * @public
+ */
 export type ObjectsByEntityRequest = KubernetesRequestBody;
 
-export interface KubernetesObjectsProvider {
-  getKubernetesObjectsByEntity(
-    request: ObjectsByEntityRequest,
-  ): Promise<ObjectsByEntityResponse>;
-}
+// TODO remove this re-export as a breaking change after a couple of releases
+/**
+ * @public @deprecated Import it from \@backstage/plugin-kubernetes-node instead
+ */
+export type KubernetesObjectsProvider = k8sTypes.KubernetesObjectsProvider;
+
+/**
+ * @public @deprecated Import it from \@backstage/plugin-kubernetes-node instead
+ */
+export type CustomResourcesByEntity = k8sTypes.CustomResourcesByEntity;
+
+/**
+ * @public
+ * @deprecated Import it from \@backstage/plugin-kubernetes-node instead
+ */
+export type AuthMetadata = k8sTypes.AuthMetadata;
+
+/**
+ * @public
+ * @deprecated Import it from \@backstage/plugin-kubernetes-node instead
+ */
+export type ClusterDetails = k8sTypes.ClusterDetails;
+
+/**
+ * @public
+ * @deprecated Import it from \@backstage/plugin-kubernetes-node instead
+ */
+export type KubernetesClustersSupplier = k8sTypes.KubernetesClustersSupplier;
+
+/**
+ * @public @deprecated Import it from \@backstage/plugin-kubernetes-node instead
+ */
+export type KubernetesObjectTypes = k8sTypes.KubernetesObjectTypes;
+
+/**
+ * @public @deprecated Import it from \@backstage/plugin-kubernetes-node instead
+ */
+export type ObjectToFetch = k8sTypes.ObjectToFetch;
+
+/**
+ * @public @deprecated Import it from \@backstage/plugin-kubernetes-node instead
+ */
+export type CustomResource = k8sTypes.CustomResource;
+
+/**
+ * @public @deprecated Import it from \@backstage/plugin-kubernetes-node instead
+ */
+export type ObjectFetchParams = k8sTypes.ObjectFetchParams;
+
+/**
+ * @public @deprecated Import it from \@backstage/plugin-kubernetes-node instead
+ */
+export type FetchResponseWrapper = k8sTypes.FetchResponseWrapper;
+
+/**
+ * @public @deprecated Import it from \@backstage/plugin-kubernetes-node instead
+ */
+export type KubernetesFetcher = k8sTypes.KubernetesFetcher;
+
+/**
+ * @public @deprecated Import it from \@backstage/plugin-kubernetes-node instead
+ */
+export type ServiceLocatorRequestContext =
+  k8sTypes.ServiceLocatorRequestContext;
+
+/**
+ * @public @deprecated Import it from \@backstage/plugin-kubernetes-node instead
+ */
+export type KubernetesServiceLocator = k8sTypes.KubernetesServiceLocator;

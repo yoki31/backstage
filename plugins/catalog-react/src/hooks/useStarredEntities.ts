@@ -16,40 +16,47 @@
 
 import {
   Entity,
-  EntityName,
+  CompoundEntityRef,
   stringifyEntityRef,
 } from '@backstage/catalog-model';
 import { useApi } from '@backstage/core-plugin-api';
-import { useCallback } from 'react';
-import { useObservable } from 'react-use';
+import { useCallback, useMemo } from 'react';
+import useObservable from 'react-use/esm/useObservable';
 import { starredEntitiesApiRef } from '../apis';
 
-function getEntityRef(entityOrRef: Entity | EntityName | string): string {
+function getEntityRef(
+  entityOrRef: Entity | CompoundEntityRef | string,
+): string {
   return typeof entityOrRef === 'string'
     ? entityOrRef
     : stringifyEntityRef(entityOrRef);
 }
 
+/** @public */
 export function useStarredEntities(): {
   starredEntities: Set<string>;
-  toggleStarredEntity: (entityOrRef: Entity | EntityName | string) => void;
-  isStarredEntity: (entityOrRef: Entity | EntityName | string) => boolean;
+  toggleStarredEntity: (
+    entityOrRef: Entity | CompoundEntityRef | string,
+  ) => void;
+  isStarredEntity: (
+    entityOrRef: Entity | CompoundEntityRef | string,
+  ) => boolean;
 } {
   const starredEntitiesApi = useApi(starredEntitiesApiRef);
 
   const starredEntities = useObservable(
-    starredEntitiesApi.starredEntitie$(),
+    useMemo(() => starredEntitiesApi.starredEntitie$(), [starredEntitiesApi]),
     new Set<string>(),
   );
 
   const isStarredEntity = useCallback(
-    (entityOrRef: Entity | EntityName | string) =>
+    (entityOrRef: Entity | CompoundEntityRef | string) =>
       starredEntities.has(getEntityRef(entityOrRef)),
     [starredEntities],
   );
 
   const toggleStarredEntity = useCallback(
-    (entityOrRef: Entity | EntityName | string) =>
+    (entityOrRef: Entity | CompoundEntityRef | string) =>
       starredEntitiesApi.toggleStarred(getEntityRef(entityOrRef)).then(),
     [starredEntitiesApi],
   );

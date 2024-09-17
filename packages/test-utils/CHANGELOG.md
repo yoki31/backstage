@@ -1,5 +1,1545 @@
 # @backstage/test-utils
 
+## 1.6.0-next.1
+
+### Patch Changes
+
+- b537bd7: Allow custom star icons to be provided via the `star` and `unstarred` icon overrides. See how to override existing icons in the [Backstage documentation](https://backstage.io/docs/getting-started/app-custom-theme/#custom-icons).
+- 836127c: Updated dependency `@testing-library/react` to `^16.0.0`.
+- Updated dependencies
+  - @backstage/core-app-api@1.14.3-next.0
+  - @backstage/core-plugin-api@1.9.4-next.0
+  - @backstage/theme@0.5.7-next.0
+  - @backstage/plugin-permission-react@0.4.26-next.0
+  - @backstage/config@1.2.0
+  - @backstage/types@1.1.1
+  - @backstage/plugin-permission-common@0.8.1
+
+## 1.6.0-next.0
+
+### Minor Changes
+
+- d47be30: Added the icons option to the renderInTestApp function's TestAppOptions to be forwarded to the icons option of `createApp`.
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/config@1.2.0
+  - @backstage/core-app-api@1.14.2
+  - @backstage/core-plugin-api@1.9.3
+  - @backstage/theme@0.5.6
+  - @backstage/types@1.1.1
+  - @backstage/plugin-permission-common@0.8.1
+  - @backstage/plugin-permission-react@0.4.25
+
+## 1.5.10
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/plugin-permission-common@0.8.1
+  - @backstage/core-app-api@1.14.2
+  - @backstage/config@1.2.0
+  - @backstage/core-plugin-api@1.9.3
+  - @backstage/theme@0.5.6
+  - @backstage/types@1.1.1
+  - @backstage/plugin-permission-react@0.4.25
+
+## 1.5.10-next.2
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/plugin-permission-common@0.8.1-next.1
+  - @backstage/plugin-permission-react@0.4.25-next.1
+  - @backstage/config@1.2.0
+  - @backstage/core-app-api@1.14.2-next.0
+  - @backstage/core-plugin-api@1.9.3
+  - @backstage/theme@0.5.6
+  - @backstage/types@1.1.1
+
+## 1.5.10-next.1
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/plugin-permission-common@0.8.1-next.0
+  - @backstage/plugin-permission-react@0.4.25-next.0
+  - @backstage/config@1.2.0
+  - @backstage/core-app-api@1.14.2-next.0
+  - @backstage/core-plugin-api@1.9.3
+  - @backstage/theme@0.5.6
+  - @backstage/types@1.1.1
+
+## 1.5.9-next.0
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/core-app-api@1.14.1-next.0
+  - @backstage/config@1.2.0
+  - @backstage/core-plugin-api@1.9.3
+  - @backstage/theme@0.5.6
+  - @backstage/types@1.1.1
+  - @backstage/plugin-permission-common@0.8.0
+  - @backstage/plugin-permission-react@0.4.24
+
+## 1.5.8
+
+### Patch Changes
+
+- 95a3a0b: Rename frontend and backend `setupRequestMockHandlers` methods to `registerMswTestHooks`.
+- Updated dependencies
+  - @backstage/plugin-permission-common@0.8.0
+  - @backstage/core-app-api@1.14.0
+  - @backstage/plugin-permission-react@0.4.24
+  - @backstage/config@1.2.0
+  - @backstage/core-plugin-api@1.9.3
+  - @backstage/theme@0.5.6
+  - @backstage/types@1.1.1
+
+## 1.5.8-next.1
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/core-app-api@1.13.1-next.1
+  - @backstage/core-plugin-api@1.9.3
+  - @backstage/config@1.2.0
+  - @backstage/theme@0.5.6
+  - @backstage/types@1.1.1
+  - @backstage/plugin-permission-common@0.7.14
+  - @backstage/plugin-permission-react@0.4.23
+
+## 1.5.7-next.0
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/core-app-api@1.13.0-next.0
+  - @backstage/core-plugin-api@1.9.3
+  - @backstage/config@1.2.0
+  - @backstage/theme@0.5.6
+  - @backstage/types@1.1.1
+  - @backstage/plugin-permission-common@0.7.14
+  - @backstage/plugin-permission-react@0.4.23
+
+## 1.5.6
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/core-plugin-api@1.9.3
+  - @backstage/theme@0.5.6
+  - @backstage/plugin-permission-common@0.7.14
+  - @backstage/plugin-permission-react@0.4.23
+  - @backstage/core-app-api@1.12.6
+  - @backstage/config@1.2.0
+  - @backstage/types@1.1.1
+
+## 1.5.6-next.2
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/plugin-permission-common@0.7.14-next.0
+  - @backstage/plugin-permission-react@0.4.23-next.1
+  - @backstage/config@1.2.0
+  - @backstage/core-app-api@1.12.6-next.0
+  - @backstage/core-plugin-api@1.9.3-next.0
+  - @backstage/theme@0.5.6-next.0
+  - @backstage/types@1.1.1
+
+## 1.5.6-next.1
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/core-plugin-api@1.9.3-next.0
+  - @backstage/core-app-api@1.12.6-next.0
+  - @backstage/plugin-permission-react@0.4.23-next.0
+  - @backstage/config@1.2.0
+  - @backstage/theme@0.5.6-next.0
+  - @backstage/types@1.1.1
+  - @backstage/plugin-permission-common@0.7.13
+
+## 1.5.6-next.0
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/theme@0.5.6-next.0
+  - @backstage/config@1.2.0
+  - @backstage/core-app-api@1.12.5
+  - @backstage/core-plugin-api@1.9.2
+  - @backstage/types@1.1.1
+  - @backstage/plugin-permission-common@0.7.13
+  - @backstage/plugin-permission-react@0.4.22
+
+## 1.5.5
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/theme@0.5.4
+  - @backstage/core-app-api@1.12.5
+
+## 1.5.5-next.0
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/theme@0.5.4-next.0
+  - @backstage/config@1.2.0
+  - @backstage/core-app-api@1.12.4
+  - @backstage/core-plugin-api@1.9.2
+  - @backstage/types@1.1.1
+  - @backstage/plugin-permission-common@0.7.13
+  - @backstage/plugin-permission-react@0.4.22
+
+## 1.5.4
+
+### Patch Changes
+
+- abfbcfc: Updated dependency `@testing-library/react` to `^15.0.0`.
+- Updated dependencies
+  - @backstage/core-app-api@1.12.4
+  - @backstage/core-plugin-api@1.9.2
+  - @backstage/theme@0.5.3
+  - @backstage/plugin-permission-react@0.4.22
+  - @backstage/config@1.2.0
+  - @backstage/types@1.1.1
+  - @backstage/plugin-permission-common@0.7.13
+
+## 1.5.4-next.0
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/core-app-api@1.12.4-next.0
+  - @backstage/config@1.2.0
+  - @backstage/core-plugin-api@1.9.1
+  - @backstage/theme@0.5.2
+  - @backstage/types@1.1.1
+  - @backstage/plugin-permission-common@0.7.13
+  - @backstage/plugin-permission-react@0.4.21
+
+## 1.5.3
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/core-app-api@1.12.3
+  - @backstage/core-plugin-api@1.9.1
+  - @backstage/config@1.2.0
+  - @backstage/theme@0.5.2
+  - @backstage/types@1.1.1
+  - @backstage/plugin-permission-common@0.7.13
+  - @backstage/plugin-permission-react@0.4.21
+
+## 1.5.2
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/core-app-api@1.12.2
+  - @backstage/core-plugin-api@1.9.1
+  - @backstage/config@1.2.0
+  - @backstage/theme@0.5.2
+  - @backstage/types@1.1.1
+  - @backstage/plugin-permission-common@0.7.13
+  - @backstage/plugin-permission-react@0.4.21
+
+## 1.5.1
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/config@1.2.0
+  - @backstage/theme@0.5.2
+  - @backstage/plugin-permission-common@0.7.13
+  - @backstage/core-app-api@1.12.1
+  - @backstage/core-plugin-api@1.9.1
+  - @backstage/types@1.1.1
+  - @backstage/plugin-permission-react@0.4.21
+
+## 1.5.1-next.1
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/config@1.2.0-next.1
+  - @backstage/core-app-api@1.12.1-next.1
+  - @backstage/core-plugin-api@1.9.1-next.1
+  - @backstage/plugin-permission-common@0.7.13-next.1
+  - @backstage/plugin-permission-react@0.4.21-next.1
+  - @backstage/theme@0.5.2-next.0
+  - @backstage/types@1.1.1
+
+## 1.5.1-next.0
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/theme@0.5.2-next.0
+  - @backstage/plugin-permission-common@0.7.13-next.0
+  - @backstage/config@1.1.2-next.0
+  - @backstage/core-plugin-api@1.9.1-next.0
+  - @backstage/core-app-api@1.12.1-next.0
+  - @backstage/types@1.1.1
+  - @backstage/plugin-permission-react@0.4.21-next.0
+
+## 1.5.0
+
+### Minor Changes
+
+- bb40898: Added `components` option to `TestAppOptions`, which will be forwarded as the `components` option to `createApp`.
+
+### Patch Changes
+
+- 07e7d12: Fix wording in API reference
+- 8fe56a8: Widen `@types/react` dependency range to include version 18.
+- 7da67ce: Change `defaultScopes` for Bitbucket auth from invalid `team` to `account`.
+- Updated dependencies
+  - @backstage/core-app-api@1.12.0
+  - @backstage/theme@0.5.1
+  - @backstage/core-plugin-api@1.9.0
+  - @backstage/plugin-permission-react@0.4.20
+  - @backstage/config@1.1.1
+  - @backstage/types@1.1.1
+  - @backstage/plugin-permission-common@0.7.12
+
+## 1.5.0-next.3
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/theme@0.5.1-next.1
+  - @backstage/config@1.1.1
+  - @backstage/core-app-api@1.12.0-next.1
+  - @backstage/core-plugin-api@1.9.0-next.1
+  - @backstage/types@1.1.1
+  - @backstage/plugin-permission-common@0.7.12
+  - @backstage/plugin-permission-react@0.4.20-next.1
+
+## 1.5.0-next.2
+
+### Patch Changes
+
+- 8fe56a8: Widen `@types/react` dependency range to include version 18.
+- Updated dependencies
+  - @backstage/core-app-api@1.12.0-next.1
+  - @backstage/core-plugin-api@1.9.0-next.1
+  - @backstage/plugin-permission-react@0.4.20-next.1
+  - @backstage/theme@0.5.1-next.0
+  - @backstage/config@1.1.1
+  - @backstage/types@1.1.1
+  - @backstage/plugin-permission-common@0.7.12
+
+## 1.5.0-next.1
+
+### Patch Changes
+
+- 07e7d12: Fix wording in API reference
+- 7da67ce: Change `defaultScopes` for Bitbucket auth from invalid `team` to `account`.
+- Updated dependencies
+  - @backstage/core-plugin-api@1.8.3-next.0
+  - @backstage/core-app-api@1.11.4-next.0
+  - @backstage/config@1.1.1
+  - @backstage/theme@0.5.0
+  - @backstage/types@1.1.1
+  - @backstage/plugin-permission-common@0.7.12
+  - @backstage/plugin-permission-react@0.4.20-next.0
+
+## 1.5.0-next.0
+
+### Minor Changes
+
+- bb40898: Added `components` option to `TestAppOptions`, which will be forwarded as the `components` option to `createApp`.
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/config@1.1.1
+  - @backstage/core-app-api@1.11.3
+  - @backstage/core-plugin-api@1.8.2
+  - @backstage/theme@0.5.0
+  - @backstage/types@1.1.1
+  - @backstage/plugin-permission-common@0.7.12
+  - @backstage/plugin-permission-react@0.4.19
+
+## 1.4.7
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/core-plugin-api@1.8.2
+  - @backstage/plugin-permission-react@0.4.19
+  - @backstage/plugin-permission-common@0.7.12
+  - @backstage/config@1.1.1
+  - @backstage/core-app-api@1.11.3
+  - @backstage/theme@0.5.0
+  - @backstage/types@1.1.1
+
+## 1.4.7-next.1
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/core-plugin-api@1.8.2-next.0
+  - @backstage/core-app-api@1.11.3-next.0
+  - @backstage/plugin-permission-react@0.4.19-next.1
+  - @backstage/config@1.1.1
+  - @backstage/theme@0.5.0
+  - @backstage/types@1.1.1
+  - @backstage/plugin-permission-common@0.7.11
+
+## 1.4.7-next.0
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/plugin-permission-react@0.4.19-next.0
+  - @backstage/config@1.1.1
+  - @backstage/core-app-api@1.11.2
+  - @backstage/core-plugin-api@1.8.1
+  - @backstage/theme@0.5.0
+  - @backstage/types@1.1.1
+  - @backstage/plugin-permission-common@0.7.11
+
+## 1.4.6
+
+### Patch Changes
+
+- e8f2ace: Deprecated `mockBreakpoint`, as it is now available from `@backstage/core-components/testUtils` instead.
+- Updated dependencies
+  - @backstage/core-plugin-api@1.8.1
+  - @backstage/theme@0.5.0
+  - @backstage/core-app-api@1.11.2
+  - @backstage/plugin-permission-common@0.7.11
+  - @backstage/plugin-permission-react@0.4.18
+  - @backstage/config@1.1.1
+  - @backstage/types@1.1.1
+
+## 1.4.6-next.2
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/theme@0.5.0-next.1
+  - @backstage/config@1.1.1
+  - @backstage/core-app-api@1.11.2-next.1
+  - @backstage/core-plugin-api@1.8.1-next.1
+  - @backstage/types@1.1.1
+  - @backstage/plugin-permission-common@0.7.10
+  - @backstage/plugin-permission-react@0.4.18-next.1
+
+## 1.4.6-next.1
+
+### Patch Changes
+
+- e8f2acef80: Deprecated `mockBreakpoint`, as it is now available from `@backstage/core-components/testUtils` instead.
+- Updated dependencies
+  - @backstage/core-plugin-api@1.8.1-next.1
+  - @backstage/core-app-api@1.11.2-next.1
+  - @backstage/plugin-permission-react@0.4.18-next.1
+  - @backstage/config@1.1.1
+  - @backstage/theme@0.5.0-next.0
+  - @backstage/types@1.1.1
+  - @backstage/plugin-permission-common@0.7.10
+
+## 1.4.6-next.0
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/core-plugin-api@1.8.1-next.0
+  - @backstage/theme@0.5.0-next.0
+  - @backstage/core-app-api@1.11.2-next.0
+  - @backstage/plugin-permission-react@0.4.18-next.0
+  - @backstage/config@1.1.1
+  - @backstage/types@1.1.1
+  - @backstage/plugin-permission-common@0.7.10
+
+## 1.4.5
+
+### Patch Changes
+
+- 6c2b872153: Add official support for React 18.
+- 4aa43f62aa: Updated dependency `cross-fetch` to `^4.0.0`.
+- Updated dependencies
+  - @backstage/core-plugin-api@1.8.0
+  - @backstage/plugin-permission-react@0.4.17
+  - @backstage/core-app-api@1.11.1
+  - @backstage/theme@0.4.4
+  - @backstage/plugin-permission-common@0.7.10
+  - @backstage/config@1.1.1
+  - @backstage/types@1.1.1
+
+## 1.4.5-next.0
+
+### Patch Changes
+
+- 6c2b872153: Add official support for React 18.
+- Updated dependencies
+  - @backstage/core-plugin-api@1.8.0-next.0
+  - @backstage/plugin-permission-react@0.4.17-next.0
+  - @backstage/core-app-api@1.11.1-next.0
+  - @backstage/theme@0.4.4-next.0
+  - @backstage/config@1.1.1
+  - @backstage/types@1.1.1
+  - @backstage/plugin-permission-common@0.7.9
+
+## 1.4.4
+
+### Patch Changes
+
+- 322bbcae24: Removed the alpha `MockPluginProvider` export since the plugin configuration API has been removed.
+- 1a0616fa10: Add missing resource and template app icons
+- 9a1fce352e: Updated dependency `@testing-library/jest-dom` to `^6.0.0`.
+- Updated dependencies
+  - @backstage/core-app-api@1.11.0
+  - @backstage/core-plugin-api@1.7.0
+  - @backstage/plugin-permission-react@0.4.16
+  - @backstage/theme@0.4.3
+  - @backstage/config@1.1.1
+  - @backstage/types@1.1.1
+  - @backstage/plugin-permission-common@0.7.9
+
+## 1.4.4-next.2
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/core-app-api@1.11.0-next.2
+  - @backstage/core-plugin-api@1.7.0-next.1
+  - @backstage/theme@0.4.3-next.0
+  - @backstage/config@1.1.1-next.0
+  - @backstage/types@1.1.1
+  - @backstage/plugin-permission-common@0.7.9-next.0
+  - @backstage/plugin-permission-react@0.4.16-next.1
+
+## 1.4.4-next.1
+
+### Patch Changes
+
+- 1a0616fa10: Add missing resource and template app icons
+- Updated dependencies
+  - @backstage/core-app-api@1.10.1-next.1
+  - @backstage/core-plugin-api@1.7.0-next.0
+  - @backstage/config@1.1.0
+  - @backstage/plugin-permission-react@0.4.16-next.0
+  - @backstage/theme@0.4.2
+  - @backstage/types@1.1.1
+  - @backstage/plugin-permission-common@0.7.8
+
+## 1.4.4-next.0
+
+### Patch Changes
+
+- 322bbcae24: Removed the alpha `MockPluginProvider` export since the plugin configuration API has been removed.
+- Updated dependencies
+  - @backstage/core-plugin-api@1.7.0-next.0
+  - @backstage/config@1.1.0
+  - @backstage/core-app-api@1.10.1-next.0
+  - @backstage/plugin-permission-react@0.4.16-next.0
+  - @backstage/theme@0.4.2
+  - @backstage/types@1.1.1
+  - @backstage/plugin-permission-common@0.7.8
+
+## 1.4.3
+
+### Patch Changes
+
+- 7032c214f3b4: Add pod exec terminal to Container Card
+- 406b786a2a2c: Mark package as being free of side effects, allowing more optimized Webpack builds.
+- 8cec7664e146: Removed `@types/node` dependency
+- b5fbddc15dca: Add a new `MockTranslationApi` as an `/alpha` export.
+- 9ceb6195275a: Add support for React Testing Library 13+, and thus React 18.
+
+  We're exposing an additional option to the `render*` methods to enable the [`legacyRoot`](https://testing-library.com/docs/react-testing-library/api/#legacyroot) flow.
+
+- Updated dependencies
+  - @backstage/config@1.1.0
+  - @backstage/core-app-api@1.10.0
+  - @backstage/core-plugin-api@1.6.0
+  - @backstage/plugin-permission-common@0.7.8
+  - @backstage/plugin-permission-react@0.4.15
+  - @backstage/theme@0.4.2
+  - @backstage/types@1.1.1
+
+## 1.4.3-next.3
+
+### Patch Changes
+
+- 7032c214f3b4: Add pod exec terminal to Container Card
+- 406b786a2a2c: Mark package as being free of side effects, allowing more optimized Webpack builds.
+- Updated dependencies
+  - @backstage/config@1.1.0-next.2
+  - @backstage/core-app-api@1.10.0-next.3
+  - @backstage/core-plugin-api@1.6.0-next.3
+  - @backstage/plugin-permission-common@0.7.8-next.2
+  - @backstage/plugin-permission-react@0.4.15-next.3
+  - @backstage/theme@0.4.2-next.0
+  - @backstage/types@1.1.1-next.0
+
+## 1.4.3-next.2
+
+### Patch Changes
+
+- 8cec7664e146: Removed `@types/node` dependency
+- Updated dependencies
+  - @backstage/core-plugin-api@1.6.0-next.2
+  - @backstage/core-app-api@1.10.0-next.2
+  - @backstage/config@1.1.0-next.1
+  - @backstage/plugin-permission-react@0.4.15-next.2
+  - @backstage/plugin-permission-common@0.7.8-next.1
+  - @backstage/theme@0.4.1
+  - @backstage/types@1.1.0
+
+## 1.4.3-next.1
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/config@1.1.0-next.0
+  - @backstage/core-app-api@1.10.0-next.1
+  - @backstage/core-plugin-api@1.6.0-next.1
+  - @backstage/plugin-permission-common@0.7.8-next.0
+  - @backstage/plugin-permission-react@0.4.15-next.1
+  - @backstage/theme@0.4.1
+  - @backstage/types@1.1.0
+
+## 1.4.3-next.0
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/core-app-api@1.10.0-next.0
+  - @backstage/core-plugin-api@1.6.0-next.0
+  - @backstage/config@1.0.8
+  - @backstage/theme@0.4.1
+  - @backstage/types@1.1.0
+  - @backstage/plugin-permission-common@0.7.7
+  - @backstage/plugin-permission-react@0.4.15-next.0
+
+## 1.4.2
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/core-app-api@1.9.1
+  - @backstage/core-plugin-api@1.5.3
+  - @backstage/config@1.0.8
+  - @backstage/theme@0.4.1
+  - @backstage/types@1.1.0
+  - @backstage/plugin-permission-common@0.7.7
+  - @backstage/plugin-permission-react@0.4.14
+
+## 1.4.2-next.0
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/core-app-api@1.9.1-next.0
+  - @backstage/core-plugin-api@1.5.3
+  - @backstage/config@1.0.8
+  - @backstage/theme@0.4.1
+  - @backstage/types@1.1.0
+  - @backstage/plugin-permission-common@0.7.7
+  - @backstage/plugin-permission-react@0.4.14
+
+## 1.4.1
+
+### Patch Changes
+
+- 8174cf4c0edf: Fixing MUI / Material UI references
+- Updated dependencies
+  - @backstage/theme@0.4.1
+  - @backstage/core-app-api@1.9.0
+  - @backstage/core-plugin-api@1.5.3
+  - @backstage/config@1.0.8
+  - @backstage/types@1.1.0
+  - @backstage/plugin-permission-common@0.7.7
+  - @backstage/plugin-permission-react@0.4.14
+
+## 1.4.1-next.2
+
+### Patch Changes
+
+- 8174cf4c0edf: Fixing MUI / Material UI references
+- Updated dependencies
+  - @backstage/theme@0.4.1-next.1
+  - @backstage/core-plugin-api@1.5.3-next.1
+  - @backstage/core-app-api@1.8.2-next.1
+  - @backstage/config@1.0.8
+  - @backstage/types@1.1.0
+  - @backstage/plugin-permission-common@0.7.7-next.0
+  - @backstage/plugin-permission-react@0.4.14-next.2
+
+## 1.4.1-next.1
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/theme@0.4.1-next.0
+  - @backstage/core-plugin-api@1.5.3-next.0
+  - @backstage/core-app-api@1.8.2-next.0
+  - @backstage/plugin-permission-react@0.4.14-next.1
+  - @backstage/config@1.0.8
+
+## 1.4.1-next.0
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/config@1.0.8
+  - @backstage/core-app-api@1.8.1
+  - @backstage/core-plugin-api@1.5.2
+  - @backstage/theme@0.4.0
+  - @backstage/types@1.1.0
+  - @backstage/plugin-permission-common@0.7.7-next.0
+  - @backstage/plugin-permission-react@0.4.14-next.0
+
+## 1.4.0
+
+### Minor Changes
+
+- 1fd38bc4141a: Test App Wrapper is now using `UnifiedThemeProvider` for supporting Material UI v5 next to Material UI v4 in tests.
+
+### Patch Changes
+
+- 55853a367174: Add a `fetchApiRef` implementation by default
+- Updated dependencies
+  - @backstage/core-app-api@1.8.1
+  - @backstage/core-plugin-api@1.5.2
+  - @backstage/types@1.1.0
+  - @backstage/theme@0.4.0
+  - @backstage/plugin-permission-react@0.4.13
+  - @backstage/config@1.0.8
+  - @backstage/plugin-permission-common@0.7.6
+
+## 1.4.0-next.2
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/theme@0.4.0-next.1
+  - @backstage/config@1.0.7
+  - @backstage/core-app-api@1.8.1-next.0
+  - @backstage/core-plugin-api@1.5.2-next.0
+  - @backstage/plugin-permission-react@0.4.13-next.0
+
+## 1.4.0-next.1
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/core-app-api@1.8.1-next.0
+  - @backstage/core-plugin-api@1.5.2-next.0
+  - @backstage/plugin-permission-common@0.7.6-next.0
+  - @backstage/config@1.0.7
+  - @backstage/theme@0.4.0-next.0
+  - @backstage/types@1.0.2
+  - @backstage/plugin-permission-react@0.4.13-next.0
+
+## 1.4.0-next.0
+
+### Minor Changes
+
+- 1fd38bc4141a: Test App Wrapper is now using `UnifiedThemeProvider` for supporting Material UI v5 next to Material UI v4 in tests.
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/theme@0.4.0-next.0
+  - @backstage/config@1.0.7
+  - @backstage/core-app-api@1.8.0
+  - @backstage/core-plugin-api@1.5.1
+  - @backstage/plugin-permission-react@0.4.12
+  - @backstage/types@1.0.2
+  - @backstage/plugin-permission-common@0.7.5
+
+## 1.3.1
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/theme@0.3.0
+  - @backstage/core-app-api@1.8.0
+  - @backstage/config@1.0.7
+  - @backstage/core-plugin-api@1.5.1
+  - @backstage/types@1.0.2
+  - @backstage/plugin-permission-common@0.7.5
+  - @backstage/plugin-permission-react@0.4.12
+
+## 1.3.1-next.2
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/theme@0.3.0-next.0
+  - @backstage/config@1.0.7
+  - @backstage/core-app-api@1.8.0-next.1
+  - @backstage/core-plugin-api@1.5.1
+  - @backstage/plugin-permission-react@0.4.12
+
+## 1.3.1-next.1
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/core-app-api@1.8.0-next.1
+  - @backstage/core-plugin-api@1.5.1
+  - @backstage/config@1.0.7
+  - @backstage/plugin-permission-react@0.4.12
+
+## 1.3.1-next.0
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/core-app-api@1.7.1-next.0
+  - @backstage/core-plugin-api@1.5.1
+  - @backstage/config@1.0.7
+  - @backstage/theme@0.2.19
+  - @backstage/types@1.0.2
+  - @backstage/plugin-permission-common@0.7.5
+  - @backstage/plugin-permission-react@0.4.12
+
+## 1.3.0
+
+### Minor Changes
+
+- 7908d72e033: Introduce a new global config parameter, `enableExperimentalRedirectFlow`. When enabled, auth will happen with an in-window redirect flow rather than through a popup window.
+
+### Patch Changes
+
+- e0c6e8b9c3c: Update peer dependencies
+- Updated dependencies
+  - @backstage/core-app-api@1.7.0
+  - @backstage/plugin-permission-common@0.7.5
+  - @backstage/theme@0.2.19
+  - @backstage/core-plugin-api@1.5.1
+  - @backstage/plugin-permission-react@0.4.12
+  - @backstage/config@1.0.7
+  - @backstage/types@1.0.2
+
+## 1.3.0-next.3
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/core-app-api@1.7.0-next.3
+  - @backstage/config@1.0.7
+  - @backstage/core-plugin-api@1.5.1-next.1
+  - @backstage/theme@0.2.19-next.0
+  - @backstage/types@1.0.2
+  - @backstage/plugin-permission-common@0.7.5-next.0
+  - @backstage/plugin-permission-react@0.4.12-next.1
+
+## 1.3.0-next.2
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/core-plugin-api@1.5.1-next.1
+  - @backstage/config@1.0.7
+  - @backstage/core-app-api@1.7.0-next.2
+  - @backstage/theme@0.2.19-next.0
+  - @backstage/types@1.0.2
+  - @backstage/plugin-permission-common@0.7.5-next.0
+  - @backstage/plugin-permission-react@0.4.12-next.1
+
+## 1.3.0-next.1
+
+### Patch Changes
+
+- e0c6e8b9c3c: Update peer dependencies
+- Updated dependencies
+  - @backstage/plugin-permission-common@0.7.5-next.0
+  - @backstage/core-app-api@1.7.0-next.1
+  - @backstage/core-plugin-api@1.5.1-next.0
+  - @backstage/plugin-permission-react@0.4.12-next.0
+  - @backstage/theme@0.2.19-next.0
+  - @backstage/config@1.0.7
+  - @backstage/types@1.0.2
+
+## 1.3.0-next.0
+
+### Minor Changes
+
+- 7908d72e033: Introduce a new global config parameter, `enableExperimentalRedirectFlow`. When enabled, auth will happen with an in-window redirect flow rather than through a popup window.
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/core-app-api@1.7.0-next.0
+  - @backstage/core-plugin-api@1.5.0
+  - @backstage/config@1.0.7
+  - @backstage/plugin-permission-react@0.4.11
+  - @backstage/theme@0.2.18
+  - @backstage/types@1.0.2
+  - @backstage/plugin-permission-common@0.7.4
+
+## 1.2.6
+
+### Patch Changes
+
+- 928a12a9b3e: Internal refactor of `/alpha` exports.
+- 52b0022dab7: Updated dependency `msw` to `^1.0.0`.
+- 482dae5de1c: Updated link to docs.
+- Updated dependencies
+  - @backstage/core-plugin-api@1.5.0
+  - @backstage/core-app-api@1.6.0
+  - @backstage/plugin-permission-common@0.7.4
+  - @backstage/config@1.0.7
+  - @backstage/theme@0.2.18
+  - @backstage/types@1.0.2
+  - @backstage/plugin-permission-react@0.4.11
+
+## 1.2.6-next.2
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/core-app-api@1.6.0-next.2
+  - @backstage/core-plugin-api@1.5.0-next.2
+  - @backstage/plugin-permission-react@0.4.11-next.2
+  - @backstage/config@1.0.7-next.0
+
+## 1.2.6-next.1
+
+### Patch Changes
+
+- 52b0022dab7: Updated dependency `msw` to `^1.0.0`.
+- 482dae5de1c: Updated link to docs.
+- Updated dependencies
+  - @backstage/core-app-api@1.5.1-next.1
+  - @backstage/core-plugin-api@1.4.1-next.1
+  - @backstage/plugin-permission-common@0.7.4-next.0
+  - @backstage/config@1.0.7-next.0
+  - @backstage/theme@0.2.18-next.0
+  - @backstage/types@1.0.2
+  - @backstage/plugin-permission-react@0.4.11-next.1
+
+## 1.2.6-next.0
+
+### Patch Changes
+
+- 928a12a9b3: Internal refactor of `/alpha` exports.
+- Updated dependencies
+  - @backstage/core-plugin-api@1.4.1-next.0
+  - @backstage/config@1.0.6
+  - @backstage/core-app-api@1.5.1-next.0
+  - @backstage/theme@0.2.17
+  - @backstage/types@1.0.2
+  - @backstage/plugin-permission-common@0.7.3
+  - @backstage/plugin-permission-react@0.4.11-next.0
+
+## 1.2.5
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/theme@0.2.17
+  - @backstage/core-app-api@1.5.0
+  - @backstage/core-plugin-api@1.4.0
+  - @backstage/config@1.0.6
+  - @backstage/types@1.0.2
+  - @backstage/plugin-permission-common@0.7.3
+  - @backstage/plugin-permission-react@0.4.10
+
+## 1.2.5-next.0
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/core-app-api@1.4.1-next.0
+  - @backstage/config@1.0.6
+  - @backstage/core-plugin-api@1.3.0
+  - @backstage/theme@0.2.16
+  - @backstage/types@1.0.2
+  - @backstage/plugin-permission-common@0.7.3
+  - @backstage/plugin-permission-react@0.4.9
+
+## 1.2.4
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/core-plugin-api@1.3.0
+  - @backstage/core-app-api@1.4.0
+  - @backstage/plugin-permission-react@0.4.9
+  - @backstage/config@1.0.6
+  - @backstage/theme@0.2.16
+  - @backstage/types@1.0.2
+  - @backstage/plugin-permission-common@0.7.3
+
+## 1.2.4-next.1
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/core-plugin-api@1.3.0-next.1
+  - @backstage/core-app-api@1.4.0-next.1
+  - @backstage/plugin-permission-react@0.4.9-next.1
+  - @backstage/config@1.0.6-next.0
+  - @backstage/theme@0.2.16
+  - @backstage/types@1.0.2
+  - @backstage/plugin-permission-common@0.7.3-next.0
+
+## 1.2.4-next.0
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/config@1.0.6-next.0
+  - @backstage/core-app-api@1.3.1-next.0
+  - @backstage/core-plugin-api@1.2.1-next.0
+  - @backstage/theme@0.2.16
+  - @backstage/types@1.0.2
+  - @backstage/plugin-permission-common@0.7.3-next.0
+  - @backstage/plugin-permission-react@0.4.9-next.0
+
+## 1.2.3
+
+### Patch Changes
+
+- 5e238ed56a: The test utility for the plugin context called `MockPluginProvider` has been created. It will be handy in the cases when you use
+  `__experimentalConfigure` in your plugin. It is experimental and exported through `@backstage/test-utils/alpha`.
+- 2e701b3796: Internal refactor to use `react-router-dom` rather than `react-router`.
+- 3280711113: Updated dependency `msw` to `^0.49.0`.
+- 19356df560: Updated dependency `zen-observable` to `^0.9.0`.
+- c3fa90e184: Updated dependency `zen-observable` to `^0.10.0`.
+- 830687539f: Sync components in @backstage/core-components with the Component Design Guidelines
+- Updated dependencies
+  - @backstage/core-plugin-api@1.2.0
+  - @backstage/core-app-api@1.3.0
+  - @backstage/plugin-permission-common@0.7.2
+  - @backstage/plugin-permission-react@0.4.8
+  - @backstage/types@1.0.2
+  - @backstage/config@1.0.5
+  - @backstage/theme@0.2.16
+
+## 1.2.3-next.4
+
+### Patch Changes
+
+- 2e701b3796: Internal refactor to use `react-router-dom` rather than `react-router`.
+- Updated dependencies
+  - @backstage/core-app-api@1.3.0-next.4
+  - @backstage/plugin-permission-common@0.7.2-next.2
+  - @backstage/plugin-permission-react@0.4.8-next.3
+  - @backstage/config@1.0.5-next.1
+  - @backstage/core-plugin-api@1.2.0-next.2
+  - @backstage/theme@0.2.16
+  - @backstage/types@1.0.2-next.1
+
+## 1.2.3-next.3
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/core-app-api@1.2.1-next.3
+  - @backstage/config@1.0.5-next.1
+  - @backstage/core-plugin-api@1.2.0-next.2
+  - @backstage/theme@0.2.16
+  - @backstage/types@1.0.2-next.1
+  - @backstage/plugin-permission-common@0.7.2-next.1
+  - @backstage/plugin-permission-react@0.4.8-next.2
+
+## 1.2.3-next.2
+
+### Patch Changes
+
+- 830687539f: Sync components in @backstage/core-components with the Component Design Guidelines
+- Updated dependencies
+  - @backstage/core-plugin-api@1.2.0-next.2
+  - @backstage/core-app-api@1.2.1-next.2
+  - @backstage/plugin-permission-react@0.4.8-next.2
+  - @backstage/config@1.0.5-next.1
+  - @backstage/theme@0.2.16
+  - @backstage/types@1.0.2-next.1
+  - @backstage/plugin-permission-common@0.7.2-next.1
+
+## 1.2.3-next.1
+
+### Patch Changes
+
+- 5e238ed56a: The test utility for the plugin context called `MockPluginProvider` has been created. It will be handy in the cases when you use
+  `__experimentalConfigure` in your plugin. It is experimental and exported through `@backstage/test-utils/alpha`.
+- c3fa90e184: Updated dependency `zen-observable` to `^0.10.0`.
+- Updated dependencies
+  - @backstage/core-app-api@1.2.1-next.1
+  - @backstage/core-plugin-api@1.1.1-next.1
+  - @backstage/types@1.0.2-next.1
+  - @backstage/config@1.0.5-next.1
+  - @backstage/plugin-permission-react@0.4.8-next.1
+  - @backstage/theme@0.2.16
+  - @backstage/plugin-permission-common@0.7.2-next.1
+
+## 1.2.3-next.0
+
+### Patch Changes
+
+- 3280711113: Updated dependency `msw` to `^0.49.0`.
+- 19356df560: Updated dependency `zen-observable` to `^0.9.0`.
+- Updated dependencies
+  - @backstage/core-app-api@1.2.1-next.0
+  - @backstage/core-plugin-api@1.1.1-next.0
+  - @backstage/plugin-permission-common@0.7.2-next.0
+  - @backstage/types@1.0.2-next.0
+  - @backstage/config@1.0.5-next.0
+  - @backstage/theme@0.2.16
+  - @backstage/plugin-permission-react@0.4.8-next.0
+
+## 1.2.2
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/core-app-api@1.2.0
+  - @backstage/core-plugin-api@1.1.0
+  - @backstage/plugin-permission-common@0.7.1
+  - @backstage/types@1.0.1
+  - @backstage/config@1.0.4
+  - @backstage/theme@0.2.16
+  - @backstage/plugin-permission-react@0.4.7
+
+## 1.2.2-next.0
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/core-app-api@1.2.0-next.0
+  - @backstage/core-plugin-api@1.1.0-next.0
+  - @backstage/plugin-permission-common@0.7.1-next.0
+  - @backstage/types@1.0.1-next.0
+  - @backstage/plugin-permission-react@0.4.7-next.0
+  - @backstage/config@1.0.4-next.0
+  - @backstage/theme@0.2.16
+
+## 1.2.1
+
+### Patch Changes
+
+- e05e0f021b: Align on the version of `@material-ui/icons` used, to `^4.9.1` like other packages in the main repo
+- Updated dependencies
+  - @backstage/core-app-api@1.1.1
+  - @backstage/plugin-permission-common@0.7.0
+  - @backstage/core-plugin-api@1.0.7
+  - @backstage/config@1.0.3
+  - @backstage/theme@0.2.16
+  - @backstage/types@1.0.0
+  - @backstage/plugin-permission-react@0.4.6
+
+## 1.2.1-next.2
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/plugin-permission-common@0.7.0-next.2
+  - @backstage/plugin-permission-react@0.4.6-next.2
+  - @backstage/config@1.0.3-next.2
+  - @backstage/core-app-api@1.1.1-next.2
+  - @backstage/core-plugin-api@1.0.7-next.2
+  - @backstage/theme@0.2.16
+  - @backstage/types@1.0.0
+
+## 1.2.1-next.1
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/core-app-api@1.1.1-next.1
+  - @backstage/core-plugin-api@1.0.7-next.1
+  - @backstage/config@1.0.3-next.1
+  - @backstage/theme@0.2.16
+  - @backstage/types@1.0.0
+  - @backstage/plugin-permission-common@0.6.5-next.1
+  - @backstage/plugin-permission-react@0.4.6-next.1
+
+## 1.2.1-next.0
+
+### Patch Changes
+
+- e05e0f021b: Align on the version of `@material-ui/icons` used, to `^4.9.1` like other packages in the main repo
+- Updated dependencies
+  - @backstage/config@1.0.3-next.0
+  - @backstage/core-app-api@1.1.1-next.0
+  - @backstage/core-plugin-api@1.0.7-next.0
+  - @backstage/theme@0.2.16
+  - @backstage/types@1.0.0
+  - @backstage/plugin-permission-common@0.6.5-next.0
+  - @backstage/plugin-permission-react@0.4.6-next.0
+
+## 1.2.0
+
+### Minor Changes
+
+- 817f3196f6: Elements rendered in a test app are no longer wrapped in a `Routes` and `Route` element, as this is not compatible with React Router v6 stable.
+
+### Patch Changes
+
+- 817f3196f6: Updated React Router dependencies to be peer dependencies.
+- 7d47def9c4: Removed dependency on `@types/jest`.
+- 667d917488: Updated dependency `msw` to `^0.47.0`.
+- 87ec2ba4d6: Updated dependency `msw` to `^0.46.0`.
+- bf5e9030eb: Updated dependency `msw` to `^0.45.0`.
+- d9e39544be: Add missing peer dependencies
+- Updated dependencies
+  - @backstage/core-app-api@1.1.0
+  - @backstage/core-plugin-api@1.0.6
+  - @backstage/plugin-permission-react@0.4.5
+  - @backstage/config@1.0.2
+  - @backstage/plugin-permission-common@0.6.4
+
+## 1.2.0-next.3
+
+### Patch Changes
+
+- 7d47def9c4: Removed dependency on `@types/jest`.
+- d9e39544be: Add missing peer dependencies
+- Updated dependencies
+  - @backstage/config@1.0.2-next.0
+  - @backstage/core-app-api@1.1.0-next.3
+  - @backstage/core-plugin-api@1.0.6-next.3
+  - @backstage/plugin-permission-common@0.6.4-next.2
+  - @backstage/plugin-permission-react@0.4.5-next.2
+
+## 1.2.0-next.2
+
+### Patch Changes
+
+- 667d917488: Updated dependency `msw` to `^0.47.0`.
+- 87ec2ba4d6: Updated dependency `msw` to `^0.46.0`.
+- Updated dependencies
+  - @backstage/core-app-api@1.1.0-next.2
+  - @backstage/core-plugin-api@1.0.6-next.2
+  - @backstage/plugin-permission-common@0.6.4-next.1
+
+## 1.2.0-next.1
+
+### Minor Changes
+
+- 817f3196f6: Elements rendered in a test app are no longer wrapped in a `Routes` and `Route` element, as this is not compatible with React Router v6 stable.
+
+### Patch Changes
+
+- 817f3196f6: Updated React Router dependencies to be peer dependencies.
+- Updated dependencies
+  - @backstage/core-app-api@1.1.0-next.1
+  - @backstage/core-plugin-api@1.0.6-next.1
+  - @backstage/plugin-permission-react@0.4.5-next.1
+
+## 1.1.4-next.0
+
+### Patch Changes
+
+- bf5e9030eb: Updated dependency `msw` to `^0.45.0`.
+- Updated dependencies
+  - @backstage/core-app-api@1.0.6-next.0
+  - @backstage/core-plugin-api@1.0.6-next.0
+  - @backstage/plugin-permission-common@0.6.4-next.0
+  - @backstage/plugin-permission-react@0.4.5-next.0
+
+## 1.1.3
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/core-plugin-api@1.0.5
+  - @backstage/core-app-api@1.0.5
+  - @backstage/plugin-permission-react@0.4.4
+
+## 1.1.3-next.0
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/core-plugin-api@1.0.5-next.0
+  - @backstage/core-app-api@1.0.5-next.0
+  - @backstage/plugin-permission-react@0.4.4-next.0
+
+## 1.1.2
+
+### Patch Changes
+
+- a70869e775: Updated dependency `msw` to `^0.43.0`.
+- 8006d0f9bf: Updated dependency `msw` to `^0.44.0`.
+- Updated dependencies
+  - @backstage/core-app-api@1.0.4
+  - @backstage/core-plugin-api@1.0.4
+  - @backstage/plugin-permission-common@0.6.3
+  - @backstage/theme@0.2.16
+  - @backstage/plugin-permission-react@0.4.3
+
+## 1.1.2-next.2
+
+### Patch Changes
+
+- a70869e775: Updated dependency `msw` to `^0.43.0`.
+- Updated dependencies
+  - @backstage/core-app-api@1.0.4-next.1
+  - @backstage/core-plugin-api@1.0.4-next.0
+  - @backstage/plugin-permission-common@0.6.3-next.1
+  - @backstage/plugin-permission-react@0.4.3-next.1
+
+## 1.1.2-next.1
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/theme@0.2.16-next.0
+  - @backstage/plugin-permission-common@0.6.3-next.0
+  - @backstage/plugin-permission-react@0.4.3-next.0
+
+## 1.1.2-next.0
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/core-app-api@1.0.4-next.0
+
+## 1.1.1
+
+### Patch Changes
+
+- 8f7b1835df: Updated dependency `msw` to `^0.41.0`.
+- Updated dependencies
+  - @backstage/core-app-api@1.0.3
+  - @backstage/core-plugin-api@1.0.3
+  - @backstage/plugin-permission-common@0.6.2
+  - @backstage/plugin-permission-react@0.4.2
+
+## 1.1.1-next.0
+
+### Patch Changes
+
+- 8f7b1835df: Updated dependency `msw` to `^0.41.0`.
+- Updated dependencies
+  - @backstage/core-app-api@1.0.3-next.0
+  - @backstage/core-plugin-api@1.0.3-next.0
+  - @backstage/plugin-permission-common@0.6.2-next.0
+  - @backstage/plugin-permission-react@0.4.2-next.0
+
+## 1.1.0
+
+### Minor Changes
+
+- 1da8b248c2: Added the options parameter to `renderWithEffects`, which if forwarded to the `render` function from `@testling-library/react`. Initially only the `wrapper` option is supported.
+- 1da8b248c2: Added `createTestAppWrapper`, which returns a component that can be used as the `wrapper` option for `render` or `renderWithEffects`.
+
+### Patch Changes
+
+- 1da8b248c2: Fixed `renderInTestApp` so that it is able to re-render the result without removing the app wrapping.
+- 7a5ddfd595: Added missing `Routes` element to wrap the `Route` elements of the test app wrapping.
+- 7a5ddfd595: The internal elements created as part of the `mountedRoutes` implementation are now hidden during rendering.
+- Updated dependencies
+  - @backstage/core-plugin-api@1.0.2
+  - @backstage/config@1.0.1
+  - @backstage/core-app-api@1.0.2
+  - @backstage/plugin-permission-common@0.6.1
+  - @backstage/plugin-permission-react@0.4.1
+
+## 1.1.0-next.2
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/config@1.0.1-next.0
+  - @backstage/core-app-api@1.0.2-next.1
+  - @backstage/core-plugin-api@1.0.2-next.1
+  - @backstage/plugin-permission-common@0.6.1-next.0
+  - @backstage/plugin-permission-react@0.4.1-next.1
+
+## 1.1.0-next.1
+
+### Minor Changes
+
+- 1da8b248c2: Added the options parameter to `renderWithEffects`, which if forwarded to the `render` function from `@testling-library/react`. Initially only the `wrapper` option is supported.
+- 1da8b248c2: Added `createTestAppWrapper`, which returns a component that can be used as the `wrapper` option for `render` or `renderWithEffects`.
+
+### Patch Changes
+
+- 1da8b248c2: Fixed `renderInTestApp` so that it is able to re-render the result without removing the app wrapping.
+- Updated dependencies
+  - @backstage/core-plugin-api@1.0.2-next.0
+  - @backstage/core-app-api@1.0.2-next.0
+  - @backstage/plugin-permission-react@0.4.1-next.0
+
+## 1.0.2-next.0
+
+### Patch Changes
+
+- 7a5ddfd595: Added missing `Routes` element to wrap the `Route` elements of the test app wrapping.
+- 7a5ddfd595: The internal elements created as part of the `mountedRoutes` implementation are now hidden during rendering.
+
+## 1.0.1
+
+### Patch Changes
+
+- 24254fd433: build(deps): bump `@testing-library/user-event` from 13.5.0 to 14.0.0
+- c98d271466: Use updated types from `@backstage/plugin-permission-common`
+- 230ad0826f: Bump to using `@types/node` v16
+- Updated dependencies
+  - @backstage/plugin-permission-react@0.4.0
+  - @backstage/plugin-permission-common@0.6.0
+  - @backstage/core-app-api@1.0.1
+  - @backstage/core-plugin-api@1.0.1
+
+## 1.0.1-next.2
+
+### Patch Changes
+
+- 24254fd433: build(deps): bump `@testing-library/user-event` from 13.5.0 to 14.0.0
+- 230ad0826f: Bump to using `@types/node` v16
+- Updated dependencies
+  - @backstage/core-app-api@1.0.1-next.1
+  - @backstage/core-plugin-api@1.0.1-next.0
+  - @backstage/plugin-permission-common@0.6.0-next.1
+  - @backstage/plugin-permission-react@0.4.0-next.1
+
+## 1.0.1-next.1
+
+### Patch Changes
+
+- c98d271466: Use updated types from `@backstage/plugin-permission-common`
+- Updated dependencies
+  - @backstage/plugin-permission-react@0.4.0-next.0
+  - @backstage/plugin-permission-common@0.6.0-next.0
+
+## 1.0.1-next.0
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/core-app-api@1.0.1-next.0
+
+## 1.0.0
+
+### Major Changes
+
+- b58c70c223: This package has been promoted to v1.0! To understand how this change affects the package, please check out our [versioning policy](https://backstage.io/docs/overview/versioning-policy).
+
+### Patch Changes
+
+- a422d7ce5e: chore(deps): bump `@testing-library/react` from 11.2.6 to 12.1.3
+- f24ef7864e: Minor typo fixes
+- Updated dependencies
+  - @backstage/core-app-api@1.0.0
+  - @backstage/core-plugin-api@1.0.0
+  - @backstage/plugin-permission-react@0.3.4
+  - @backstage/config@1.0.0
+  - @backstage/types@1.0.0
+  - @backstage/plugin-permission-common@0.5.3
+
+## 0.3.0
+
+### Minor Changes
+
+- bb2bb36651: **BREAKING**: Removed the deprecated `get` method from `StorageAPI` and its implementations, this method has been replaced by the `snapshot` method. The return value from snapshot no longer includes `newValue` which has been replaced by `value`. For getting notified when a value changes, use `observe# @backstage/test-utils.
+- af5eaa87f4: **BREAKING**: Removed deprecated `auth0AuthApiRef`, `oauth2ApiRef`, `samlAuthApiRef` and `oidcAuthApiRef` as these APIs are too generic to be useful. Instructions for how to migrate can be found at [https://backstage.io/docs/api/deprecations#generic-auth-api-refs](https://backstage.io/docs/api/deprecations#generic-auth-api-refs).
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/core-app-api@0.6.0
+  - @backstage/core-plugin-api@0.8.0
+  - @backstage/plugin-permission-common@0.5.2
+  - @backstage/plugin-permission-react@0.3.3
+
+## 0.2.6
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/core-plugin-api@0.7.0
+  - @backstage/core-app-api@0.5.4
+  - @backstage/plugin-permission-react@0.3.2
+
+## 0.2.5
+
+### Patch Changes
+
+- 1ed305728b: Bump `node-fetch` to version 2.6.7 and `cross-fetch` to version 3.1.5
+- c77c5c7eb6: Added `backstage.role` to `package.json`
+- Updated dependencies
+  - @backstage/core-app-api@0.5.3
+  - @backstage/core-plugin-api@0.6.1
+  - @backstage/plugin-permission-common@0.5.0
+  - @backstage/plugin-permission-react@0.3.1
+  - @backstage/config@0.1.14
+  - @backstage/theme@0.2.15
+  - @backstage/types@0.1.2
+
+## 0.2.4
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/core-app-api@0.5.2
+
+## 0.2.4-next.0
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/core-app-api@0.5.2-next.0
+
+## 0.2.3
+
+### Patch Changes
+
+- c54c0d9d10: Add MockPermissionApi
+- 6bf7826258: Added a `MockFetchApi`
+- Updated dependencies
+  - @backstage/plugin-permission-react@0.3.0
+  - @backstage/plugin-permission-common@0.4.0
+  - @backstage/core-plugin-api@0.6.0
+  - @backstage/core-app-api@0.5.0
+  - @backstage/config@0.1.13
+
+## 0.2.3-next.0
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/core-plugin-api@0.6.0-next.0
+  - @backstage/config@0.1.13-next.0
+  - @backstage/core-app-api@0.5.0-next.0
+
+## 0.2.2
+
+### Patch Changes
+
+- 2d3fd91e33: Add new `MockConfigApi` as a more discoverable and leaner method for mocking configuration.
+- Updated dependencies
+  - @backstage/config@0.1.12
+  - @backstage/core-plugin-api@0.5.0
+  - @backstage/core-app-api@0.4.0
+
+## 0.2.1
+
+### Patch Changes
+
+- c36b7794f7: JSON serialize and freeze values stored by the `MockStorageApi`.
+
+## 0.2.0
+
+### Minor Changes
+
+- a195284c7b: Updated `MockStorageApi` to reflect the `StorageApi` changes in `@backstage/core-plugin-api`.
+- 771b9c07fe: Removed deprecated `Keyboard` class which has been superseded by `@testing-library/user-event#userEvent`
+- f6722d2458: Removed deprecated `msw` definition which was replaced by calling `setupRequestMockHandlers` directly
+
+### Patch Changes
+
+- Updated dependencies
+  - @backstage/core-app-api@0.3.0
+  - @backstage/core-plugin-api@0.4.0
+
 ## 0.1.24
 
 ### Patch Changes

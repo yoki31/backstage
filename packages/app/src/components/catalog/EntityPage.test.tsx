@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
-import { EntityLayout } from '@backstage/plugin-catalog';
+import { EntityLayout, catalogPlugin } from '@backstage/plugin-catalog';
 import {
-  DefaultStarredEntitiesApi,
   EntityProvider,
   starredEntitiesApiRef,
+  MockStarredEntitiesApi,
 } from '@backstage/plugin-catalog-react';
-import { githubActionsApiRef } from '@backstage/plugin-github-actions';
+import { permissionApiRef } from '@backstage/plugin-permission-react';
 import {
-  MockStorageApi,
+  MockPermissionApi,
   renderInTestApp,
   TestApiProvider,
 } from '@backstage/test-utils';
@@ -46,22 +46,16 @@ describe('EntityPage Test', () => {
     },
   };
 
-  const mockedApi = {
-    listWorkflowRuns: jest.fn().mockResolvedValue([]),
-  };
+  const mockPermissionApi = new MockPermissionApi();
+  const rootRouteRef = catalogPlugin.routes.catalogIndex;
 
   describe('cicdContent', () => {
     it('Should render GitHub Actions View', async () => {
       const rendered = await renderInTestApp(
         <TestApiProvider
           apis={[
-            [githubActionsApiRef, mockedApi],
-            [
-              starredEntitiesApiRef,
-              new DefaultStarredEntitiesApi({
-                storageApi: MockStorageApi.create(),
-              }),
-            ],
+            [starredEntitiesApiRef, new MockStarredEntitiesApi()],
+            [permissionApiRef, mockPermissionApi],
           ]}
         >
           <EntityProvider entity={entity}>
@@ -72,14 +66,18 @@ describe('EntityPage Test', () => {
             </EntityLayout>
           </EntityProvider>
         </TestApiProvider>,
+        {
+          mountedRoutes: {
+            '/catalog': rootRouteRef,
+          },
+        },
       );
 
       expect(rendered.getByText('ExampleComponent')).toBeInTheDocument();
 
       await expect(
-        rendered.findByText('No Workflow Data'),
+        rendered.findByText('No CI/CD available for this entity'),
       ).resolves.toBeInTheDocument();
-      expect(rendered.getByText('Create new Workflow')).toBeInTheDocument();
     });
   });
 });

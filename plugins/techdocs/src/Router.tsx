@@ -14,20 +14,36 @@
  * limitations under the License.
  */
 
-import React from 'react';
+import React, { PropsWithChildren } from 'react';
+import { Route, Routes, useRoutes } from 'react-router-dom';
+
 import { Entity } from '@backstage/catalog-model';
-import { useEntity } from '@backstage/plugin-catalog-react';
-import { Route, Routes } from 'react-router-dom';
-import { TechDocsIndexPage } from './home/components/TechDocsIndexPage';
-import { TechDocsPage as TechDocsReaderPage } from './reader/components/TechDocsPage';
 import { EntityPageDocs } from './EntityPageDocs';
-import { MissingAnnotationEmptyState } from '@backstage/core-components';
+import { TechDocsIndexPage } from './home/components/TechDocsIndexPage';
+import { TechDocsReaderPage } from './reader/components/TechDocsReaderPage';
+import {
+  useEntity,
+  MissingAnnotationEmptyState,
+} from '@backstage/plugin-catalog-react';
+import {
+  TECHDOCS_ANNOTATION,
+  TECHDOCS_EXTERNAL_ANNOTATION,
+} from '@backstage/plugin-techdocs-common';
 
-const TECHDOCS_ANNOTATION = 'backstage.io/techdocs-ref';
-
+/**
+ * Helper that takes in entity and returns true/false if TechDocs is available for the entity
+ *
+ * @public
+ */
 export const isTechDocsAvailable = (entity: Entity) =>
-  Boolean(entity?.metadata?.annotations?.[TECHDOCS_ANNOTATION]);
+  Boolean(entity?.metadata?.annotations?.[TECHDOCS_ANNOTATION]) ||
+  Boolean(entity?.metadata?.annotations?.[TECHDOCS_EXTERNAL_ANNOTATION]);
 
+/**
+ * Responsible for registering routes for TechDocs, TechDocs Homepage and separate TechDocs page
+ *
+ * @public
+ */
 export const Router = () => {
   return (
     <Routes>
@@ -40,23 +56,48 @@ export const Router = () => {
   );
 };
 
-type Props = {
-  /** @deprecated The entity is now grabbed from context instead */
-  entity?: Entity;
-};
-
-export const EmbeddedDocsRouter = (_props: Props) => {
+export const EmbeddedDocsRouter = (
+  props: PropsWithChildren<{ emptyState?: React.ReactElement }>,
+) => {
+  const { children, emptyState } = props;
   const { entity } = useEntity();
 
-  const projectId = entity.metadata.annotations?.[TECHDOCS_ANNOTATION];
+  // Using objects instead of <Route> elements, otherwise "outlet" will be null on sub-pages and add-ons won't render
+  const element = useRoutes([
+    {
+      path: '/*',
+      element: <EntityPageDocs entity={entity} />,
+      children: [
+        {
+          path: '*',
+          element: children,
+        },
+      ],
+    },
+  ]);
+
+  const projectId =
+    entity.metadata.annotations?.[TECHDOCS_ANNOTATION] ||
+    entity.metadata.annotations?.[TECHDOCS_EXTERNAL_ANNOTATION];
 
   if (!projectId) {
-    return <MissingAnnotationEmptyState annotation={TECHDOCS_ANNOTATION} />;
+    return (
+      emptyState ?? (
+        <MissingAnnotationEmptyState annotation={[TECHDOCS_ANNOTATION]} />
+      )
+    );
   }
 
-  return (
-    <Routes>
-      <Route path="/*" element={<EntityPageDocs entity={entity} />} />
-    </Routes>
-  );
+  return element;
+};
+
+/**
+ * Responsible for registering route to view docs on Entity page
+ *
+ * @public
+ */
+export const LegacyEmbeddedDocsRouter = (props: PropsWithChildren<{}>) => {
+  // Wrap the Router to avoid exposing the emptyState prop in the non-alpha
+  // public API and make it easier for us to change later.
+  return <EmbeddedDocsRouter children={props.children} />;
 };

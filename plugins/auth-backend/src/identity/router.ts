@@ -14,18 +14,27 @@
  * limitations under the License.
  */
 
+import express from 'express';
 import Router from 'express-promise-router';
 import { TokenIssuer } from './types';
+import { AuthService } from '@backstage/backend-plugin-api';
+import { decodeJwt } from 'jose';
+import { AuthenticationError, InputError } from '@backstage/errors';
+import { UserInfoDatabaseHandler } from './UserInfoDatabaseHandler';
 
-export type Options = {
-  baseUrl: string;
-  tokenIssuer: TokenIssuer;
-};
-
-export function createOidcRouter(options: Options) {
-  const { baseUrl, tokenIssuer } = options;
+export function bindOidcRouter(
+  targetRouter: express.Router,
+  options: {
+    baseUrl: string;
+    auth: AuthService;
+    tokenIssuer: TokenIssuer;
+    userInfoDatabaseHandler: UserInfoDatabaseHandler;
+  },
+) {
+  const { baseUrl, auth, tokenIssuer, userInfoDatabaseHandler } = options;
 
   const router = Router();
+  targetRouter.use(router);
 
   const config = {
     issuer: baseUrl,
@@ -34,10 +43,21 @@ export function createOidcRouter(options: Options) {
     jwks_uri: `${baseUrl}/.well-known/jwks.json`,
     response_types_supported: ['id_token'],
     subject_types_supported: ['public'],
-    id_token_signing_alg_values_supported: ['RS256'],
+    id_token_signing_alg_values_supported: [
+      'RS256',
+      'RS384',
+      'RS512',
+      'ES256',
+      'ES384',
+      'ES512',
+      'PS256',
+      'PS384',
+      'PS512',
+      'EdDSA',
+    ],
     scopes_supported: ['openid'],
     token_endpoint_auth_methods_supported: [],
-    claims_supported: ['sub'],
+    claims_supported: ['sub', 'ent'],
     grant_types_supported: [],
   };
 
@@ -54,9 +74,37 @@ export function createOidcRouter(options: Options) {
     res.status(501).send('Not Implemented');
   });
 
-  router.get('/v1/userinfo', (_req, res) => {
-    res.status(501).send('Not Implemented');
-  });
+  // This endpoint doesn't use the regular HttpAuthService, since the contract
+  // is specifically for the header to be communicated in the Authorization
+  // header, regardless of token type
+  router.get('/v1/userinfo', async (req, res) => {
+    const matches = req.headers.authorization?.match(/^Bearer[ ]+(\S+)$/i);
+    const token = matches?.[1];
+    if (!token) {
+      throw new AuthenticationError('No token provided');
+    }
 
-  return router;
+    const credentials = await auth.authenticate(token, {
+      allowLimitedAccess: true,
+    });
+    if (!auth.isPrincipal(credentials, 'user')) {
+      throw new InputError(
+        'Userinfo endpoint must be called with a token that represents a user principal',
+      );
+    }
+
+    const { sub: userEntityRef } = decodeJwt(token);
+
+    if (typeof userEntityRef !== 'string') {
+      throw new Error('Invalid user token, user entity ref must be a string');
+    }
+
+    const userInfo = await userInfoDatabaseHandler.getUserInfo(userEntityRef);
+    if (!userInfo) {
+      res.status(404).send('User info not found');
+      return;
+    }
+
+    res.json(userInfo);
+  });
 }

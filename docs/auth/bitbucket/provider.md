@@ -37,6 +37,13 @@ auth:
       development:
         clientId: ${AUTH_BITBUCKET_CLIENT_ID}
         clientSecret: ${AUTH_BITBUCKET_CLIENT_SECRET}
+        signIn:
+          resolvers:
+            # typically you would pick one of these
+            - resolver: emailMatchingUserEntityProfileEmail
+            - resolver: emailLocalPartMatchingUserEntityName
+            - resolver: userIdMatchingUserEntityAnnotation
+            - resolver: usernameMatchingUserEntityAnnotation
 ```
 
 The Bitbucket provider is a structure with two configuration keys:
@@ -45,8 +52,42 @@ The Bitbucket provider is a structure with two configuration keys:
   `b59241722e3c3b4816e2`
 - `clientSecret`: The Secret tied to the generated Key.
 
+### Resolvers
+
+This provider includes several resolvers out of the box that you can use:
+
+- `emailMatchingUserEntityProfileEmail`: Matches the email address from the auth provider with the User entity that has a matching `spec.profile.email`. If no match is found it will throw a `NotFoundError`.
+- `emailLocalPartMatchingUserEntityName`: Matches the [local part](https://en.wikipedia.org/wiki/Email_address#Local-part) of the email address from the auth provider with the User entity that has a matching `name`. If no match is found it will throw a `NotFoundError`.
+- `userIdMatchingUserEntityAnnotation`: Matches the `userId` from the auth provider with the User entity that has a matching `bitbucket.org/user-id` annotation. If no match is found it will throw a `NotFoundError`.
+- `usernameMatchingUserEntityAnnotation`: Matches the `username` from the auth provider with the User entity that has a matching `bitbucket.org/username` annotation. If no match is found it will throw a `NotFoundError`.
+
+:::note Note
+
+The resolvers will be tried in order, but will only be skipped if they throw a `NotFoundError`.
+
+:::
+
+If these resolvers do not fit your needs you can build a custom resolver, this is covered in the [Building Custom Resolvers](../identity-resolver.md#building-custom-resolvers) section of the Sign-in Identities and Resolvers documentation.
+
+## Backend Installation
+
+To add the provider to the backend we will first need to install the package by running this command:
+
+```bash title="from your Backstage root directory"
+yarn --cwd packages/backend add @backstage/plugin-auth-backend-module-bitbucket-provider
+```
+
+Then we will need to add this line:
+
+```ts title="in packages/backend/src/index.ts"
+backend.add(import('@backstage/plugin-auth-backend'));
+/* highlight-add-start */
+backend.add(import('@backstage/plugin-auth-backend-module-bitbucket-provider'));
+/* highlight-add-end */
+```
+
 ## Adding the provider to the Backstage frontend
 
 To add the provider to the frontend, add the `bitbucketAuthApi` reference and
 `SignInPage` component as shown in
-[Adding the provider to the sign-in page](../index.md#adding-the-provider-to-the-sign-in-page).
+[Adding the provider to the sign-in page](../index.md#sign-in-configuration).

@@ -15,17 +15,118 @@
  */
 
 import express from 'express';
+import { UnsecuredJWT } from 'jose';
 import passport from 'passport';
 import { InternalOAuthError } from 'passport-oauth2';
 import {
   executeRedirectStrategy,
   executeFrameHandlerStrategy,
   executeRefreshTokenStrategy,
+  makeProfileInfo,
 } from './PassportStrategyHelper';
+import { PassportProfile } from './types';
 
 const mockRequest = {} as unknown as express.Request;
 
 describe('PassportStrategyHelper', () => {
+  describe('makeProfileInfo', () => {
+    it('retrieves email from passport profile', () => {
+      const profile: PassportProfile = {
+        emails: [{ value: 'email' }],
+        provider: '',
+        id: '',
+        displayName: '',
+      };
+
+      const profileInfo = makeProfileInfo(profile);
+
+      expect(profileInfo.email).toEqual('email');
+    });
+
+    it('retrieves picture from passport profile avatarUrl', () => {
+      const profile: PassportProfile = {
+        avatarUrl: 'avatarUrl',
+        provider: '',
+        id: '',
+        displayName: '',
+      };
+
+      const profileInfo = makeProfileInfo(profile);
+
+      expect(profileInfo.picture).toEqual('avatarUrl');
+    });
+
+    it('falls back to picture from passport profile photos field', () => {
+      const profile: PassportProfile = {
+        photos: [{ value: 'picture' }],
+        provider: '',
+        id: '',
+        displayName: '',
+      };
+
+      const profileInfo = makeProfileInfo(profile);
+
+      expect(profileInfo.picture).toEqual('picture');
+    });
+
+    it('falls back to email from ID token', async () => {
+      const profile: PassportProfile = {
+        provider: '',
+        id: '',
+        displayName: '',
+      };
+
+      const profileInfo = makeProfileInfo(
+        profile,
+        await new UnsecuredJWT({ email: 'email' }).encode(),
+      );
+
+      expect(profileInfo.email).toEqual('email');
+    });
+
+    it('falls back to picture from ID token', async () => {
+      const profile: PassportProfile = {
+        provider: '',
+        id: '',
+        displayName: '',
+      };
+
+      const profileInfo = makeProfileInfo(
+        profile,
+        await new UnsecuredJWT({ picture: 'picture' }).encode(),
+      );
+
+      expect(profileInfo.picture).toEqual('picture');
+    });
+
+    it('falls back to name from ID token', async () => {
+      const profile: PassportProfile = {
+        provider: '',
+        id: '',
+        displayName: '',
+      };
+
+      const profileInfo = makeProfileInfo(
+        profile,
+        await new UnsecuredJWT({ name: 'name' }).encode(),
+      );
+
+      expect(profileInfo.displayName).toEqual('name');
+    });
+
+    it('fails when attempting to fall back to invalid JWT', () => {
+      const profile: PassportProfile = {
+        provider: '',
+        id: '',
+        displayName: '',
+      };
+
+      expect(() => makeProfileInfo(profile, 'invalid JWT')).toThrow(
+        'Failed to parse id token and get profile info',
+      );
+    });
+  });
+
   class MyCustomRedirectStrategy extends passport.Strategy {
     authenticate() {
       this.redirect('a', 302);
@@ -33,7 +134,7 @@ describe('PassportStrategyHelper', () => {
   }
 
   describe('executeRedirectStrategy', () => {
-    it('should call authenticate and resolve with RedirectInfo', async () => {
+    it('should call authenticate and resolve with OAuthStartResponse', async () => {
       const mockStrategy = new MyCustomRedirectStrategy();
       const spyAuthenticate = jest.spyOn(mockStrategy, 'authenticate');
       const redirectStrategyPromise = executeRedirectStrategy(
@@ -41,7 +142,7 @@ describe('PassportStrategyHelper', () => {
         mockStrategy,
         {},
       );
-      expect(spyAuthenticate).toBeCalledTimes(1);
+      expect(spyAuthenticate).toHaveBeenCalledTimes(1);
       await expect(redirectStrategyPromise).resolves.toStrictEqual(
         expect.objectContaining({ url: 'a', status: 302 }),
       );
@@ -84,7 +185,7 @@ describe('PassportStrategyHelper', () => {
         mockRequest,
         mockStrategy,
       );
-      expect(spyAuthenticate).toBeCalledTimes(1);
+      expect(spyAuthenticate).toHaveBeenCalledTimes(1);
       await expect(frameHandlerStrategyPromise).resolves.toStrictEqual(
         expect.objectContaining({
           result: { accessToken: 'ACCESS_TOKEN' },
@@ -100,7 +201,7 @@ describe('PassportStrategyHelper', () => {
         mockRequest,
         mockStrategy,
       );
-      expect(spyAuthenticate).toBeCalledTimes(1);
+      expect(spyAuthenticate).toHaveBeenCalledTimes(1);
       await expect(frameHandlerStrategyPromise).rejects.toThrow(
         'Authentication failed, MyCustomAuth error - Custom message',
       );
@@ -113,7 +214,7 @@ describe('PassportStrategyHelper', () => {
         mockRequest,
         mockStrategy,
       );
-      expect(spyAuthenticate).toBeCalledTimes(1);
+      expect(spyAuthenticate).toHaveBeenCalledTimes(1);
       await expect(frameHandlerStrategyPromise).rejects.toThrow(
         'Unexpected redirect',
       );
@@ -126,7 +227,7 @@ describe('PassportStrategyHelper', () => {
         mockRequest,
         mockStrategy,
       );
-      expect(spyAuthenticate).toBeCalledTimes(1);
+      expect(spyAuthenticate).toHaveBeenCalledTimes(1);
       await expect(frameHandlerStrategyPromise).rejects.toThrow();
     });
   });
@@ -146,8 +247,7 @@ describe('PassportStrategyHelper', () => {
         }
       }
       class MyCustomRefreshTokenSuccess extends passport.Strategy {
-        // @ts-ignore
-        private _oauth2 = new MyCustomOAuth2Success();
+        _oauth2 = new MyCustomOAuth2Success();
         userProfile(_accessToken: string, callback: Function) {
           callback(null, {
             provider: 'a',
@@ -183,8 +283,7 @@ describe('PassportStrategyHelper', () => {
         }
       }
       class MyCustomRefreshTokenSuccess extends passport.Strategy {
-        // @ts-ignore
-        private _oauth2 = new MyCustomOAuth2Error();
+        _oauth2 = new MyCustomOAuth2Error();
       }
 
       const mockStrategy = new MyCustomRefreshTokenSuccess();
@@ -209,8 +308,7 @@ describe('PassportStrategyHelper', () => {
         }
       }
       class MyCustomRefreshTokenSuccess extends passport.Strategy {
-        // @ts-ignore
-        private _oauth2 = new MyCustomOAuth2AccessTokenMissing();
+        _oauth2 = new MyCustomOAuth2AccessTokenMissing();
       }
 
       const mockStrategy = new MyCustomRefreshTokenSuccess();

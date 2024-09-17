@@ -14,37 +14,44 @@
  * limitations under the License.
  */
 
-import React, { useContext, PropsWithChildren } from 'react';
-import { Link, makeStyles } from '@material-ui/core';
+import React, { PropsWithChildren } from 'react';
+import { makeStyles } from '@material-ui/core';
 import HomeIcon from '@material-ui/icons/Home';
-import ExtensionIcon from '@material-ui/icons/Extension';
 import RuleIcon from '@material-ui/icons/AssignmentTurnedIn';
 import MapIcon from '@material-ui/icons/MyLocation';
 import LayersIcon from '@material-ui/icons/Layers';
-import LibraryBooks from '@material-ui/icons/LibraryBooks';
+import PlaylistPlayIcon from '@material-ui/icons/PlaylistPlay';
 import CreateComponentIcon from '@material-ui/icons/AddCircleOutline';
+import SearchIcon from '@material-ui/icons/Search';
+import MenuIcon from '@material-ui/icons/Menu';
 import MoneyIcon from '@material-ui/icons/MonetizationOn';
 import LogoFull from './LogoFull';
 import LogoIcon from './LogoIcon';
-import { NavLink } from 'react-router-dom';
-import { GraphiQLIcon } from '@backstage/plugin-graphiql';
-import { Settings as SidebarSettings } from '@backstage/plugin-user-settings';
 import {
-  SidebarSearchModal,
-  SearchContextProvider,
-} from '@backstage/plugin-search';
-import { Shortcuts } from '@backstage/plugin-shortcuts';
+  Settings as SidebarSettings,
+  UserSettingsSignInAvatar,
+} from '@backstage/plugin-user-settings';
+import { SidebarSearchModal } from '@backstage/plugin-search';
 import {
+  Link,
   Sidebar,
-  SidebarPage,
   sidebarConfig,
-  SidebarContext,
-  SidebarItem,
   SidebarDivider,
-  SidebarSpace,
+  SidebarGroup,
+  SidebarItem,
+  SidebarPage,
   SidebarScrollWrapper,
+  SidebarSpace,
+  SidebarSubmenu,
+  SidebarSubmenuItem,
+  useSidebarOpenState,
 } from '@backstage/core-components';
-import { AzurePullRequestsIcon } from '@backstage/plugin-azure-devops';
+import { MyGroupsSidebarItem } from '@backstage/plugin-org';
+import { SearchModal } from '../search/SearchModal';
+import Score from '@material-ui/icons/Score';
+import { useApp } from '@backstage/core-plugin-api';
+import BuildIcon from '@material-ui/icons/Build';
+import { NotificationsSidebarItem } from '@backstage/plugin-notifications';
 
 const useSidebarLogoStyles = makeStyles({
   root: {
@@ -63,16 +70,11 @@ const useSidebarLogoStyles = makeStyles({
 
 const SidebarLogo = () => {
   const classes = useSidebarLogoStyles();
-  const { isOpen } = useContext(SidebarContext);
+  const { isOpen } = useSidebarOpenState();
 
   return (
     <div className={classes.root}>
-      <Link
-        component={NavLink}
-        to="/"
-        underline="none"
-        className={classes.link}
-      >
+      <Link to="/" underline="none" className={classes.link} aria-label="Home">
         {isOpen ? <LogoFull /> : <LogoIcon />}
       </Link>
     </div>
@@ -83,34 +85,99 @@ export const Root = ({ children }: PropsWithChildren<{}>) => (
   <SidebarPage>
     <Sidebar>
       <SidebarLogo />
-      <SearchContextProvider>
-        <SidebarSearchModal />
-      </SearchContextProvider>
+      <SidebarGroup label="Search" icon={<SearchIcon />} to="/search">
+        <SidebarSearchModal>
+          {({ toggleModal }) => <SearchModal toggleModal={toggleModal} />}
+        </SidebarSearchModal>
+      </SidebarGroup>
       <SidebarDivider />
-      {/* Global nav, not org-specific */}
-      <SidebarItem icon={HomeIcon} to="catalog" text="Home" />
-      <SidebarItem icon={ExtensionIcon} to="api-docs" text="APIs" />
-      <SidebarItem icon={LibraryBooks} to="docs" text="Docs" />
-      <SidebarItem icon={LayersIcon} to="explore" text="Explore" />
-      <SidebarItem icon={CreateComponentIcon} to="create" text="Create..." />
-      {/* End global nav */}
-      <SidebarDivider />
-      <SidebarScrollWrapper>
-        <SidebarItem icon={MapIcon} to="tech-radar" text="Tech Radar" />
-        <SidebarItem icon={RuleIcon} to="lighthouse" text="Lighthouse" />
-        <SidebarItem icon={MoneyIcon} to="cost-insights" text="Cost Insights" />
-        <SidebarItem icon={GraphiQLIcon} to="graphiql" text="GraphiQL" />
-        <SidebarItem
-          icon={AzurePullRequestsIcon}
-          to="azure-pull-requests"
-          text="Azure PRs"
+      <SidebarGroup label="Menu" icon={<MenuIcon />}>
+        {/* Global nav, not org-specific */}
+        <SidebarItem icon={HomeIcon} to="catalog" text="Home">
+          <SidebarSubmenu title="Catalog">
+            <SidebarSubmenuItem
+              title="Domains"
+              to="catalog?filters[kind]=domain"
+              icon={useApp().getSystemIcon('kind:domain')}
+            />
+            <SidebarSubmenuItem
+              title="Systems"
+              to="catalog?filters[kind]=system"
+              icon={useApp().getSystemIcon('kind:system')}
+            />
+            <SidebarSubmenuItem
+              title="Components"
+              to="catalog?filters[kind]=component"
+              icon={useApp().getSystemIcon('kind:component')}
+            />
+            <SidebarSubmenuItem
+              title="APIs"
+              to="catalog?filters[kind]=api"
+              icon={useApp().getSystemIcon('kind:api')}
+            />
+            <SidebarDivider />
+            <SidebarSubmenuItem
+              title="Resources"
+              to="catalog?filters[kind]=resource"
+              icon={useApp().getSystemIcon('kind:resource')}
+            />
+            <SidebarDivider />
+            <SidebarSubmenuItem
+              title="Groups"
+              to="catalog?filters[kind]=group"
+              icon={useApp().getSystemIcon('kind:group')}
+            />
+            <SidebarSubmenuItem
+              title="Users"
+              to="catalog?filters[kind]=user"
+              icon={useApp().getSystemIcon('kind:user')}
+            />
+          </SidebarSubmenu>
+        </SidebarItem>
+        <MyGroupsSidebarItem
+          singularTitle="My Squad"
+          pluralTitle="My Squads"
+          icon={useApp().getSystemIcon('group')!}
         />
-      </SidebarScrollWrapper>
-      <SidebarDivider />
-      <Shortcuts />
+        <SidebarItem
+          icon={useApp().getSystemIcon('kind:api')!}
+          to="api-docs"
+          text="APIs"
+        />
+        <SidebarItem
+          icon={useApp().getSystemIcon('docs')!}
+          to="docs"
+          text="Docs"
+        />
+        <SidebarItem icon={PlaylistPlayIcon} to="playlist" text="Playlists" />
+        <SidebarItem icon={LayersIcon} to="explore" text="Explore" />
+        <SidebarItem icon={CreateComponentIcon} to="create" text="Create..." />
+        {/* End global nav */}
+        <SidebarDivider />
+        <SidebarScrollWrapper>
+          <SidebarItem icon={MapIcon} to="tech-radar" text="Tech Radar" />
+          <SidebarItem icon={RuleIcon} to="lighthouse" text="Lighthouse" />
+          <SidebarItem
+            icon={MoneyIcon}
+            to="cost-insights"
+            text="Cost Insights"
+          />
+          <SidebarItem icon={Score} to="score-board" text="Score board" />
+        </SidebarScrollWrapper>
+        <SidebarDivider />
+        <SidebarDivider />
+        <NotificationsSidebarItem />
+      </SidebarGroup>
       <SidebarSpace />
       <SidebarDivider />
-      <SidebarSettings />
+      <SidebarGroup
+        label="Settings"
+        icon={<UserSettingsSignInAvatar />}
+        to="/settings"
+      >
+        <SidebarSettings />
+        <SidebarItem icon={BuildIcon} to="devtools" text="DevTools" />
+      </SidebarGroup>
     </Sidebar>
     {children}
   </SidebarPage>

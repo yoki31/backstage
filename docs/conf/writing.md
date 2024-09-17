@@ -67,7 +67,7 @@ production build.
 
 ## Configuration Files
 
-It is possible to have multiple configuration files (bundled and/or remote),
+It is possible to have multiple configuration files (bundled and/or remote\*),
 both to support different environments, but also to define configuration that is
 local to specific packages. The configuration files to load are selected using a
 `--config <local-path|url>` flag, and it is possible to load any number of
@@ -76,6 +76,9 @@ example `package/backend`. This means that to select a config file in the repo
 root when running the backend, you would use `--config ../../my-config.yaml`,
 and for config file on a config server you would use
 `--config https://some.domain.io/app-config.yaml`
+
+**Note**: In case URLs are passed, it is also needed to set the remote option in
+the loadBackendConfig call.
 
 If no `config` flags are specified, the default behavior is to load
 `app-config.yaml` and, if it exists, `app-config.local.yaml` from the repo root.
@@ -98,6 +101,9 @@ All loaded configuration files are merged together using the following rules:
   contents.
 - Objects are merged together deeply, meaning that if any of the included
   configs contain a value for a given path, it will be found.
+- A `null` value in a config file will be treated as an explicit absence of
+  configuration. This means that the reading will not fall back to a lower priority
+  config, but it will still be treated as if the configuration was not present.
 
 The priority of the configurations is determined by the following rules, in
 order:
@@ -158,7 +164,7 @@ $file: ./my-secret.txt
 
 The `$include` keyword can be used to load configuration values from an external
 file. It's able to load and parse data from `.json`, `.yml`, and `.yaml` files.
-It's also possible to include a url fragment (`#`) to point to a value at the
+It's also possible to include a URL fragment (`#`) to point to a value at the
 given path in the file, using a dot-separated list of keys.
 
 For example, the following would read `my-secret-key` from `my-secrets.json`:
@@ -193,6 +199,18 @@ configuration value will evaluate to `undefined`.
 The substitution syntax can be escaped using `$${...}`, which will be resolved
 as `${...}`.
 
+Parameter substitution syntax (e.g. `${MY_VAR:-default-value}`) is also
+supported to provide a default or fallback value for a given environment
+variable if it is unset, or is declared but has no value. For example:
+
+```yaml
+app:
+  baseUrl: https://${HOST:-localhost:3000}
+```
+
+In the above example, when `HOST` is unset or has no value, it will be
+substituted with `localhost:3000`.
+
 ## Combining Includes and Environment Variable Substitution
 
 The Includes and Environment Variable Substitutions can be combined to do
@@ -217,6 +235,8 @@ clientSecret: someGithubAppClientSecret
 webhookSecret: someWebhookSecret
 privateKey: |
   -----BEGIN RSA PRIVATE KEY-----
-  SomeRsaPrivateKey
+  SomeRsaPrivateKeySecurelyStored
   -----END RSA PRIVATE KEY-----
 ```
+
+**Warning: Sensitive information, such as private keys, should not be hard coded**. We recommend that this entire file should be a secret and stored as such in a secure storage solution like Vault, to ensure they are neither exposed nor misused. This example key part only shows the format on how to use the yaml | syntax to make sure that the key is valid.

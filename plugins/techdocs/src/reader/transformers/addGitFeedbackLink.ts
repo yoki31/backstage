@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
-import type { Transformer } from './index';
+import type { Transformer } from './transformer';
 import {
-  replaceGitHubUrlType,
+  replaceGithubUrlType,
   ScmIntegrationRegistry,
 } from '@backstage/integration';
 import FeedbackOutlinedIcon from '@material-ui/icons/FeedbackOutlined';
 import React from 'react';
-import ReactDOM from 'react-dom';
 import parseGitUrl from 'git-url-parse';
+import { renderReactElement } from './renderReactElement';
 
 // requires repo
 export const addGitFeedbackLink = (
@@ -48,8 +48,9 @@ export const addGitFeedbackLink = (
     }
 
     // topmost h1 only contains title for whole page
-    const title = (dom.querySelector('article>h1') as HTMLElement).childNodes[0]
-      .textContent;
+    const title =
+      (dom.querySelector('article>h1') as HTMLElement)?.childNodes[0]
+        .textContent || '';
     const issueTitle = encodeURIComponent(`Documentation Feedback: ${title}`);
     const issueDesc = encodeURIComponent(
       `Page source:\n${sourceAnchor.href}\n\nFeedback:`,
@@ -58,7 +59,7 @@ export const addGitFeedbackLink = (
     // Convert GitHub edit url to blob type so it can be parsed by git-url-parse correctly
     const gitUrl =
       integration?.type === 'github'
-        ? replaceGitHubUrlType(sourceURL.href, 'blob')
+        ? replaceGithubUrlType(sourceURL.href, 'blob')
         : sourceURL.href;
     const gitInfo = parseGitUrl(gitUrl);
     const repoPath = `/${gitInfo.organization}/${gitInfo.name}`;
@@ -74,7 +75,7 @@ export const addGitFeedbackLink = (
       default:
         return dom;
     }
-    ReactDOM.render(React.createElement(FeedbackOutlinedIcon), feedbackLink);
+    renderReactElement(React.createElement(FeedbackOutlinedIcon), feedbackLink);
     feedbackLink.style.paddingLeft = '5px';
     feedbackLink.title = 'Leave feedback for this page';
     feedbackLink.id = 'git-feedback-link';

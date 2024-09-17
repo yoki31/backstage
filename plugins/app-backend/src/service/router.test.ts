@@ -14,17 +14,18 @@
  * limitations under the License.
  */
 
-import { getVoidLogger } from '@backstage/backend-common';
-import { ConfigReader } from '@backstage/config';
+import { AppConfig, ConfigReader } from '@backstage/config';
 import express from 'express';
 import Router from 'express-promise-router';
 import { resolve as resolvePath } from 'path';
 import request from 'supertest';
 import { createRouter } from './router';
+import { loadConfigSchema } from '@backstage/config-loader';
+import { mockServices } from '@backstage/backend-test-utils';
 
 jest.mock('../lib/config', () => ({
   injectConfig: jest.fn(),
-  readConfigs: jest.fn(),
+  readFrontendConfig: jest.fn(),
 }));
 
 global.__non_webpack_require__ = {
@@ -37,7 +38,7 @@ describe('createRouter', () => {
 
   beforeAll(async () => {
     const router = await createRouter({
-      logger: getVoidLogger(),
+      logger: mockServices.logger.mock(),
       config: new ConfigReader({}),
       appPackageName: 'example-app',
     });
@@ -81,7 +82,7 @@ describe('createRouter', () => {
     'returns %s with default Cache-Control header',
     async file => {
       const response = await request(app).get(file);
-      expect(response.header['cache-control']).toBe('public, max-age=0');
+      expect(response.header['cache-control']).toBe('public, max-age=1209600');
     },
   );
 });
@@ -95,7 +96,7 @@ describe('createRouter with static fallback handler', () => {
     });
 
     const router = await createRouter({
-      logger: getVoidLogger(),
+      logger: mockServices.logger.mock(),
       config: new ConfigReader({}),
       appPackageName: 'example-app',
       staticFallbackHandler,
@@ -113,5 +114,79 @@ describe('createRouter with static fallback handler', () => {
 
     const response3 = await request(app).get('/static/missing.txt');
     expect(response3.status).toBe(404);
+  });
+});
+
+describe('createRouter config schema test', () => {
+  const libConfigs = require('../lib/config');
+  const libConfigsActual = jest.requireActual('../lib/config');
+  const readFrontendConfigMock: jest.Mock = libConfigs.readFrontendConfig;
+
+  beforeEach(() => {
+    jest.resetAllMocks();
+    readFrontendConfigMock.mockImplementation(
+      libConfigsActual.readFrontendConfig,
+    );
+  });
+
+  it('uses an external schema', async () => {
+    await createRouter({
+      logger: mockServices.logger.mock(),
+      config: new ConfigReader({
+        test: 'value',
+      }),
+      appPackageName: 'example-app',
+      schema: await loadConfigSchema({
+        serialized: {
+          schemas: [
+            {
+              value: {
+                type: 'object',
+                properties: {
+                  test: {
+                    visibility: 'frontend',
+                    type: 'string',
+                  },
+                },
+              },
+              path: '/mock',
+            },
+          ],
+          backstageConfigSchemaVersion: 1,
+        },
+      }),
+    });
+
+    const results = readFrontendConfigMock.mock.results;
+    expect(results.length).toBe(1);
+
+    const mockedResult = results[0];
+    expect(mockedResult.type).toBe('return');
+    const result = await (mockedResult.value as Promise<AppConfig[]>);
+
+    expect(result.length).toBe(1);
+    expect(result[0].data).toStrictEqual({
+      test: 'value',
+    });
+  });
+
+  it('uses no external schema', async () => {
+    await createRouter({
+      logger: mockServices.logger.mock(),
+      config: new ConfigReader({
+        test: 'value',
+      }),
+      appPackageName: 'example-app',
+    });
+
+    const results = readFrontendConfigMock.mock.results;
+    expect(results.length).toBe(1);
+
+    const mockedResult = results[0];
+    expect(mockedResult.type).toBe('return');
+    const result = await (mockedResult.value as Promise<AppConfig[]>);
+
+    expect(result.length).toBe(1);
+    expect(result[0].data).toStrictEqual({});
   });
 });

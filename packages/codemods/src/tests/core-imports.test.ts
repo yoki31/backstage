@@ -57,7 +57,7 @@ const button = <MyButton />
 import { Button as MyButton } from '@backstage/core-components';
 
 import { createApiRef } from '@backstage/core-plugin-api';
-import { createApp } from '@backstage/core-app-api';
+import { createApp } from '@backstage/app-defaults';
 
 const app = createApp();
 const apiRef = createApiRef();

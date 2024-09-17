@@ -19,7 +19,7 @@ import {
   RELATION_OWNER_OF,
   RELATION_PART_OF,
 } from '@backstage/catalog-model';
-import { renderHook } from '@testing-library/react-hooks';
+import { renderHook } from '@testing-library/react';
 import { pick } from 'lodash';
 import { useEntityRelationGraph } from './useEntityRelationGraph';
 import { useEntityStore as useEntityStoreMocked } from './useEntityStore';
@@ -49,6 +49,7 @@ describe('useEntityRelationGraph', () => {
               name: 'a1',
               namespace: 'd',
             },
+            targetRef: 'k:d/a1',
             type: RELATION_OWNER_OF,
           },
           {
@@ -57,6 +58,7 @@ describe('useEntityRelationGraph', () => {
               name: 'c1',
               namespace: 'd',
             },
+            targetRef: 'b:d/c1',
             type: RELATION_HAS_PART,
           },
         ],
@@ -75,6 +77,7 @@ describe('useEntityRelationGraph', () => {
               name: 'c',
               namespace: 'd',
             },
+            targetRef: 'b:d/c',
             type: RELATION_OWNED_BY,
           },
           {
@@ -83,6 +86,7 @@ describe('useEntityRelationGraph', () => {
               name: 'c1',
               namespace: 'd',
             },
+            targetRef: 'b:d/c1',
             type: RELATION_OWNED_BY,
           },
         ],
@@ -101,6 +105,7 @@ describe('useEntityRelationGraph', () => {
               name: 'c',
               namespace: 'd',
             },
+            targetRef: 'b:d/c',
             type: RELATION_PART_OF,
           },
           {
@@ -109,6 +114,7 @@ describe('useEntityRelationGraph', () => {
               name: 'a1',
               namespace: 'd',
             },
+            targetRef: 'k:d/a1',
             type: RELATION_OWNER_OF,
           },
           {
@@ -117,6 +123,7 @@ describe('useEntityRelationGraph', () => {
               name: 'c2',
               namespace: 'd',
             },
+            targetRef: 'b:d/c2',
             type: RELATION_HAS_PART,
           },
         ],
@@ -135,6 +142,7 @@ describe('useEntityRelationGraph', () => {
               name: 'c1',
               namespace: 'd',
             },
+            targetRef: 'b:d/c1',
             type: RELATION_PART_OF,
           },
         ],
@@ -341,6 +349,28 @@ describe('useEntityRelationGraph', () => {
 
     expect(result.current.entities).toEqual({
       'b:d/c': expect.anything(),
+      'k:d/a1': expect.anything(),
+    });
+  });
+
+  test('should filter by func', async () => {
+    const { result, rerender } = renderHook(() =>
+      useEntityRelationGraph({
+        rootEntityRefs: ['b:d/c'],
+        filter: {
+          entityFilter: e => e.metadata.name !== 'c2',
+        },
+      }),
+    );
+
+    // Simulate rerendering as this is triggered automatically due to the mock
+    for (let i = 0; i < 5; ++i) {
+      rerender();
+    }
+
+    expect(result.current.entities).toEqual({
+      'b:d/c': expect.anything(),
+      'b:d/c1': expect.anything(),
       'k:d/a1': expect.anything(),
     });
   });

@@ -16,7 +16,7 @@
 
 import {
   Entity,
-  ENTITY_DEFAULT_NAMESPACE,
+  DEFAULT_NAMESPACE,
   RELATION_OWNED_BY,
 } from '@backstage/catalog-model';
 import {
@@ -33,22 +33,31 @@ import {
   attachComponentData,
   IconComponent,
   useElementFilter,
+  useRouteRef,
+  useRouteRefParams,
 } from '@backstage/core-plugin-api';
 import {
-  EntityContext,
+  EntityDisplayName,
   EntityRefLinks,
+  entityRouteRef,
   FavoriteEntity,
   getEntityRelations,
+  InspectEntityDialog,
   UnregisterEntityDialog,
-  useEntityCompoundName,
+  useAsyncEntity,
 } from '@backstage/plugin-catalog-react';
-import { Box, TabProps } from '@material-ui/core';
-import { Alert } from '@material-ui/lab';
-import React, { useContext, useState } from 'react';
-import { useNavigate } from 'react-router';
+import Box from '@material-ui/core/Box';
+import { TabProps } from '@material-ui/core/Tab';
+import Alert from '@material-ui/lab/Alert';
+import React, { useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { EntityContextMenu } from '../EntityContextMenu/EntityContextMenu';
+import { rootRouteRef, unregisterRedirectRouteRef } from '../../routes';
+import { catalogTranslationRef } from '../../alpha/translation';
+import { useTranslationRef } from '@backstage/core-plugin-api/alpha';
 
-type SubRoute = {
+/** @public */
+export type EntityLayoutRouteProps = {
   path: string;
   title: string;
   children: JSX.Element;
@@ -58,19 +67,15 @@ type SubRoute = {
 
 const dataKey = 'plugin.catalog.entityLayoutRoute';
 
-const Route: (props: SubRoute) => null = () => null;
+const Route: (props: EntityLayoutRouteProps) => null = () => null;
 attachComponentData(Route, dataKey, true);
+attachComponentData(Route, 'core.gatherMountPoints', true); // This causes all mount points that are discovered within this route to use the path of the route itself
 
-// This causes all mount points that are discovered within this route to use the path of the route itself
-attachComponentData(Route, 'core.gatherMountPoints', true);
-
-const EntityLayoutTitle = ({
-  entity,
-  title,
-}: {
+function EntityLayoutTitle(props: {
   title: string;
   entity: Entity | undefined;
-}) => {
+}) {
+  const { entity, title } = props;
   return (
     <Box display="inline-flex" alignItems="center" height="1em" maxWidth="100%">
       <Box
@@ -79,28 +84,26 @@ const EntityLayoutTitle = ({
         whiteSpace="nowrap"
         overflow="hidden"
       >
-        {title}
+        {entity ? <EntityDisplayName entityRef={entity} hideIcon /> : title}
       </Box>
       {entity && <FavoriteEntity entity={entity} />}
     </Box>
   );
-};
+}
 
-const headerProps = (
+function headerProps(
   paramKind: string | undefined,
   paramNamespace: string | undefined,
   paramName: string | undefined,
   entity: Entity | undefined,
-): { headerTitle: string; headerType: string } => {
+): { headerTitle: string; headerType: string } {
   const kind = paramKind ?? entity?.kind ?? '';
   const namespace = paramNamespace ?? entity?.metadata.namespace ?? '';
   const name =
     entity?.metadata.title ?? paramName ?? entity?.metadata.name ?? '';
   return {
     headerTitle: `${name}${
-      namespace && namespace !== ENTITY_DEFAULT_NAMESPACE
-        ? ` in ${namespace}`
-        : ''
+      namespace && namespace !== DEFAULT_NAMESPACE ? ` in ${namespace}` : ''
     }`,
     headerType: (() => {
       let t = kind.toLocaleLowerCase('en-US');
@@ -111,15 +114,18 @@ const headerProps = (
       return t;
     })(),
   };
-};
+}
 
-const EntityLabels = ({ entity }: { entity: Entity }) => {
+function EntityLabels(props: { entity: Entity }) {
+  const { entity } = props;
   const ownedByRelations = getEntityRelations(entity, RELATION_OWNED_BY);
+  const { t } = useTranslationRef(catalogTranslationRef);
   return (
     <>
       {ownedByRelations.length > 0 && (
         <HeaderLabel
-          label="Owner"
+          label={t('entityLabels.ownerLabel')}
+          contentTypograpyRootComponent="p"
           value={
             <EntityRefLinks
               entityRefs={ownedByRelations}
@@ -130,30 +136,38 @@ const EntityLabels = ({ entity }: { entity: Entity }) => {
         />
       )}
       {entity.spec?.lifecycle && (
-        <HeaderLabel label="Lifecycle" value={entity.spec.lifecycle} />
+        <HeaderLabel
+          label={t('entityLabels.lifecycleLabel')}
+          value={entity.spec.lifecycle?.toString()}
+        />
       )}
     </>
   );
-};
+}
 
 // NOTE(freben): Intentionally not exported at this point, since it's part of
 // the unstable extra context menu items concept below
-type ExtraContextMenuItem = {
+interface ExtraContextMenuItem {
   title: string;
   Icon: IconComponent;
   onClick: () => void;
-};
+}
 
+type VisibleType = 'visible' | 'hidden' | 'disable';
+
+// NOTE(blam): Intentionally not exported at this point, since it's part of
 // unstable context menu option, eg: disable the unregister entity menu
-type contextMenuOptions = {
-  disableUnregister: boolean;
-};
+interface EntityContextMenuOptions {
+  disableUnregister: boolean | VisibleType;
+}
 
-type EntityLayoutProps = {
+/** @public */
+export interface EntityLayoutProps {
   UNSTABLE_extraContextMenuItems?: ExtraContextMenuItem[];
-  UNSTABLE_contextMenuOptions?: contextMenuOptions;
+  UNSTABLE_contextMenuOptions?: EntityContextMenuOptions;
   children?: React.ReactNode;
-};
+  NotFoundComponent?: React.ReactNode;
+}
 
 /**
  * EntityLayout is a compound component, which allows you to define a layout for
@@ -169,14 +183,19 @@ type EntityLayoutProps = {
  *   </EntityLayout.Route>
  * </EntityLayout>
  * ```
+ *
+ * @public
  */
-export const EntityLayout = ({
-  UNSTABLE_extraContextMenuItems,
-  UNSTABLE_contextMenuOptions,
-  children,
-}: EntityLayoutProps) => {
-  const { kind, namespace, name } = useEntityCompoundName();
-  const { entity, loading, error } = useContext(EntityContext);
+export const EntityLayout = (props: EntityLayoutProps) => {
+  const {
+    UNSTABLE_extraContextMenuItems,
+    UNSTABLE_contextMenuOptions,
+    children,
+    NotFoundComponent,
+  } = props;
+  const { kind, namespace, name } = useRouteRefParams(entityRouteRef);
+  const { entity, loading, error } = useAsyncEntity();
+  const location = useLocation();
   const routes = useElementFilter(
     children,
     elements =>
@@ -186,18 +205,20 @@ export const EntityLayout = ({
           withStrictError:
             'Child of EntityLayout must be an EntityLayout.Route',
         })
-        .getElements<SubRoute>() // all nodes, element data, maintain structure or not?
-        .flatMap(({ props }) => {
-          if (props.if && entity && !props.if(entity)) {
+        .getElements<EntityLayoutRouteProps>() // all nodes, element data, maintain structure or not?
+        .flatMap(({ props: elementProps }) => {
+          if (!entity) {
+            return [];
+          } else if (elementProps.if && !elementProps.if(entity)) {
             return [];
           }
 
           return [
             {
-              path: props.path,
-              title: props.title,
-              children: props.children,
-              tabProps: props.tabProps,
+              path: elementProps.path,
+              title: elementProps.title,
+              children: elementProps.children,
+              tabProps: elementProps.tabProps,
             },
           ];
         }),
@@ -212,13 +233,27 @@ export const EntityLayout = ({
   );
 
   const [confirmationDialogOpen, setConfirmationDialogOpen] = useState(false);
+  const [inspectionDialogOpen, setInspectionDialogOpen] = useState(false);
   const navigate = useNavigate();
+  const catalogRoute = useRouteRef(rootRouteRef);
+  const unregisterRedirectRoute = useRouteRef(unregisterRedirectRouteRef);
+  const { t } = useTranslationRef(catalogTranslationRef);
+
   const cleanUpAfterRemoval = async () => {
     setConfirmationDialogOpen(false);
-    navigate('/');
+    setInspectionDialogOpen(false);
+    navigate(
+      unregisterRedirectRoute ? unregisterRedirectRoute() : catalogRoute(),
+    );
   };
 
-  const showRemovalDialog = () => setConfirmationDialogOpen(true);
+  // Make sure to close the dialog if the user clicks links in it that navigate
+  // to another entity.
+  useEffect(() => {
+    setConfirmationDialogOpen(false);
+    setInspectionDialogOpen(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname]);
 
   return (
     <Page themeId={entity?.spec?.type?.toString() ?? 'home'}>
@@ -233,7 +268,8 @@ export const EntityLayout = ({
             <EntityContextMenu
               UNSTABLE_extraContextMenuItems={UNSTABLE_extraContextMenuItems}
               UNSTABLE_contextMenuOptions={UNSTABLE_contextMenuOptions}
-              onUnregisterEntity={showRemovalDialog}
+              onUnregisterEntity={() => setConfirmationDialogOpen(true)}
+              onInspectEntity={() => setInspectionDialogOpen(true)}
             />
           </>
         )}
@@ -251,13 +287,17 @@ export const EntityLayout = ({
 
       {!loading && !error && !entity && (
         <Content>
-          <WarningPanel title="Entity not found">
-            There is no {kind} with the requested{' '}
-            <Link to="https://backstage.io/docs/features/software-catalog/references">
-              kind, namespace, and name
-            </Link>
-            .
-          </WarningPanel>
+          {NotFoundComponent ? (
+            NotFoundComponent
+          ) : (
+            <WarningPanel title={t('entityLabels.warningPanelTitle')}>
+              There is no {kind} with the requested{' '}
+              <Link to="https://backstage.io/docs/features/software-catalog/references">
+                kind, namespace, and name
+              </Link>
+              .
+            </WarningPanel>
+          )}
         </Content>
       )}
 
@@ -266,6 +306,11 @@ export const EntityLayout = ({
         entity={entity!}
         onConfirm={cleanUpAfterRemoval}
         onClose={() => setConfirmationDialogOpen(false)}
+      />
+      <InspectEntityDialog
+        open={inspectionDialogOpen}
+        entity={entity!}
+        onClose={() => setInspectionDialogOpen(false)}
       />
     </Page>
   );

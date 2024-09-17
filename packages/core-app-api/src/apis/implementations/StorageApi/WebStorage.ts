@@ -16,13 +16,13 @@
 
 import {
   StorageApi,
-  StorageValueChange,
+  StorageValueSnapshot,
   ErrorApi,
 } from '@backstage/core-plugin-api';
-import { Observable } from '@backstage/types';
+import { JsonValue, Observable } from '@backstage/types';
 import ObservableImpl from 'zen-observable';
 
-const buckets = new Map<string, WebStorage>();
+export const buckets = new Map<string, WebStorage>();
 
 /**
  * An implementation of the storage API, that uses the browser's local storage.
@@ -35,6 +35,8 @@ export class WebStorage implements StorageApi {
     private readonly errorApi: ErrorApi,
   ) {}
 
+  private static hasSubscribed = false;
+
   static create(options: {
     errorApi: ErrorApi;
     namespace?: string;
@@ -42,17 +44,40 @@ export class WebStorage implements StorageApi {
     return new WebStorage(options.namespace ?? '', options.errorApi);
   }
 
+  private static addStorageEventListener() {
+    window.addEventListener('storage', event => {
+      for (const [bucketPath, webStorage] of buckets.entries()) {
+        if (event.key?.startsWith(bucketPath)) {
+          webStorage.handleStorageChange(event.key);
+        }
+      }
+    });
+  }
+
   get<T>(key: string): T | undefined {
+    return this.snapshot(key).value as T | undefined;
+  }
+
+  snapshot<T extends JsonValue>(key: string): StorageValueSnapshot<T> {
+    let value = undefined;
+    let presence: 'present' | 'absent' = 'absent';
     try {
-      const storage = JSON.parse(localStorage.getItem(this.getKeyName(key))!);
-      return storage ?? undefined;
+      const item = localStorage.getItem(this.getKeyName(key));
+      if (item) {
+        value = JSON.parse(item, (_key, val) => {
+          if (typeof val === 'object' && val !== null) {
+            Object.freeze(val);
+          }
+          return val;
+        });
+        presence = 'present';
+      }
     } catch (e) {
       this.errorApi.post(
         new Error(`Error when parsing JSON config from storage for: ${key}`),
       );
     }
-
-    return undefined;
+    return { key, value, presence };
   }
 
   forBucket(name: string): WebStorage {
@@ -64,39 +89,59 @@ export class WebStorage implements StorageApi {
   }
 
   async set<T>(key: string, data: T): Promise<void> {
-    localStorage.setItem(this.getKeyName(key), JSON.stringify(data, null, 2));
-    this.notifyChanges({ key, newValue: data });
+    localStorage.setItem(this.getKeyName(key), JSON.stringify(data));
+    this.notifyChanges(key);
   }
 
   async remove(key: string): Promise<void> {
     localStorage.removeItem(this.getKeyName(key));
-    this.notifyChanges({ key, newValue: undefined });
+    this.notifyChanges(key);
   }
 
-  observe$<T>(key: string): Observable<StorageValueChange<T>> {
+  observe$<T extends JsonValue>(
+    key: string,
+  ): Observable<StorageValueSnapshot<T>> {
+    if (!WebStorage.hasSubscribed) {
+      WebStorage.addStorageEventListener();
+      WebStorage.hasSubscribed = true;
+    }
     return this.observable.filter(({ key: messageKey }) => messageKey === key);
+  }
+
+  private handleStorageChange(eventKey: StorageEvent['key']) {
+    if (!eventKey?.startsWith(this.namespace)) {
+      return;
+    }
+    // Grab the part of this key that is local to this bucket
+    const trimmedKey = eventKey?.slice(`${this.namespace}/`.length);
+
+    // If the key still contains a slash, it means it's a sub-bucket
+    if (!trimmedKey.includes('/')) {
+      this.notifyChanges(decodeURIComponent(trimmedKey));
+    }
   }
 
   private getKeyName(key: string) {
     return `${this.namespace}/${encodeURIComponent(key)}`;
   }
 
-  private notifyChanges<T>(message: StorageValueChange<T>) {
+  private notifyChanges(key: string) {
+    const snapshot = this.snapshot(key);
     for (const subscription of this.subscribers) {
-      subscription.next(message);
+      subscription.next(snapshot);
     }
   }
 
   private subscribers = new Set<
-    ZenObservable.SubscriptionObserver<StorageValueChange>
+    ZenObservable.SubscriptionObserver<StorageValueSnapshot<JsonValue>>
   >();
 
-  private readonly observable = new ObservableImpl<StorageValueChange>(
-    subscriber => {
-      this.subscribers.add(subscriber);
-      return () => {
-        this.subscribers.delete(subscriber);
-      };
-    },
-  );
+  private readonly observable = new ObservableImpl<
+    StorageValueSnapshot<JsonValue>
+  >(subscriber => {
+    this.subscribers.add(subscriber);
+    return () => {
+      this.subscribers.delete(subscriber);
+    };
+  });
 }

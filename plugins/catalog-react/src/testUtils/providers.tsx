@@ -14,32 +14,34 @@
  * limitations under the License.
  */
 
-import React, { PropsWithChildren, useCallback, useState } from 'react';
+import React, {
+  PropsWithChildren,
+  useCallback,
+  useMemo,
+  useState,
+} from 'react';
 import {
   DefaultEntityFilters,
   EntityListContext,
   EntityListContextProps,
 } from '../hooks/useEntityListProvider';
 
-export const MockEntityListContextProvider = ({
-  children,
-  value,
-}: PropsWithChildren<{
-  value?: Partial<EntityListContextProps>;
-}>) => {
+/** @public */
+export function MockEntityListContextProvider<
+  T extends DefaultEntityFilters = DefaultEntityFilters,
+>(
+  props: PropsWithChildren<{
+    value?: Partial<EntityListContextProps<T>>;
+  }>,
+) {
+  const { children, value } = props;
+
   // Provides a default implementation that stores filter state, for testing components that
   // reflect filter state.
-  const [filters, setFilters] = useState<DefaultEntityFilters>(
-    value?.filters ?? {},
-  );
+  const [filters, setFilters] = useState<T>(value?.filters ?? ({} as T));
+
   const updateFilters = useCallback(
-    (
-      update:
-        | Partial<DefaultEntityFilters>
-        | ((
-            prevFilters: DefaultEntityFilters,
-          ) => Partial<DefaultEntityFilters>),
-    ) => {
+    (update: Partial<T> | ((prevFilters: T) => Partial<T>)) => {
       setFilters(prevFilters => {
         const newFilters =
           typeof update === 'function' ? update(prevFilters) : update;
@@ -49,24 +51,40 @@ export const MockEntityListContextProvider = ({
     [],
   );
 
-  const defaultContext: EntityListContextProps = {
-    entities: [],
-    backendEntities: [],
-    updateFilters,
-    filters,
-    loading: false,
-    queryParameters: {},
-  };
+  // Memoize the default values since pickers have useEffect triggers on these; naively defaulting
+  // below with `?? <X>` breaks referential equality on subsequent updates.
+  const defaultValues = useMemo(
+    () => ({
+      entities: [],
+      backendEntities: [],
+      queryParameters: {},
+    }),
+    [],
+  );
 
-  // Extract value.filters to avoid overwriting it; some tests exercise filter updates. The value
-  // provided is used as the initial seed in useState above.
-  const { filters: _, ...otherContextFields } = value ?? {};
+  const resolvedValue: EntityListContextProps<T> = useMemo(
+    () => ({
+      entities: value?.entities ?? defaultValues.entities,
+      backendEntities: value?.backendEntities ?? defaultValues.backendEntities,
+      updateFilters: value?.updateFilters ?? updateFilters,
+      filters,
+      loading: value?.loading ?? false,
+      queryParameters: value?.queryParameters ?? defaultValues.queryParameters,
+      error: value?.error,
+      totalItems:
+        value?.totalItems ?? (value?.entities ?? defaultValues.entities).length,
+      limit: value?.limit ?? 20,
+      offset: value?.offset,
+      setLimit: value?.setLimit ?? (() => {}),
+      setOffset: value?.setOffset,
+      paginationMode: value?.paginationMode ?? 'none',
+    }),
+    [value, defaultValues, filters, updateFilters],
+  );
 
   return (
-    <EntityListContext.Provider
-      value={{ ...defaultContext, ...otherContextFields }}
-    >
+    <EntityListContext.Provider value={resolvedValue}>
       {children}
     </EntityListContext.Provider>
   );
-};
+}

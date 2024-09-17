@@ -13,19 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import {
-  Checkbox,
-  Chip,
-  FormControl,
-  InputLabel,
-  ListItemText,
-  makeStyles,
-  MenuItem,
-  Select,
-} from '@material-ui/core';
+import Checkbox from '@material-ui/core/Checkbox';
+import Chip from '@material-ui/core/Chip';
+import FormControl from '@material-ui/core/FormControl';
+import InputLabel from '@material-ui/core/InputLabel';
+import ListItemText from '@material-ui/core/ListItemText';
+import MenuItem from '@material-ui/core/MenuItem';
+import Select from '@material-ui/core/Select';
+import { makeStyles } from '@material-ui/core/styles';
 import React, { ChangeEvent } from 'react';
-import { useEffectOnce } from 'react-use';
-import { useSearch } from '../SearchContext';
+import useEffectOnce from 'react-use/esm/useEffectOnce';
+import {
+  SearchTypeAccordion,
+  SearchTypeAccordionProps,
+} from './SearchType.Accordion';
+import { SearchTypeTabs, SearchTypeTabsProps } from './SearchType.Tabs';
+import { useSearch } from '@backstage/plugin-search-react';
 
 const useStyles = makeStyles(theme => ({
   label: {
@@ -41,6 +44,11 @@ const useStyles = makeStyles(theme => ({
   },
 }));
 
+/**
+ * Props for {@link SearchType}.
+ *
+ * @public
+ */
 export type SearchTypeProps = {
   className?: string;
   name: string;
@@ -48,12 +56,11 @@ export type SearchTypeProps = {
   defaultValue?: string[] | string | null;
 };
 
-const SearchType = ({
-  values = [],
-  className,
-  name,
-  defaultValue,
-}: SearchTypeProps) => {
+/**
+ * @public
+ */
+const SearchType = (props: SearchTypeProps) => {
+  const { className, defaultValue, name, values = [] } = props;
   const classes = useStyles();
   const { types, setTypes } = useSearch();
 
@@ -112,4 +119,23 @@ const SearchType = ({
   );
 };
 
+/**
+ * A control surface for the search query's "types" property, displayed as a
+ * single-select collapsible accordion suitable for use in faceted search UIs.
+ * @public
+ */
+SearchType.Accordion = (props: SearchTypeAccordionProps) => {
+  return <SearchTypeAccordion {...props} />;
+};
+
+/**
+ * A control surface for the search query's "types" property, displayed as a
+ * tabs suitable for use in faceted search UIs.
+ * @public
+ */
+SearchType.Tabs = (props: SearchTypeTabsProps) => {
+  return <SearchTypeTabs {...props} />;
+};
+
 export { SearchType };
+export type { SearchTypeAccordionProps, SearchTypeTabsProps };

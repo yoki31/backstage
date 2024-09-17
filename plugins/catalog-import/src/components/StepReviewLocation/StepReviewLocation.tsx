@@ -15,14 +15,16 @@
  */
 
 import { catalogApiRef } from '@backstage/plugin-catalog-react';
-import { FormHelperText, Grid, Typography } from '@material-ui/core';
+import FormHelperText from '@material-ui/core/FormHelperText';
+import Grid from '@material-ui/core/Grid';
+import Typography from '@material-ui/core/Typography';
 import LocationOnIcon from '@material-ui/icons/LocationOn';
 import React, { useCallback, useState } from 'react';
 import { BackButton, NextButton } from '../Buttons';
 import { EntityListComponent } from '../EntityListComponent';
 import { PrepareResult, ReviewResult } from '../useImportState';
 
-import { configApiRef, useApi } from '@backstage/core-plugin-api';
+import { configApiRef, useAnalytics, useApi } from '@backstage/core-plugin-api';
 import { Link } from '@backstage/core-components';
 import { stringifyEntityRef } from '@backstage/catalog-model';
 import { assertError } from '@backstage/errors';
@@ -40,8 +42,9 @@ export const StepReviewLocation = ({
 }: Props) => {
   const catalogApi = useApi(catalogApiRef);
   const configApi = useApi(configApiRef);
+  const analytics = useAnalytics();
 
-  const appTitle = configApi.getOptional('app.title') || 'Backstage';
+  const appTitle = configApi.getOptionalString('app.title') || 'Backstage';
 
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string>();
@@ -52,6 +55,7 @@ export const StepReviewLocation = ({
       : false;
   const handleClick = useCallback(async () => {
     setSubmitted(true);
+    analytics.captureEvent('click', 'import entity');
     try {
       let refreshed = new Array<{ target: string }>();
       if (prepareResult.type === 'locations') {
@@ -73,8 +77,6 @@ export const StepReviewLocation = ({
             const result = await catalogApi.addLocation({
               type: 'url',
               target: l.target,
-              presence:
-                prepareResult.type === 'repository' ? 'optional' : 'required',
             });
             return {
               target: result.location.target,
@@ -110,7 +112,7 @@ export const StepReviewLocation = ({
         setSubmitted(false);
       }
     }
-  }, [prepareResult, onReview, catalogApi]);
+  }, [prepareResult, onReview, catalogApi, analytics]);
 
   return (
     <>

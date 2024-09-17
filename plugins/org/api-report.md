@@ -6,87 +6,100 @@
 /// <reference types="react" />
 
 import { BackstagePlugin } from '@backstage/core-plugin-api';
-import { Entity } from '@backstage/catalog-model';
-import { GroupEntity } from '@backstage/catalog-model';
+import { ExternalRouteRef } from '@backstage/core-plugin-api';
+import { IconComponent } from '@backstage/core-plugin-api';
 import { InfoCardVariants } from '@backstage/core-components';
-import { UserEntity } from '@backstage/catalog-model';
+import { JSX as JSX_2 } from 'react';
+import { default as React_2 } from 'react';
 
-// Warning: (ae-missing-release-tag) "EntityGroupProfileCard" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
-export const EntityGroupProfileCard: ({
-  variant,
-}: {
-  entity?: GroupEntity | undefined;
+export const EntityGroupProfileCard: (props: {
   variant?: InfoCardVariants | undefined;
-}) => JSX.Element;
+  showLinks?: boolean | undefined;
+}) => JSX_2.Element;
 
-// Warning: (ae-missing-release-tag) "EntityMembersListCard" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
-export const EntityMembersListCard: (_props: {
-  entity?: GroupEntity | undefined;
-}) => JSX.Element;
+export const EntityMembersListCard: (props: {
+  memberDisplayTitle?: string | undefined;
+  pageSize?: number | undefined;
+  showAggregateMembersToggle?: boolean | undefined;
+  relationType?: string | undefined;
+  relationsType?: EntityRelationAggregation | undefined;
+  relationAggregation?: EntityRelationAggregation | undefined;
+}) => JSX_2.Element;
 
-// Warning: (ae-missing-release-tag) "EntityOwnershipCard" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
-export const EntityOwnershipCard: ({
-  variant,
-}: {
-  entity?: Entity | undefined;
+export const EntityOwnershipCard: (props: {
   variant?: InfoCardVariants | undefined;
-}) => JSX.Element;
+  entityFilterKind?: string[] | undefined;
+  hideRelationsToggle?: boolean | undefined;
+  relationsType?: EntityRelationAggregation | undefined;
+  relationAggregation?: EntityRelationAggregation | undefined;
+  entityLimit?: number | undefined;
+}) => JSX_2.Element;
 
-// Warning: (ae-missing-release-tag) "EntityUserProfileCard" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
-export const EntityUserProfileCard: ({
-  variant,
-}: {
-  entity?: UserEntity | undefined;
+export type EntityRelationAggregation = 'direct' | 'aggregated';
+
+// @public (undocumented)
+export const EntityUserProfileCard: (props: {
   variant?: InfoCardVariants | undefined;
-}) => JSX.Element;
+  showLinks?: boolean | undefined;
+}) => JSX_2.Element;
 
-// Warning: (ae-missing-release-tag) "GroupProfileCard" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
-export const GroupProfileCard: ({
-  variant,
-}: {
-  entity?: GroupEntity | undefined;
-  variant?: InfoCardVariants | undefined;
-}) => JSX.Element;
+export const GroupProfileCard: (props: {
+  variant?: InfoCardVariants;
+  showLinks?: boolean;
+}) => React_2.JSX.Element;
 
-// Warning: (ae-missing-release-tag) "MembersListCard" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
-export const MembersListCard: (_props: { entity?: GroupEntity }) => JSX.Element;
+export type MemberComponentClassKey = 'card' | 'avatar';
 
-// Warning: (ae-missing-release-tag) "orgPlugin" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
-const orgPlugin: BackstagePlugin<{}, {}>;
+export const MembersListCard: (props: {
+  memberDisplayTitle?: string;
+  pageSize?: number;
+  showAggregateMembersToggle?: boolean;
+  relationType?: string;
+  relationsType?: EntityRelationAggregation;
+  relationAggregation?: EntityRelationAggregation;
+}) => React_2.JSX.Element;
+
+// @public (undocumented)
+export type MembersListCardClassKey = 'root' | 'cardContent' | 'memberList';
+
+// @public
+export const MyGroupsSidebarItem: (props: {
+  singularTitle: string;
+  pluralTitle: string;
+  icon: IconComponent;
+  filter?: Record<string, string | symbol | (string | symbol)[]>;
+}) => React_2.JSX.Element | null;
+
+// @public (undocumented)
+const orgPlugin: BackstagePlugin<
+  {},
+  {
+    catalogIndex: ExternalRouteRef<undefined, true>;
+  }
+>;
 export { orgPlugin };
 export { orgPlugin as plugin };
 
-// Warning: (ae-missing-release-tag) "OwnershipCard" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
-export const OwnershipCard: ({
-  variant,
-}: {
-  entity?: Entity | undefined;
-  variant?: InfoCardVariants | undefined;
-}) => JSX.Element;
+export const OwnershipCard: (props: {
+  variant?: InfoCardVariants;
+  entityFilterKind?: string[];
+  hideRelationsToggle?: boolean;
+  relationsType?: EntityRelationAggregation;
+  relationAggregation?: EntityRelationAggregation;
+  entityLimit?: number;
+}) => React_2.JSX.Element;
 
-// Warning: (ae-missing-release-tag) "UserProfileCard" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
-export const UserProfileCard: ({
-  variant,
-}: {
-  entity?: UserEntity | undefined;
-  variant?: InfoCardVariants | undefined;
-}) => JSX.Element;
+export const UserProfileCard: (props: {
+  variant?: InfoCardVariants;
+  showLinks?: boolean;
+}) => React_2.JSX.Element;
 ```

@@ -14,14 +14,23 @@
  * limitations under the License.
  */
 
-import { Permission } from './permission';
+import { JsonPrimitive } from '@backstage/types';
+import { Permission, ResourcePermission } from './permission';
 
 /**
  * A request with a UUID identifier, so that batched responses can be matched up with the original
  * requests.
  * @public
  */
-export type Identified<T> = T & { id: string };
+export type IdentifiedPermissionMessage<T> = T & { id: string };
+
+/**
+ * A batch of request or response items.
+ * @public
+ */
+export type PermissionMessageBatch<T> = {
+  items: IdentifiedPermissionMessage<T>[];
+};
 
 /**
  * The result of an authorization request.
@@ -43,13 +52,44 @@ export enum AuthorizeResult {
 }
 
 /**
- * An authorization request for {@link PermissionClient#authorize}.
+ * A definitive decision returned by the {@link @backstage/plugin-permission-node#PermissionPolicy}.
+ *
+ * @remarks
+ *
+ * This indicates that the policy unconditionally allows (or denies) the request.
+ *
  * @public
  */
-export type AuthorizeRequest = {
-  permission: Permission;
-  resourceRef?: string;
+export type DefinitivePolicyDecision = {
+  result: AuthorizeResult.ALLOW | AuthorizeResult.DENY;
 };
+
+/**
+ * A conditional decision returned by the {@link @backstage/plugin-permission-node#PermissionPolicy}.
+ *
+ * @remarks
+ *
+ * This indicates that the policy allows authorization for the request, given that the returned
+ * conditions hold when evaluated. The conditions will be evaluated by the corresponding plugin
+ * which knows about the referenced permission rules.
+ *
+ * @public
+ */
+export type ConditionalPolicyDecision = {
+  result: AuthorizeResult.CONDITIONAL;
+  pluginId: string;
+  resourceType: string;
+  conditions: PermissionCriteria<PermissionCondition>;
+};
+
+/**
+ * A decision returned by the {@link @backstage/plugin-permission-node#PermissionPolicy}.
+ *
+ * @public
+ */
+export type PolicyDecision =
+  | DefinitivePolicyDecision
+  | ConditionalPolicyDecision;
 
 /**
  * A condition returned with a CONDITIONAL authorization response.
@@ -59,9 +99,43 @@ export type AuthorizeRequest = {
  * claims from a identity token.
  * @public
  */
-export type PermissionCondition<TParams extends unknown[] = unknown[]> = {
+export type PermissionCondition<
+  TResourceType extends string = string,
+  TParams extends PermissionRuleParams = PermissionRuleParams,
+> = {
+  resourceType: TResourceType;
   rule: string;
-  params: TParams;
+  params?: TParams;
+};
+
+/**
+ * Utility type to represent an array with 1 or more elements.
+ * @ignore
+ */
+type NonEmptyArray<T> = [T, ...T[]];
+
+/**
+ * Represents a logical AND for the provided criteria.
+ * @public
+ */
+export type AllOfCriteria<TQuery> = {
+  allOf: NonEmptyArray<PermissionCriteria<TQuery>>;
+};
+
+/**
+ * Represents a logical OR for the provided criteria.
+ * @public
+ */
+export type AnyOfCriteria<TQuery> = {
+  anyOf: NonEmptyArray<PermissionCriteria<TQuery>>;
+};
+
+/**
+ * Represents a negation of the provided criteria.
+ * @public
+ */
+export type NotCriteria<TQuery> = {
+  not: PermissionCriteria<TQuery>;
 };
 
 /**
@@ -69,18 +143,134 @@ export type PermissionCondition<TParams extends unknown[] = unknown[]> = {
  * @public
  */
 export type PermissionCriteria<TQuery> =
-  | { allOf: PermissionCriteria<TQuery>[] }
-  | { anyOf: PermissionCriteria<TQuery>[] }
-  | { not: PermissionCriteria<TQuery> }
+  | AllOfCriteria<TQuery>
+  | AnyOfCriteria<TQuery>
+  | NotCriteria<TQuery>
   | TQuery;
 
 /**
- * An authorization response from {@link PermissionClient#authorize}.
+ * A parameter to a permission rule.
+ *
  * @public
  */
-export type AuthorizeResponse =
-  | { result: AuthorizeResult.ALLOW | AuthorizeResult.DENY }
+export type PermissionRuleParam = undefined | JsonPrimitive | JsonPrimitive[];
+
+/**
+ * Types that can be used as parameters to permission rules.
+ *
+ * @public
+ */
+export type PermissionRuleParams =
+  | undefined
+  | Record<string, PermissionRuleParam>;
+
+/**
+ * An individual request sent to the permission backend.
+ * @public
+ */
+export type EvaluatePermissionRequest = {
+  permission: Permission;
+  resourceRef?: string;
+};
+
+/**
+ * A batch of requests sent to the permission backend.
+ * @public
+ */
+export type EvaluatePermissionRequestBatch =
+  PermissionMessageBatch<EvaluatePermissionRequest>;
+
+/**
+ * An individual response from the permission backend.
+ *
+ * @remarks
+ *
+ * This response type is an alias of {@link PolicyDecision} to maintain separation between the
+ * {@link @backstage/plugin-permission-node#PermissionPolicy} interface and the permission backend
+ * api. They may diverge at some point in the future. The response
+ *
+ * @public
+ */
+export type EvaluatePermissionResponse = PolicyDecision;
+
+/**
+ * A batch of responses from the permission backend.
+ * @public
+ */
+export type EvaluatePermissionResponseBatch =
+  PermissionMessageBatch<EvaluatePermissionResponse>;
+
+/**
+ * Request object for {@link PermissionEvaluator.authorize}. If a {@link ResourcePermission}
+ * is provided, it must include a corresponding `resourceRef`.
+ * @public
+ */
+export type AuthorizePermissionRequest =
   | {
-      result: AuthorizeResult.CONDITIONAL;
-      conditions: PermissionCriteria<PermissionCondition>;
-    };
+      permission: Exclude<Permission, ResourcePermission>;
+      resourceRef?: never;
+    }
+  | { permission: ResourcePermission; resourceRef: string };
+
+/**
+ * Response object for {@link PermissionEvaluator.authorize}.
+ * @public
+ */
+export type AuthorizePermissionResponse = DefinitivePolicyDecision;
+
+/**
+ * Request object for {@link PermissionEvaluator.authorizeConditional}.
+ * @public
+ */
+export type QueryPermissionRequest = {
+  permission: ResourcePermission;
+  resourceRef?: never;
+};
+
+/**
+ * Response object for {@link PermissionEvaluator.authorizeConditional}.
+ * @public
+ */
+export type QueryPermissionResponse = PolicyDecision;
+
+/**
+ * A client interacting with the permission backend can implement this evaluator interface.
+ *
+ * @public
+ */
+export interface PermissionEvaluator {
+  /**
+   * Evaluates {@link Permission | Permissions} and returns a definitive decision.
+   */
+  authorize(
+    requests: AuthorizePermissionRequest[],
+    options?: EvaluatorRequestOptions & { _ignored?: never }, // Since the options are empty we add this placeholder to reject all options
+  ): Promise<AuthorizePermissionResponse[]>;
+
+  /**
+   * Evaluates {@link ResourcePermission | ResourcePermissions} and returns both definitive and
+   * conditional decisions, depending on the configured
+   * {@link @backstage/plugin-permission-node#PermissionPolicy}. This method is useful when the
+   * caller needs more control over the processing of conditional decisions. For example, a plugin
+   * backend may want to use {@link PermissionCriteria | conditions} in a database query instead of
+   * evaluating each resource in memory.
+   */
+  authorizeConditional(
+    requests: QueryPermissionRequest[],
+    options?: EvaluatorRequestOptions & { _ignored?: never }, // Since the options are empty we add this placeholder to reject all options
+  ): Promise<QueryPermissionResponse[]>;
+}
+
+// Note(Rugvip): I kept the below type around in case we want to add new options
+// in the future, for example a signal. It also helps out enabling API
+// constraints, as without this we can't have the permissions service implement
+// the evaluator interface due to the mismatch in parameter count.
+
+/**
+ * Options for {@link PermissionEvaluator} requests.
+ *
+ * This is currently empty, as there are no longer any common options for the permission evaluator.
+ *
+ * @public
+ */
+export interface EvaluatorRequestOptions {}

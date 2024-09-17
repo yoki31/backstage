@@ -19,27 +19,14 @@ import { ApiProvider, ConfigReader } from '@backstage/core-app-api';
 import { configApiRef } from '@backstage/core-plugin-api';
 import { catalogApiRef } from '@backstage/plugin-catalog-react';
 import { renderInTestApp, TestApiRegistry } from '@backstage/test-utils';
+import { screen } from '@testing-library/react';
 import React from 'react';
 import { catalogImportApiRef, CatalogImportClient } from '../../api';
 import { DefaultImportPage } from './DefaultImportPage';
 
 describe('<DefaultImportPage />', () => {
-  const identityApi = {
-    getUserId: () => {
-      return 'user';
-    },
-    getProfile: () => {
-      return {};
-    },
-    getIdToken: () => {
-      return Promise.resolve('token');
-    },
-    signOut: () => {
-      return Promise.resolve();
-    },
-    getProfileInfo: jest.fn(),
-    getBackstageIdentity: jest.fn(),
-    getCredentials: jest.fn(),
+  const fetchApi = {
+    fetch: jest.fn(),
   };
 
   let apis: TestApiRegistry;
@@ -55,7 +42,7 @@ describe('<DefaultImportPage />', () => {
           scmAuthApi: {
             getCredentials: async () => ({ token: 'token', headers: {} }),
           },
-          identityApi,
+          fetchApi,
           scmIntegrationsApi: {} as any,
           catalogApi: {} as any,
           configApi: {} as any,
@@ -65,14 +52,14 @@ describe('<DefaultImportPage />', () => {
   });
 
   it('renders without exploding', async () => {
-    const { getByText } = await renderInTestApp(
+    await renderInTestApp(
       <ApiProvider apis={apis}>
         <DefaultImportPage />
       </ApiProvider>,
     );
 
     expect(
-      getByText('Start tracking your component in Backstage'),
+      screen.getByText('Start tracking your component in Backstage'),
     ).toBeInTheDocument();
   });
 });

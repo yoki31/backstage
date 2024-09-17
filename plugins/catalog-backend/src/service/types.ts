@@ -14,16 +14,47 @@
  * limitations under the License.
  */
 
-import { Entity, LocationSpec, Location } from '@backstage/catalog-model';
+import { CompoundEntityRef, Entity } from '@backstage/catalog-model';
+import { Location } from '@backstage/catalog-client';
+import { BackstageCredentials } from '@backstage/backend-plugin-api';
 
+/**
+ * Holds the information required to create a new location in the catalog location store.
+ *
+ * @public
+ */
+export interface LocationInput {
+  type: string;
+  target: string;
+}
+
+/**
+ * The location service manages entity locations.
+ * @public
+ */
 export interface LocationService {
   createLocation(
-    spec: LocationSpec,
+    location: LocationInput,
     dryRun: boolean,
+    options: {
+      credentials: BackstageCredentials;
+    },
   ): Promise<{ location: Location; entities: Entity[]; exists?: boolean }>;
-  listLocations(): Promise<Location[]>;
-  getLocation(id: string): Promise<Location>;
-  deleteLocation(id: string): Promise<void>;
+  listLocations(options: {
+    credentials: BackstageCredentials;
+  }): Promise<Location[]>;
+  getLocation(
+    id: string,
+    options: { credentials: BackstageCredentials },
+  ): Promise<Location>;
+  deleteLocation(
+    id: string,
+    options: { credentials: BackstageCredentials },
+  ): Promise<void>;
+  getLocationByEntity(
+    entityRef: CompoundEntityRef | string,
+    options: { credentials: BackstageCredentials },
+  ): Promise<Location>;
 }
 
 /**
@@ -34,6 +65,7 @@ export interface LocationService {
 export type RefreshOptions = {
   /** The reference to a single entity that should be refreshed */
   entityRef: string;
+  credentials: BackstageCredentials;
 };
 
 /**
@@ -48,9 +80,14 @@ export interface RefreshService {
   refresh(options: RefreshOptions): Promise<void>;
 }
 
+/**
+ * Interacts with the database to manage locations.
+ * @public
+ */
 export interface LocationStore {
-  createLocation(spec: LocationSpec): Promise<Location>;
+  createLocation(location: LocationInput): Promise<Location>;
   listLocations(): Promise<Location[]>;
   getLocation(id: string): Promise<Location>;
   deleteLocation(id: string): Promise<void>;
+  getLocationByEntity(entityRef: CompoundEntityRef | string): Promise<Location>;
 }

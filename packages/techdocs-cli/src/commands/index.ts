@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-import { CommanderStatic } from 'commander';
-import { TechdocsGenerator } from '@backstage/techdocs-common';
+import { Command } from 'commander';
+import { TechdocsGenerator } from '@backstage/plugin-techdocs-node';
 
 const defaultDockerImage = TechdocsGenerator.defaultDockerImage;
+const defaultPreviewAppPort = '3000';
 
-export function registerCommands(program: CommanderStatic) {
+export function registerCommands(program: Command) {
   program
     .command('generate')
     .description('Generate TechDocs documentation site using MkDocs.')
@@ -38,14 +39,14 @@ export function registerCommands(program: CommanderStatic) {
       'The mkdocs docker container to use',
       defaultDockerImage,
     )
-    .option('--no-pull', 'Do not pull the latest docker image', false)
+    .option('--no-pull', 'Do not pull the latest docker image')
     .option(
       '--no-docker',
       'Do not use Docker, use MkDocs executable and plugins in current user environment.',
     )
     .option(
       '--techdocs-ref <HOST_TYPE:URL>',
-      'The repository hosting documentation source files e.g. github:https://ghe.mycompany.net.com/org/repo.' +
+      'The repository hosting documentation source files e.g. url:https://ghe.mycompany.net.com/org/repo.' +
         '\nThis value is same as the backstage.io/techdocs-ref annotation of the corresponding Backstage entity.' +
         '\nIt is completely fine to skip this as it is only being used to set repo_url in mkdocs.yml if not found.\n',
     )
@@ -53,7 +54,32 @@ export function registerCommands(program: CommanderStatic) {
       '--etag <ETAG>',
       'A unique identifier for the prepared tree e.g. commit SHA. If provided it will be stored in techdocs_metadata.json.',
     )
+    .option(
+      '--site-name',
+      'Name for site when using default MkDocs config',
+      'Documentation Site',
+    )
     .option('-v --verbose', 'Enable verbose output.', false)
+    .option(
+      '--omitTechdocsCoreMkdocsPlugin',
+      "Don't patch MkDocs file automatically with techdocs-core plugin.",
+      false,
+    )
+    .option(
+      '--legacyCopyReadmeMdToIndexMd',
+      'Attempt to ensure an index.md exists falling back to using <docs-dir>/README.md or README.md in case a default <docs-dir>/index.md is not provided.',
+      false,
+    )
+    .option(
+      '--defaultPlugin [defaultPlugins...]',
+      'Plugins which should be added automatically to the mkdocs.yaml file',
+      [],
+    )
+    .option(
+      '--runAsDefaultUser',
+      'Bypass setting the container user as the same user and group id as host for Linux and MacOS',
+      false,
+    )
     .alias('build')
     .action(lazy(() => import('./generate/generate').then(m => m.default)));
 
@@ -89,10 +115,6 @@ export function registerCommands(program: CommanderStatic) {
     .option(
       '--awsS3ForcePathStyle',
       'Optional AWS S3 option to force path style.',
-    )
-    .option(
-      '--awsBucketRootPath',
-      'Optional sub-directory to store files in Amazon S3',
     )
     .option(
       '--osCredentialId <OPENSTACK SWIFT APPLICATION CREDENTIAL ID>',
@@ -161,10 +183,18 @@ export function registerCommands(program: CommanderStatic) {
       '--awsEndpoint <AWS ENDPOINT>',
       'Optional AWS endpoint to send requests to.',
     )
+    .option(
+      '--awsProxy <HTTPS Proxy>',
+      'Optional Proxy to use for AWS requests.',
+    )
     .option('--awsS3sse <AWS SSE>', 'Optional AWS S3 Server Side Encryption.')
     .option(
       '--awsS3ForcePathStyle',
       'Optional AWS S3 option to force path style.',
+    )
+    .option(
+      '--awsBucketRootPath <AWS BUCKET ROOT PATH>',
+      'Optional sub-directory to store files in Amazon S3',
     )
     .option(
       '--osCredentialId <OPENSTACK SWIFT APPLICATION CREDENTIAL ID>',
@@ -183,7 +213,7 @@ export function registerCommands(program: CommanderStatic) {
       '(Required for OpenStack) specify when --publisher-type openStackSwift',
     )
     .option(
-      '--gcsBucketRootPath',
+      '--gcsBucketRootPath <GCS BUCKET ROOT PATH>',
       'Optional sub-directory to store files in Google cloud storage',
     )
     .option(
@@ -202,8 +232,21 @@ export function registerCommands(program: CommanderStatic) {
       defaultDockerImage,
     )
     .option(
+      '--docker-entrypoint <DOCKER_ENTRYPOINT>',
+      'Override the image entrypoint',
+    )
+    .option(
+      '--docker-option <DOCKER_OPTION...>',
+      'Extra options to pass to the docker run command, e.g. "--add-host=internal.host:192.168.11.12" (can be added multiple times).',
+    )
+    .option(
       '--no-docker',
       'Do not use Docker, run `mkdocs serve` in current user environment.',
+    )
+    .option(
+      '--site-name',
+      'Name for site when using default MkDocs config',
+      'Documentation Site',
     )
     .option('-p, --port <PORT>', 'Port to serve documentation locally', '8000')
     .option('-v --verbose', 'Enable verbose output.', false)
@@ -220,11 +263,62 @@ export function registerCommands(program: CommanderStatic) {
       defaultDockerImage,
     )
     .option(
+      '--docker-entrypoint <DOCKER_ENTRYPOINT>',
+      'Override the image entrypoint',
+    )
+    .option(
+      '--docker-option <DOCKER_OPTION...>',
+      'Extra options to pass to the docker run command, e.g. "--add-host=internal.host:192.168.11.12" (can be added multiple times).',
+    )
+    .option(
       '--no-docker',
       'Do not use Docker, use MkDocs executable in current user environment.',
     )
+    .option(
+      '--site-name',
+      'Name for site when using default MkDocs config',
+      'Documentation Site',
+    )
     .option('--mkdocs-port <PORT>', 'Port for MkDocs server to use', '8000')
     .option('-v --verbose', 'Enable verbose output.', false)
+    .option(
+      '--preview-app-bundle-path <PATH_TO_BUNDLE>',
+      'Preview documentation using another web app',
+    )
+    .option(
+      '--preview-app-port <PORT>',
+      'Port for the preview app to be served on',
+      defaultPreviewAppPort,
+    )
+    .option(
+      '-c, --mkdocs-config-file-name <FILENAME>',
+      'Mkdocs config file name',
+    )
+    .option(
+      '--mkdocs-parameter-clean',
+      'Pass "--clean" parameter to mkdocs server running in containerized environment',
+      false,
+    )
+    .option(
+      '--mkdocs-parameter-dirtyreload',
+      'Pass "--dirtyreload" parameter to mkdocs server running in containerized environment',
+      false,
+    )
+    .option(
+      '--mkdocs-parameter-strict',
+      'Pass "--strict" parameter to mkdocs server running in containerized environment',
+      false,
+    )
+    .hook('preAction', command => {
+      if (
+        command.opts().previewAppPort !== defaultPreviewAppPort &&
+        !command.opts().previewAppBundlePath
+      ) {
+        command.error(
+          '--preview-app-port can only be used together with --preview-app-bundle-path',
+        );
+      }
+    })
     .action(lazy(() => import('./serve/serve').then(m => m.default)));
 }
 

@@ -28,7 +28,6 @@ describe('entityKindSchemaValidator', () => {
       metadata: {
         uid: 'e01199ab-08cc-44c2-8e19-5c29ded82521',
         etag: 'lsndfkjsndfkjnsdfkjnsd==',
-        generation: 13,
         name: 'test',
         namespace: 'ns',
         labels: {
@@ -52,7 +51,11 @@ describe('entityKindSchemaValidator', () => {
         owner: 'me',
       },
       relations: [
-        { type: 't', target: { kind: 'k', namespace: 'ns', name: 'n' } },
+        {
+          type: 't',
+          targetRef: 'someTargetRef',
+          target: { kind: 'k', namespace: 'ns', name: 'n' },
+        },
       ],
       status: {
         items: [

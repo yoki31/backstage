@@ -16,21 +16,52 @@
 import React from 'react';
 import SearchIcon from '@material-ui/icons/Search';
 import { SidebarItem } from '@backstage/core-components';
-import { SearchModal } from '../SearchModal';
-import { useSearch } from '../SearchContext';
+import { IconComponent } from '@backstage/core-plugin-api';
+import {
+  SearchModal,
+  SearchModalProps,
+  SearchModalProvider,
+  useSearchModal,
+} from '../SearchModal';
 
-export const SidebarSearchModal = () => {
-  const { open, toggleModal } = useSearch();
+/**
+ * Props for {@link SidebarSearchModal}.
+ *
+ * @public
+ */
+export type SidebarSearchModalProps = Pick<
+  SearchModalProps,
+  'children' | 'resultItemComponents'
+> & {
+  icon?: IconComponent;
+};
+
+const SidebarSearchModalContent = (props: SidebarSearchModalProps) => {
+  const { state, toggleModal } = useSearchModal();
+  const Icon = props.icon ? props.icon : SearchIcon;
 
   return (
     <>
       <SidebarItem
         className="search-icon"
-        icon={SearchIcon}
+        icon={Icon}
         text="Search"
         onClick={toggleModal}
       />
-      <SearchModal open={open} toggleModal={toggleModal} />
+      <SearchModal
+        {...state}
+        toggleModal={toggleModal}
+        resultItemComponents={props.resultItemComponents}
+        children={props.children}
+      />
     </>
+  );
+};
+
+export const SidebarSearchModal = (props: SidebarSearchModalProps) => {
+  return (
+    <SearchModalProvider>
+      <SidebarSearchModalContent {...props} />
+    </SearchModalProvider>
   );
 };

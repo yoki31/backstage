@@ -13,11 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-import React from 'react';
+import Box from '@material-ui/core/Box';
 import { makeStyles } from '@material-ui/core/styles';
-import { InfoCard, InfoCardVariants } from '../../layout/InfoCard';
+import React, { ReactNode } from 'react';
+
 import { BottomLinkProps } from '../../layout/BottomLink';
+import { InfoCard, InfoCardVariants } from '../../layout/InfoCard';
 import { Gauge, GaugePropsGetColor } from './Gauge';
 
 type Props = {
@@ -26,6 +27,10 @@ type Props = {
   variant?: InfoCardVariants;
   /** Progress in % specified as decimal, e.g. "0.23" */
   progress: number;
+  alignGauge?: 'normal' | 'bottom';
+  size?: 'normal' | 'small';
+  description?: ReactNode;
+  icon?: ReactNode;
   inverse?: boolean;
   deepLink?: BottomLinkProps;
   getColor?: GaugePropsGetColor;
@@ -40,32 +45,61 @@ const useStyles = makeStyles(
       height: '100%',
       width: 250,
     },
+    rootSmall: {
+      height: '100%',
+      width: 160,
+    },
   },
   { name: 'BackstageGaugeCard' },
 );
 
-/** @public */
+/**
+ * {@link Gauge} with header, subheader and footer
+ *
+ * @public
+ *
+ */
 export function GaugeCard(props: Props) {
   const classes = useStyles(props);
-  const { title, subheader, progress, inverse, deepLink, variant, getColor } =
-    props;
+  const {
+    title,
+    subheader,
+    progress,
+    inverse,
+    deepLink,
+    description,
+    icon,
+    variant,
+    alignGauge = 'normal',
+    size = 'normal',
+    getColor,
+  } = props;
 
   const gaugeProps = {
     inverse,
+    description,
     getColor,
     value: progress,
   };
 
   return (
-    <div className={classes.root}>
+    <Box className={size === 'small' ? classes.rootSmall : classes.root}>
       <InfoCard
         title={title}
         subheader={subheader}
         deepLink={deepLink}
         variant={variant}
+        alignContent={alignGauge}
+        icon={icon}
+        titleTypographyProps={{
+          ...(size === 'small' ? { variant: 'subtitle2' } : undefined),
+        }}
+        subheaderTypographyProps={{
+          ...(size === 'small' ? { variant: 'body2' } : undefined),
+        }}
       >
-        <Gauge {...gaugeProps} />
+        <Gauge {...gaugeProps} size={size} />
       </InfoCard>
-    </div>
+    </Box>
   );
 }

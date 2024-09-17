@@ -14,9 +14,17 @@
  * limitations under the License.
  */
 
+import {
+  BackstagePlugin,
+  ExternalRouteRef,
+  RouteRef,
+  SubRouteRef,
+} from '@backstage/core-plugin-api';
+import { joinPaths } from './helpers';
 import { AnyRouteRef } from './types';
 
-export function validateRoutes(
+// Validates that there is no duplication of route parameter names
+export function validateRouteParameters(
   routePaths: Map<AnyRouteRef, string>,
   routeParents: Map<AnyRouteRef, AnyRouteRef | undefined>,
 ) {
@@ -33,10 +41,10 @@ export function validateRoutes(
     let fullPath = '';
     while (currentRouteRef) {
       const path = routePaths.get(currentRouteRef);
-      if (!path) {
+      if (path === undefined) {
         throw new Error(`No path for ${currentRouteRef}`);
       }
-      fullPath = `${path}${fullPath}`;
+      fullPath = joinPaths(path, fullPath);
       currentRouteRef = routeParents.get(currentRouteRef);
     }
 
@@ -50,6 +58,38 @@ export function validateRoutes(
             );
           }
         }
+      }
+    }
+  }
+}
+
+// Validates that all non-optional external routes have been bound
+export function validateRouteBindings(
+  routeBindings: Map<ExternalRouteRef, RouteRef | SubRouteRef>,
+  plugins: Iterable<
+    Pick<
+      BackstagePlugin<{}, Record<string, ExternalRouteRef>>,
+      'getId' | 'externalRoutes'
+    >
+  >,
+) {
+  for (const plugin of plugins) {
+    if (!plugin.externalRoutes) {
+      continue;
+    }
+
+    for (const [name, externalRouteRef] of Object.entries(
+      plugin.externalRoutes,
+    )) {
+      if (externalRouteRef.optional) {
+        continue;
+      }
+
+      if (!routeBindings.has(externalRouteRef)) {
+        throw new Error(
+          `External route '${name}' of the '${plugin.getId()}' plugin must be bound to a target route. ` +
+            'See https://backstage.io/link?bind-routes for details.',
+        );
       }
     }
   }

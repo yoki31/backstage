@@ -21,7 +21,7 @@ should have a separate package in a folder, which represents your plugin.
 Example:
 
 ```
-$ yarn create-plugin
+$ yarn new --select plugin
 > ? Enter an ID for the plugin [required] my-plugin
 > ? Enter the owner(s) of the plugin. If specified, this will be added to CODEOWNERS for the plugin path. [optional]
 
@@ -37,7 +37,7 @@ You can access the currently selected entity using the backstage api
 import { useEntity } from '@backstage/plugin-catalog-react';
 
 export const MyPluginEntityContent = () => {
-  const { entity, loading, error, refresh } = useEntity();
+  const entity = useEntity();
 
   // Do something with the entity data...
 };
@@ -54,7 +54,7 @@ To begin, you will need to import your plugin in the entities page. Located at
 your backstage app.
 
 ```tsx
-import { MyPluginEntityContent } from '@backstage/plugin-my-plugin;
+import { MyPluginEntityContent } from '@backstage/plugin-my-plugin';
 ```
 
 To add your component to the Entity view, you will need to modify the
@@ -107,7 +107,7 @@ const systemPage = (
       </Grid>
     </EntityLayout.Route>
     <EntityLayout.Route path="/diagram" title="Diagram">
-      <EntitySystemDiagramCard />
+      <EntityCatalogGraphCard variant="gridItem" height={400} />
     </EntityLayout.Route>
 
     {/* Adding a new tab to the system view */}

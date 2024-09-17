@@ -16,10 +16,8 @@ If you haven't setup Backstage already, start
 
 ## Adding Search to the Frontend
 
-```bash
-# From your Backstage root directory
-cd packages/app
-yarn add @backstage/plugin-search
+```bash title="From your Backstage root directory"
+yarn --cwd packages/app add @backstage/plugin-search @backstage/plugin-search-react
 ```
 
 Create a new `packages/app/src/components/search/SearchPage.tsx` file in your
@@ -34,8 +32,8 @@ import {
   SearchResult,
   DefaultResultListItem,
   SearchFilter,
-} from '@backstage/plugin-search';
-import { CatalogResultListItem } from '@backstage/plugin-catalog';
+} from '@backstage/plugin-search-react';
+import { CatalogSearchResultListItem } from '@backstage/plugin-catalog';
 
 export const searchPage = (
   <Page themeId="home">
@@ -69,9 +67,10 @@ export const searchPage = (
                   switch (result.type) {
                     case 'software-catalog':
                       return (
-                        <CatalogResultListItem
+                        <CatalogSearchResultListItem
                           key={result.document.location}
                           result={result.document}
+                          highlight={result.highlight}
                         />
                       );
                     default:
@@ -79,6 +78,7 @@ export const searchPage = (
                         <DefaultResultListItem
                           key={result.document.location}
                           result={result.document}
+                          highlight={result.highlight}
                         />
                       );
                   }
@@ -114,15 +114,13 @@ const routes = (
 In `Root.tsx`, add the `SidebarSearchModal` component:
 
 ```bash
-import { SidebarSearchModal, SearchContextProvider } from '@backstage/plugin-search';
+import { SidebarSearchModal } from '@backstage/plugin-search';
 
 export const Root = ({ children }: PropsWithChildren<{}>) => (
   <SidebarPage>
     <Sidebar>
       <SidebarLogo />
-      <SearchContextProvider>
-        <SidebarSearchModal />
-      </SearchContextProvider>
+      <SidebarSearchModal />
       <SidebarDivider />
 ...
 ```
@@ -134,78 +132,41 @@ For more information about using `Root.tsx`, please see
 
 Add the following plugins into your backend app:
 
-```bash
-# From your Backstage root directory
-cd packages/backend
-yarn add @backstage/plugin-search-backend @backstage/plugin-search-backend-node
+```bash title="From your Backstage root directory"
+yarn --cwd packages/backend add @backstage/plugin-search-backend @backstage/plugin-search-backend-module-pg @backstage/plugin-search-backend-module-catalog @backstage/plugin-search-backend-module-techdocs
 ```
 
-Create a `packages/backend/src/plugins/search.ts` file containing the following
-code:
+Then add the following lines:
 
-```typescript
-import { useHotCleanup } from '@backstage/backend-common';
-import { createRouter } from '@backstage/plugin-search-backend';
-import {
-  IndexBuilder,
-  LunrSearchEngine,
-} from '@backstage/plugin-search-backend-node';
-import { PluginEnvironment } from '../types';
-import { DefaultCatalogCollator } from '@backstage/plugin-catalog-backend';
+```ts title="packages/backend/src/index.ts"
+const backend = createBackend();
 
-export default async function createPlugin({
-  logger,
-  discovery,
-  tokenManager,
-}: PluginEnvironment) {
-  const searchEngine = new LunrSearchEngine({ logger });
-  const indexBuilder = new IndexBuilder({ logger, searchEngine });
+// Other plugins...
 
-  indexBuilder.addCollator({
-    defaultRefreshIntervalSeconds: 600,
-    collator: new DefaultCatalogCollator({
-      discovery,
-      tokenManager,
-    }),
-  });
+/* highlight-add-start */
+// search plugin
+backend.add(import('@backstage/plugin-search-backend/alpha'));
 
-  const { scheduler } = await indexBuilder.build();
+// search engines
+backend.add(import('@backstage/plugin-search-backend-module-pg/alpha'));
 
-  scheduler.start();
-  useHotCleanup(module, () => scheduler.stop());
+// search collators
+backend.add(import('@backstage/plugin-search-backend-module-catalog/alpha'));
+backend.add(import('@backstage/plugin-search-backend-module-techdocs/alpha'));
+/* highlight-add-end */
 
-  return await createRouter({
-    engine: indexBuilder.getSearchEngine(),
-    logger,
-  });
-}
+backend.start();
 ```
 
-Make the following modifications to your `packages/backend/src/index.ts` file:
+With the above setup Search will use the [Lunr](https://github.com/olivernn/lunr.js) in-memory Search Engine but if your have Postgres setup as your database then it will use Postgres as your Search Engine. Learn more in the [Search Engines](./search-engines.md) documentation.
 
-Import the `plugins/search` file you created above:
-
-```typescript
-import search from './plugins/search';
-```
-
-Set up an environment for search:
-
-```typescript
-const searchEnv = useHotMemoize(module, () => createEnv('search'));
-```
-
-Register the search service with the router:
-
-```typescript
-apiRouter.use('/search', await search(searchEnv));
-```
+The above also sets up two Collators for you - Catalog and TechDocs - which will index content from these two locations so that you can easily search them. Learn more in the [Collators documentation](./collators.md).
 
 ## Customizing Search
 
 ### Frontend
 
-The Search Plugin exposes several default filter types as static properties,
+The Search Plugin web library (`@backstage/plugin-search-react`) exposes several default filter types as static properties,
 including `<SearchFilter.Select />` and `<SearchFilter.Checkbox />`. These allow
 you to provide values relevant to your Backstage instance that, when selected,
 get passed to the backend.
@@ -229,7 +190,7 @@ If you have advanced filter needs, you can specify your own filter component
 like this (although new core filter contributions are welcome):
 
 ```tsx
-import { useSearch, SearchFilter } from '@backstage/plugin-search';
+import { useSearch, SearchFilter } from '@backstage/plugin-search-react';
 
 const MyCustomFilter = () => {
   // Note: filters contain filter data from other filter components. Be sure
@@ -245,7 +206,7 @@ const MyCustomFilter = () => {
 
 It's good practice for search results to highlight information that was used to
 return it in the first place! The code below highlights how you might specify a
-custom result item component, using the `<CatalogResultListItem />` component as
+custom result item component, using the `<CatalogSearchResultListItem />` component as
 an example:
 
 ```tsx {7-13}
@@ -257,9 +218,10 @@ an example:
         switch (result.type) {
           case 'software-catalog':
             return (
-              <CatalogResultListItem
+              <CatalogSearchResultListItem
                 key={result.document.location}
                 result={result.document}
+                highlight={result.highlight}
               />
             );
           // ...
@@ -270,12 +232,14 @@ an example:
 </SearchResult>
 ```
 
+> For more advanced customization of the Search frontend, also see how to guides such as [How to implement your own Search API](./how-to-guides.md#how-to-implement-your-own-search-api) and [How to customize search results highlighting styling](./how-to-guides.md#how-to-customize-search-results-highlighting-styling)
+
 ### Backend
 
 Backstage Search isn't a search engine itself, rather, it provides an interface
 between your Backstage instance and a
 [Search Engine](./concepts.md#search-engines) of your choice. Currently, we only
-support two engines, an in-memory search Engine called Lunr and ElasticSearch.
+support two engines, an in-memory search Engine called Lunr and Elasticsearch.
 See [Search Engines](./search-engines.md) documentation for more information how
 to configure these in your Backstage instance.
 
@@ -287,34 +251,92 @@ which are responsible for providing documents
 number of collators with the `IndexBuilder` like this:
 
 ```typescript
-const indexBuilder = new IndexBuilder({ logger, searchEngine });
+const indexBuilder = new IndexBuilder({ logger: env.logger, searchEngine });
+
+const every10MinutesSchedule = env.scheduler.createScheduledTaskRunner({
+  frequency: { minutes: 10 },
+  timeout: { minutes: 15 },
+  initialDelay: { seconds: 3 },
+});
+
+const everyHourSchedule = env.scheduler.createScheduledTaskRunner({
+  frequency: { hours: 1 },
+  timeout: { minutes: 90 },
+  initialDelay: { seconds: 3 },
+});
 
 indexBuilder.addCollator({
-  defaultRefreshIntervalSeconds: 600,
-  collator: new DefaultCatalogCollator({
-    discovery,
-    tokenManager,
+  schedule: every10MinutesSchedule,
+  factory: DefaultCatalogCollatorFactory.fromConfig(env.config, {
+    discovery: env.discovery,
+    tokenManager: env.tokenManager,
   }),
 });
 
 indexBuilder.addCollator({
-  defaultRefreshIntervalSeconds: 3600,
-  collator: new MyCustomCollator(),
+  schedule: everyHourSchedule,
+  factory: new MyCustomCollatorFactory(),
 });
 ```
 
 Backstage Search builds and maintains its index
 [on a schedule](./concepts.md#the-scheduler). You can change how often the
 indexes are rebuilt for a given type of document. You may want to do this if
-your documents are updated more or less frequently. You can do so by modifying
-its `defaultRefreshIntervalSeconds` value, like this:
+your documents are updated more or less frequently. You can do so by configuring
+a scheduled `SchedulerServiceTaskRunner` to pass into the `schedule` value, like this:
 
 ```typescript {3}
+const every10MinutesSchedule = env.scheduler.createScheduledTaskRunner({
+  frequency: { minutes: 10 },
+  timeout: { minutes: 15 },
+  initialDelay: { seconds: 3 },
+});
+
 indexBuilder.addCollator({
-  defaultRefreshIntervalSeconds: 600,
-  collator: new DefaultCatalogCollator({
-    discovery,
-    tokenManager,
+  schedule: every10MinutesSchedule,
+  factory: DefaultCatalogCollatorFactory.fromConfig(env.config, {
+    discovery: env.discovery,
+    tokenManager: env.tokenManager,
   }),
 });
 ```
+
+Note: if you are using the in-memory Lunr search engine, you probably want to
+implement a non-distributed `SchedulerServiceTaskRunner` like the following to ensure consistency
+if you're running multiple search backend nodes (alternatively, you can configure
+the search plugin to use a non-distributed database such as
+[SQLite](../../tutorials/configuring-plugin-databases.md#postgresql-and-sqlite-3)):
+
+```typescript
+import {
+  SchedulerServiceTaskRunner,
+  SchedulerServiceTaskInvocationDefinition,
+} from '@backstage/backend-plugin-api';
+
+const schedule: SchedulerServiceTaskRunner = {
+  run: async (task: SchedulerServiceTaskInvocationDefinition) => {
+    const startRefresh = async () => {
+      while (!task.signal?.aborted) {
+        try {
+          await task.fn(task.signal);
+        } catch {
+          // ignore intentionally
+        }
+
+        await new Promise(resolve => setTimeout(resolve, 600 * 1000));
+      }
+    };
+    startRefresh();
+  },
+};
+
+indexBuilder.addCollator({
+  schedule,
+  factory: DefaultCatalogCollatorFactory.fromConfig(env.config, {
+    discovery: env.discovery,
+    tokenManager: env.tokenManager,
+  }),
+});
+```
+
+> For more advanced customization of the Search backend, also see how to guides such as [How to index TechDocs documents](./how-to-guides.md#how-to-index-techdocs-documents) and [How to limit what can be searched in the Software Catalog](./how-to-guides.md#how-to-limit-what-can-be-searched-in-the-software-catalog)

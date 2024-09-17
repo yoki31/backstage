@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-import { OldIconComponent } from '../icons/types';
 import { getOrCreateGlobalSingleton } from '@backstage/version-bridge';
 
 /**
@@ -22,12 +21,19 @@ import { getOrCreateGlobalSingleton } from '@backstage/version-bridge';
  *
  * @public
  */
-export type AnyParams = { [param in string]: string } | undefined;
+export type AnyRouteRefParams = { [param in string]: string } | undefined;
+
+/**
+ * @deprecated use {@link AnyRouteRefParams} instead
+ * @public
+ */
+export type AnyParams = AnyRouteRefParams;
 
 /**
  * Type describing the key type of a route parameter mapping.
  *
  * @public
+ * @deprecated this type is deprecated and will be removed in the future
  */
 export type ParamKeys<Params extends AnyParams> = keyof Params extends never
   ? []
@@ -37,6 +43,7 @@ export type ParamKeys<Params extends AnyParams> = keyof Params extends never
  * Optional route params.
  *
  * @public
+ * @deprecated this type is deprecated and will be removed in the future
  */
 export type OptionalParams<Params extends { [param in string]: string }> =
   Params[keyof Params] extends never ? undefined : Params;
@@ -82,17 +89,11 @@ export const routeRefType: unique symbol = getOrCreateGlobalSingleton<any>(
  * @public
  */
 export type RouteRef<Params extends AnyParams = any> = {
+  /** @deprecated access to this property will be removed in the future */
   $$routeRefType: 'absolute'; // See routeRefType above
 
+  /** @deprecated access to this property will be removed in the future */
   params: ParamKeys<Params>;
-
-  // TODO(Rugvip): Remove all of these once plugins don't rely on the path
-  /** @deprecated paths are no longer accessed directly from RouteRefs, use useRouteRef instead */
-  path: string;
-  /** @deprecated icons are no longer accessed via RouteRefs */
-  icon?: OldIconComponent;
-  /** @deprecated titles are no longer accessed via RouteRefs */
-  title?: string;
 };
 
 /**
@@ -105,12 +106,15 @@ export type RouteRef<Params extends AnyParams = any> = {
  * @public
  */
 export type SubRouteRef<Params extends AnyParams = any> = {
+  /** @deprecated access to this property will be removed in the future */
   $$routeRefType: 'sub'; // See routeRefType above
 
+  /** @deprecated access to this property will be removed in the future */
   parent: RouteRef;
 
   path: string;
 
+  /** @deprecated access to this property will be removed in the future */
   params: ParamKeys<Params>;
 };
 
@@ -127,8 +131,10 @@ export type ExternalRouteRef<
   Params extends AnyParams = any,
   Optional extends boolean = any,
 > = {
+  /** @deprecated access to this property will be removed in the future */
   $$routeRefType: 'external'; // See routeRefType above
 
+  /** @deprecated access to this property will be removed in the future */
   params: ParamKeys<Params>;
 
   optional?: Optional;
@@ -141,23 +147,6 @@ export type AnyRouteRef =
   | RouteRef<any>
   | SubRouteRef<any>
   | ExternalRouteRef<any, any>;
-
-// TODO(Rugvip): None of these should be found in the wild anymore, remove in next minor release
-/**
- * @deprecated
- * @internal
- */
-export type ConcreteRoute = {};
-/**
- * @deprecated
- * @internal
- */
-export type AbsoluteRouteRef = RouteRef<{}>;
-/**
- * @deprecated
- * @internal
- */
-export type MutableRouteRef = RouteRef<{}>;
 
 /**
  * A duplicate of the react-router RouteObject, but with routeRef added

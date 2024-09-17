@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-import { renderHook } from '@testing-library/react-hooks';
+import { renderHook } from '@testing-library/react';
 import React from 'react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, Router } from 'react-router-dom';
 import { createVersionedContextForTesting } from '@backstage/version-bridge';
 import { useRouteRef } from './useRouteRef';
 import { createRouteRef } from './RouteRef';
+import { createBrowserHistory } from 'history';
 
 describe('v1 consumer', () => {
   const context = createVersionedContextForTesting('routing-context');
@@ -35,7 +36,7 @@ describe('v1 consumer', () => {
     const routeRef = createRouteRef({ id: 'ref1' });
 
     const renderedHook = renderHook(() => useRouteRef(routeRef), {
-      wrapper: ({ children }) => (
+      wrapper: ({ children }: React.PropsWithChildren<{}>) => (
         <MemoryRouter initialEntries={['/my-page']} children={children} />
       ),
     });
@@ -48,5 +49,109 @@ describe('v1 consumer', () => {
         pathname: '/my-page',
       }),
     );
+  });
+
+  it('re-resolves the routeFunc when the search parameters change', () => {
+    const resolve = jest.fn(() => () => '/hello');
+    context.set({ 1: { resolve } });
+
+    const routeRef = createRouteRef({ id: 'ref1' });
+    const history = createBrowserHistory();
+    history.push('/my-page');
+
+    const { rerender } = renderHook(() => useRouteRef(routeRef), {
+      wrapper: ({ children }: React.PropsWithChildren<{}>) => (
+        <Router
+          location={history.location}
+          navigator={history}
+          children={children}
+        />
+      ),
+    });
+
+    expect(resolve).toHaveBeenCalledTimes(1);
+
+    history.push('/my-new-page');
+    rerender();
+
+    expect(resolve).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not re-resolve the routeFunc the location pathname does not change', () => {
+    const resolve = jest.fn(() => () => '/hello');
+    context.set({ 1: { resolve } });
+
+    const routeRef = createRouteRef({ id: 'ref1' });
+    const history = createBrowserHistory();
+    history.push('/my-page');
+
+    const { rerender } = renderHook(() => useRouteRef(routeRef), {
+      wrapper: ({ children }: React.PropsWithChildren<{}>) => (
+        <Router
+          location={history.location}
+          navigator={history}
+          children={children}
+        />
+      ),
+    });
+
+    expect(resolve).toHaveBeenCalledTimes(1);
+
+    history.push('/my-page');
+    rerender();
+
+    expect(resolve).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not re-resolve the routeFunc when the search parameter changes', () => {
+    const resolve = jest.fn(() => () => '/hello');
+    context.set({ 1: { resolve } });
+
+    const routeRef = createRouteRef({ id: 'ref1' });
+    const history = createBrowserHistory();
+    history.push('/my-page');
+
+    const { rerender } = renderHook(() => useRouteRef(routeRef), {
+      wrapper: ({ children }: React.PropsWithChildren<{}>) => (
+        <Router
+          location={history.location}
+          navigator={history}
+          children={children}
+        />
+      ),
+    });
+
+    expect(resolve).toHaveBeenCalledTimes(1);
+
+    history.push('/my-page?foo=bar');
+    rerender();
+
+    expect(resolve).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not re-resolve the routeFunc when the hash parameter changes', () => {
+    const resolve = jest.fn(() => () => '/hello');
+    context.set({ 1: { resolve } });
+
+    const routeRef = createRouteRef({ id: 'ref1' });
+    const history = createBrowserHistory();
+    history.push('/my-page');
+
+    const { rerender } = renderHook(() => useRouteRef(routeRef), {
+      wrapper: ({ children }: React.PropsWithChildren<{}>) => (
+        <Router
+          location={history.location}
+          navigator={history}
+          children={children}
+        />
+      ),
+    });
+
+    expect(resolve).toHaveBeenCalledTimes(1);
+
+    history.push('/my-page#foo');
+    rerender();
+
+    expect(resolve).toHaveBeenCalledTimes(1);
   });
 });

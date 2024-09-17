@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-import React, { PropsWithChildren } from 'react';
+import { makeStyles, Theme } from '@material-ui/core/styles';
 import classNames from 'classnames';
-import { Theme, makeStyles } from '@material-ui/core/styles';
+import React, { PropsWithChildren } from 'react';
 
 /** @public */
 export type BackstageContentClassKey = 'root' | 'stretch' | 'noPadding';
@@ -53,8 +53,16 @@ type Props = {
   className?: string;
 };
 
+/**
+ * The main content part inside a {@link Page}.
+ *
+ * @public
+ *
+ */
+
 export function Content(props: PropsWithChildren<Props>) {
   const { className, stretch, noPadding, children, ...restProps } = props;
+
   const classes = useStyles();
   return (
     <article

@@ -17,22 +17,32 @@
 import { InputError } from '@backstage/errors';
 import { ScmIntegrations } from '@backstage/integration';
 import { CatalogApi } from '@backstage/catalog-client';
-import { stringifyEntityRef } from '@backstage/catalog-model';
-import { createTemplateAction } from '../../createTemplateAction';
+import { stringifyEntityRef, Entity } from '@backstage/catalog-model';
+import { createTemplateAction } from '@backstage/plugin-scaffolder-node';
+import { examples } from './register.examples';
+import { AuthService } from '@backstage/backend-plugin-api';
 
+const id = 'catalog:register';
+
+/**
+ * Registers entities from a catalog descriptor file in the workspace into the software catalog.
+ * @public
+ */
 export function createCatalogRegisterAction(options: {
   catalogClient: CatalogApi;
   integrations: ScmIntegrations;
+  auth?: AuthService;
 }) {
-  const { catalogClient, integrations } = options;
+  const { catalogClient, integrations, auth } = options;
 
   return createTemplateAction<
     | { catalogInfoUrl: string; optional?: boolean }
     | { repoContentsUrl: string; catalogInfoPath?: string; optional?: boolean }
   >({
-    id: 'catalog:register',
+    id,
     description:
       'Registers entities from a catalog descriptor file in the workspace into the software catalog.',
+    examples,
     schema: {
       input: {
         oneOf: [
@@ -80,6 +90,18 @@ export function createCatalogRegisterAction(options: {
           },
         ],
       },
+      output: {
+        type: 'object',
+        required: ['catalogInfoUrl'],
+        properties: {
+          entityRef: {
+            type: 'string',
+          },
+          catalogInfoUrl: {
+            type: 'string',
+          },
+        },
+      },
     },
     async handler(ctx) {
       const { input } = ctx;
@@ -105,29 +127,56 @@ export function createCatalogRegisterAction(options: {
 
       ctx.logger.info(`Registering ${catalogInfoUrl} in the catalog`);
 
-      await catalogClient.addLocation(
-        {
-          type: 'url',
-          target: catalogInfoUrl,
-        },
-        ctx.token ? { token: ctx.token } : {},
-      );
+      const { token } = (await auth?.getPluginRequestToken({
+        onBehalfOf: await ctx.getInitiatorCredentials(),
+        targetPluginId: 'catalog',
+      })) ?? { token: ctx.secrets?.backstageToken };
 
       try {
+        // 1st try to register the location, this will throw an error if the location already exists (see catch)
+        await catalogClient.addLocation(
+          {
+            type: 'url',
+            target: catalogInfoUrl,
+          },
+          token ? { token } : {},
+        );
+      } catch (e) {
+        if (!input.optional) {
+          // if optional is false or unset, it is not allowed to register the same location twice, we rethrow the error
+          throw e;
+        }
+      }
+
+      try {
+        // 2nd retry the registration as a dry run, this will not throw an error if the location already exists
         const result = await catalogClient.addLocation(
           {
             dryRun: true,
             type: 'url',
             target: catalogInfoUrl,
           },
-          ctx.token ? { token: ctx.token } : {},
+          token ? { token } : {},
         );
 
-        if (result.entities.length > 0) {
+        if (result.entities.length) {
           const { entities } = result;
-          const entity =
-            entities.find(e => !e.metadata.name.startsWith('generated-')) ??
-            entities[0];
+          let entity: Entity | undefined;
+          // prioritise 'Component' type as it is the most central kind of entity
+          entity = entities.find(
+            e =>
+              !e.metadata.name.startsWith('generated-') &&
+              e.kind === 'Component',
+          );
+          if (!entity) {
+            entity = entities.find(
+              e => !e.metadata.name.startsWith('generated-'),
+            );
+          }
+          if (!entity) {
+            entity = entities[0];
+          }
+
           ctx.output('entityRef', stringifyEntityRef(entity));
         }
       } catch (e) {

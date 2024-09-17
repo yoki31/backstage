@@ -24,6 +24,10 @@ export const safelyEncodeURIComponent = (value: string) => {
   return encodeURIComponent(value).replace(/'/g, '%27');
 };
 
+/**
+ * @public
+ * @deprecated Use `sendWebMessageResponse` from `@backstage/plugin-auth-node` instead
+ */
 export const postMessageResponse = (
   res: express.Response,
   appOrigin: string,
@@ -68,6 +72,10 @@ export const postMessageResponse = (
   res.end(`<html><body><script>${script}</script></body></html>`);
 };
 
+/**
+ * @public
+ * @deprecated Use inline logic to check that the `X-Requested-With` header is set to `'XMLHttpRequest'` instead.
+ */
 export const ensuresXRequestedWith = (req: express.Request) => {
   const requiredHeader = req.header('X-Requested-With');
   if (!requiredHeader || requiredHeader !== 'XMLHttpRequest') {

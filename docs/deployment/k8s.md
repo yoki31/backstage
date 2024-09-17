@@ -107,10 +107,14 @@ $ echo -n "backstage" | base64
 YmFja3N0YWdl
 ```
 
-> Note: Secrets are base64-encoded, but not encrypted. Be sure to enable
-> [Encryption at Rest](https://kubernetes.io/docs/tasks/administer-cluster/encrypt-data/)
-> for the cluster. For storing secrets in Git, consider
-> [SealedSecrets or other solutions](https://learnk8s.io/kubernetes-secrets-in-git).
+:::note Note
+
+Secrets are base64-encoded, but not encrypted. Be sure to enable
+[Encryption at Rest](https://kubernetes.io/docs/tasks/administer-cluster/encrypt-data/)
+for the cluster. For storing secrets in Git, consider
+[SealedSecrets or other solutions](https://learnk8s.io/kubernetes-secrets-in-git).
+
+:::
 
 The secrets can now be applied to the Kubernetes cluster:
 
@@ -209,6 +213,7 @@ spec:
           volumeMounts:
             - mountPath: /var/lib/postgresql/data
               name: postgresdb
+              subPath: data
       volumes:
         - name: postgresdb
           persistentVolumeClaim:
@@ -256,7 +261,7 @@ bash-5.1# exit
 
 The database pod is running, but how does another pod connect to it?
 
-Kubernetes pods are transient - they can be killed, restarted, or created
+Kubernetes pods are transient - they can be stopped, restarted, or created
 dynamically. Therefore we don't want to try to connect to pods directly, but
 rather create a Kubernetes Service. Services keep track of pods and direct
 traffic to the right place.
@@ -384,7 +389,7 @@ $ yarn build-image --tag backstage:1.0.0
 There is no special wiring needed to access the PostgreSQL service. Since it's
 running on the same cluster, Kubernetes will inject `POSTGRES_SERVICE_HOST` and
 `POSTGRES_SERVICE_PORT` environment variables into our Backstage container.
-These can be used in the Backstage `app-config.yaml` along with the secrets:
+These can be used in the Backstage `app-config.yaml` along with the secrets. Apply this to `app-config.production.yaml` as well if you have one:
 
 ```yaml
 backend:

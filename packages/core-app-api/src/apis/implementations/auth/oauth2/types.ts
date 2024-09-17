@@ -14,9 +14,13 @@
  * limitations under the License.
  */
 
-import { ProfileInfo, BackstageIdentity } from '@backstage/core-plugin-api';
+import {
+  ProfileInfo,
+  BackstageIdentityResponse,
+} from '@backstage/core-plugin-api';
 
 export type { OAuth2CreateOptions } from './OAuth2';
+export type { PopupOptions } from '../../../../lib/AuthConnector';
 /**
  * Session information for generic OAuth2 auth.
  *
@@ -27,8 +31,8 @@ export type OAuth2Session = {
     idToken: string;
     accessToken: string;
     scopes: Set<string>;
-    expiresAt: Date;
+    expiresAt?: Date;
   };
   profile: ProfileInfo;
-  backstageIdentity: BackstageIdentity;
+  backstageIdentity?: BackstageIdentityResponse;
 };

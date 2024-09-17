@@ -1,18 +1,3 @@
-/*
- * Copyright 2020 The Backstage Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 import React from 'react';
 import { Button, Grid } from '@material-ui/core';
 import {
@@ -27,7 +12,6 @@ import {
   EntityAboutCard,
   EntityDependsOnComponentsCard,
   EntityDependsOnResourcesCard,
-  EntitySystemDiagramCard,
   EntityHasComponentsCard,
   EntityHasResourcesCard,
   EntityHasSubcomponentsCard,
@@ -41,11 +25,9 @@ import {
   isKind,
   hasCatalogProcessingErrors,
   isOrphan,
+  hasRelationWarnings,
+  EntityRelationWarning,
 } from '@backstage/plugin-catalog';
-import {
-  isGithubActionsAvailable,
-  EntityGithubActionsContent,
-} from '@backstage/plugin-github-actions';
 import {
   EntityUserProfileCard,
   EntityGroupProfileCard,
@@ -54,14 +36,48 @@ import {
 } from '@backstage/plugin-org';
 import { EntityTechdocsContent } from '@backstage/plugin-techdocs';
 import { EmptyState } from '@backstage/core-components';
+import {
+  Direction,
+  EntityCatalogGraphCard,
+} from '@backstage/plugin-catalog-graph';
+import {
+  RELATION_API_CONSUMED_BY,
+  RELATION_API_PROVIDED_BY,
+  RELATION_CONSUMES_API,
+  RELATION_DEPENDENCY_OF,
+  RELATION_DEPENDS_ON,
+  RELATION_HAS_PART,
+  RELATION_PART_OF,
+  RELATION_PROVIDES_API,
+} from '@backstage/catalog-model';
+
+import { TechDocsAddons } from '@backstage/plugin-techdocs-react';
+import { ReportIssue } from '@backstage/plugin-techdocs-module-addons-contrib';
+
+import {
+  EntityKubernetesContent,
+  isKubernetesAvailable,
+} from '@backstage/plugin-kubernetes';
+
+const techdocsContent = (
+  <EntityTechdocsContent>
+    <TechDocsAddons>
+      <ReportIssue />
+    </TechDocsAddons>
+  </EntityTechdocsContent>
+);
 
 const cicdContent = (
   // This is an example of how you can implement your company's logic in entity page.
   // You can for example enforce that all components of type 'service' should use GitHubActions
   <EntitySwitch>
-    <EntitySwitch.Case if={isGithubActionsAvailable}>
-      <EntityGithubActionsContent />
-    </EntitySwitch.Case>
+    {/*
+      Here you can add support for different CI/CD services, for example
+      using @backstage-community/plugin-github-actions as follows:
+      <EntitySwitch.Case if={isGithubActionsAvailable}>
+        <EntityGithubActionsContent />
+      </EntitySwitch.Case>
+     */}
 
     <EntitySwitch.Case>
       <EmptyState
@@ -93,6 +109,14 @@ const entityWarningContent = (
     </EntitySwitch>
 
     <EntitySwitch>
+      <EntitySwitch.Case if={hasRelationWarnings}>
+        <Grid item xs={12}>
+          <EntityRelationWarning />
+        </Grid>
+      </EntitySwitch.Case>
+    </EntitySwitch>
+
+    <EntitySwitch>
       <EntitySwitch.Case if={hasCatalogProcessingErrors}>
         <Grid item xs={12}>
           <EntityProcessingErrorsPanel />
@@ -108,6 +132,10 @@ const overviewContent = (
     <Grid item md={6}>
       <EntityAboutCard variant="gridItem" />
     </Grid>
+    <Grid item md={6} xs={12}>
+      <EntityCatalogGraphCard variant="gridItem" height={400} />
+    </Grid>
+
     <Grid item md={4} xs={12}>
       <EntityLinksCard />
     </Grid>
@@ -125,6 +153,14 @@ const serviceEntityPage = (
 
     <EntityLayout.Route path="/ci-cd" title="CI/CD">
       {cicdContent}
+    </EntityLayout.Route>
+
+    <EntityLayout.Route
+      path="/kubernetes"
+      title="Kubernetes"
+      if={isKubernetesAvailable}
+    >
+      <EntityKubernetesContent />
     </EntityLayout.Route>
 
     <EntityLayout.Route path="/api" title="API">
@@ -150,7 +186,7 @@ const serviceEntityPage = (
     </EntityLayout.Route>
 
     <EntityLayout.Route path="/docs" title="Docs">
-      <EntityTechdocsContent />
+      {techdocsContent}
     </EntityLayout.Route>
   </EntityLayout>
 );
@@ -165,6 +201,14 @@ const websiteEntityPage = (
       {cicdContent}
     </EntityLayout.Route>
 
+    <EntityLayout.Route
+      path="/kubernetes"
+      title="Kubernetes"
+      if={isKubernetesAvailable}
+    >
+      <EntityKubernetesContent />
+    </EntityLayout.Route>
+
     <EntityLayout.Route path="/dependencies" title="Dependencies">
       <Grid container spacing={3} alignItems="stretch">
         <Grid item md={6}>
@@ -177,7 +221,7 @@ const websiteEntityPage = (
     </EntityLayout.Route>
 
     <EntityLayout.Route path="/docs" title="Docs">
-      <EntityTechdocsContent />
+      {techdocsContent}
     </EntityLayout.Route>
   </EntityLayout>
 );
@@ -196,7 +240,7 @@ const defaultEntityPage = (
     </EntityLayout.Route>
 
     <EntityLayout.Route path="/docs" title="Docs">
-      <EntityTechdocsContent />
+      {techdocsContent}
     </EntityLayout.Route>
   </EntityLayout>
 );
@@ -222,6 +266,9 @@ const apiPage = (
         {entityWarningContent}
         <Grid item md={6}>
           <EntityAboutCard />
+        </Grid>
+        <Grid item md={6} xs={12}>
+          <EntityCatalogGraphCard variant="gridItem" height={400} />
         </Grid>
         <Grid item md={4} xs={12}>
           <EntityLinksCard />
@@ -274,8 +321,11 @@ const groupPage = (
         <Grid item xs={12} md={6}>
           <EntityOwnershipCard variant="gridItem" />
         </Grid>
-        <Grid item xs={12}>
+        <Grid item xs={12} md={6}>
           <EntityMembersListCard />
+        </Grid>
+        <Grid item xs={12} md={6}>
+          <EntityLinksCard />
         </Grid>
       </Grid>
     </EntityLayout.Route>
@@ -290,7 +340,13 @@ const systemPage = (
         <Grid item md={6}>
           <EntityAboutCard variant="gridItem" />
         </Grid>
-        <Grid item md={6}>
+        <Grid item md={6} xs={12}>
+          <EntityCatalogGraphCard variant="gridItem" height={400} />
+        </Grid>
+        <Grid item md={4} xs={12}>
+          <EntityLinksCard />
+        </Grid>
+        <Grid item md={8}>
           <EntityHasComponentsCard variant="gridItem" />
         </Grid>
         <Grid item md={6}>
@@ -302,7 +358,23 @@ const systemPage = (
       </Grid>
     </EntityLayout.Route>
     <EntityLayout.Route path="/diagram" title="Diagram">
-      <EntitySystemDiagramCard />
+      <EntityCatalogGraphCard
+        variant="gridItem"
+        direction={Direction.TOP_BOTTOM}
+        title="System Diagram"
+        height={700}
+        relations={[
+          RELATION_PART_OF,
+          RELATION_HAS_PART,
+          RELATION_API_CONSUMED_BY,
+          RELATION_API_PROVIDED_BY,
+          RELATION_CONSUMES_API,
+          RELATION_PROVIDES_API,
+          RELATION_DEPENDENCY_OF,
+          RELATION_DEPENDS_ON,
+        ]}
+        unidirectional={false}
+      />
     </EntityLayout.Route>
   </EntityLayout>
 );
@@ -314,6 +386,9 @@ const domainPage = (
         {entityWarningContent}
         <Grid item md={6}>
           <EntityAboutCard variant="gridItem" />
+        </Grid>
+        <Grid item md={6} xs={12}>
+          <EntityCatalogGraphCard variant="gridItem" height={400} />
         </Grid>
         <Grid item md={6}>
           <EntityHasSystemsCard variant="gridItem" />

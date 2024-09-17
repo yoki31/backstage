@@ -13,19 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { IndexableDocument } from '@backstage/search-common';
+import { IndexableDocument } from '@backstage/plugin-search-common';
 import { Knex } from 'knex';
+import { PgSearchHighlightOptions } from '../PgSearchEngine';
 
+/** @public */
 export interface PgSearchQuery {
   fields?: Record<string, string | string[]>;
   types?: string[];
   pgTerm?: string;
   offset: number;
   limit: number;
+  options: PgSearchHighlightOptions;
 }
 
+/** @public */
 export interface DatabaseStore {
   transaction<T>(fn: (tx: Knex.Transaction) => Promise<T>): Promise<T>;
+  getTransaction(): Promise<Knex.Transaction>;
   prepareInsert(tx: Knex.Transaction): Promise<void>;
   insertDocuments(
     tx: Knex.Transaction,
@@ -39,13 +44,16 @@ export interface DatabaseStore {
   ): Promise<DocumentResultRow[]>;
 }
 
+/** @public */
 export interface RawDocumentRow {
   document: IndexableDocument;
   type: string;
   hash: unknown;
 }
 
+/** @public */
 export interface DocumentResultRow {
   document: IndexableDocument;
   type: string;
+  highlight: IndexableDocument;
 }

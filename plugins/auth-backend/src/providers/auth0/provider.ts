@@ -14,170 +14,62 @@
  * limitations under the License.
  */
 
-import express from 'express';
-import passport from 'passport';
-import Auth0Strategy from './strategy';
-import {
-  OAuthAdapter,
-  OAuthProviderOptions,
-  OAuthHandlers,
-  OAuthResponse,
-  OAuthEnvironmentHandler,
-  OAuthStartRequest,
-  encodeState,
-  OAuthRefreshRequest,
-  OAuthResult,
-} from '../../lib/oauth';
-import {
-  executeFetchUserProfileStrategy,
-  executeFrameHandlerStrategy,
-  executeRedirectStrategy,
-  executeRefreshTokenStrategy,
-  makeProfileInfo,
-  PassportDoneCallback,
-} from '../../lib/passport';
-import { RedirectInfo, AuthProviderFactory } from '../types';
+import { OAuthProviderOptions, OAuthResult } from '../../lib/oauth';
 
-type PrivateInfo = {
-  refreshToken: string;
-};
+import { AuthHandler } from '../types';
+import { createAuthProviderIntegration } from '../createAuthProviderIntegration';
+import {
+  AuthResolverContext,
+  createOAuthProviderFactory,
+  SignInResolver,
+} from '@backstage/plugin-auth-node';
+import {
+  adaptLegacyOAuthHandler,
+  adaptLegacyOAuthSignInResolver,
+} from '../../lib/legacy';
+import { auth0Authenticator } from '@backstage/plugin-auth-backend-module-auth0-provider';
 
+/**
+ * @public
+ * @deprecated The Auth0 auth provider was extracted to `@backstage/plugin-auth-backend-module-auth0-provider`.
+ */
 export type Auth0AuthProviderOptions = OAuthProviderOptions & {
   domain: string;
+  signInResolver?: SignInResolver<OAuthResult>;
+  authHandler: AuthHandler<OAuthResult>;
+  resolverContext: AuthResolverContext;
+  audience?: string;
+  connection?: string;
+  connectionScope?: string;
 };
 
-export class Auth0AuthProvider implements OAuthHandlers {
-  private readonly _strategy: Auth0Strategy;
+/**
+ * Auth provider integration for auth0 auth
+ *
+ * @public
+ */
+export const auth0 = createAuthProviderIntegration({
+  create(options?: {
+    /**
+     * The profile transformation function used to verify and convert the auth response
+     * into the profile that will be presented to the user.
+     */
+    authHandler?: AuthHandler<OAuthResult>;
 
-  constructor(options: Auth0AuthProviderOptions) {
-    this._strategy = new Auth0Strategy(
-      {
-        clientID: options.clientId,
-        clientSecret: options.clientSecret,
-        callbackURL: options.callbackUrl,
-        domain: options.domain,
-        passReqToCallback: false as true,
-      },
-      (
-        accessToken: any,
-        refreshToken: any,
-        params: any,
-        fullProfile: passport.Profile,
-        done: PassportDoneCallback<OAuthResult, PrivateInfo>,
-      ) => {
-        done(
-          undefined,
-          {
-            fullProfile,
-            accessToken,
-            refreshToken,
-            params,
-          },
-          {
-            refreshToken,
-          },
-        );
-      },
-    );
-  }
-
-  async start(req: OAuthStartRequest): Promise<RedirectInfo> {
-    return await executeRedirectStrategy(req, this._strategy, {
-      accessType: 'offline',
-      prompt: 'consent',
-      scope: req.scope,
-      state: encodeState(req.state),
-    });
-  }
-
-  async handler(
-    req: express.Request,
-  ): Promise<{ response: OAuthResponse; refreshToken: string }> {
-    const { result, privateInfo } = await executeFrameHandlerStrategy<
-      OAuthResult,
-      PrivateInfo
-    >(req, this._strategy);
-
-    const profile = makeProfileInfo(result.fullProfile, result.params.id_token);
-
-    return {
-      response: await this.populateIdentity({
-        profile,
-        providerInfo: {
-          idToken: result.params.id_token,
-          accessToken: result.accessToken,
-          scope: result.params.scope,
-          expiresInSeconds: result.params.expires_in,
-        },
-      }),
-      refreshToken: privateInfo.refreshToken,
+    /**
+     * Configure sign-in for this provider, without it the provider can not be used to sign users in.
+     */
+    signIn?: {
+      /**
+       * Maps an auth result to a Backstage identity for the user.
+       */
+      resolver: SignInResolver<OAuthResult>;
     };
-  }
-
-  async refresh(req: OAuthRefreshRequest): Promise<OAuthResponse> {
-    const { accessToken, params } = await executeRefreshTokenStrategy(
-      this._strategy,
-      req.refreshToken,
-      req.scope,
-    );
-
-    const fullProfile = await executeFetchUserProfileStrategy(
-      this._strategy,
-      accessToken,
-    );
-    const profile = makeProfileInfo(fullProfile, params.id_token);
-
-    return this.populateIdentity({
-      providerInfo: {
-        accessToken,
-        idToken: params.id_token,
-        expiresInSeconds: params.expires_in,
-        scope: params.scope,
-      },
-      profile,
+  }) {
+    return createOAuthProviderFactory({
+      authenticator: auth0Authenticator,
+      profileTransform: adaptLegacyOAuthHandler(options?.authHandler),
+      signInResolver: adaptLegacyOAuthSignInResolver(options?.signIn?.resolver),
     });
-  }
-
-  // Use this function to grab the user profile info from the token
-  // Then populate the profile with it
-  private async populateIdentity(
-    response: OAuthResponse,
-  ): Promise<OAuthResponse> {
-    const { profile } = response;
-
-    if (!profile.email) {
-      throw new Error('Profile does not contain an email');
-    }
-
-    const id = profile.email.split('@')[0];
-
-    return { ...response, backstageIdentity: { id, token: '' } };
-  }
-}
-
-export type Auth0ProviderOptions = {};
-
-export const createAuth0Provider = (
-  _options?: Auth0ProviderOptions,
-): AuthProviderFactory => {
-  return ({ providerId, globalConfig, config, tokenIssuer }) =>
-    OAuthEnvironmentHandler.mapConfig(config, envConfig => {
-      const clientId = envConfig.getString('clientId');
-      const clientSecret = envConfig.getString('clientSecret');
-      const domain = envConfig.getString('domain');
-      const callbackUrl = `${globalConfig.baseUrl}/${providerId}/handler/frame`;
-
-      const provider = new Auth0AuthProvider({
-        clientId,
-        clientSecret,
-        callbackUrl,
-        domain,
-      });
-
-      return OAuthAdapter.fromConfig(globalConfig, provider, {
-        disableRefresh: true,
-        providerId,
-        tokenIssuer,
-      });
-    });
-};
+  },
+});

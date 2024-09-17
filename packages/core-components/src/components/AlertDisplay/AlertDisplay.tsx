@@ -13,14 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-import React, { useEffect, useState } from 'react';
-import Snackbar from '@material-ui/core/Snackbar';
+import { alertApiRef, AlertMessage, useApi } from '@backstage/core-plugin-api';
+import { useTranslationRef } from '@backstage/core-plugin-api/alpha';
 import IconButton from '@material-ui/core/IconButton';
+import Snackbar from '@material-ui/core/Snackbar';
+import Typography from '@material-ui/core/Typography';
 import CloseIcon from '@material-ui/icons/Close';
-import { Alert } from '@material-ui/lab';
-import { AlertMessage, useApi, alertApiRef } from '@backstage/core-plugin-api';
-import pluralize from 'pluralize';
+import Alert from '@material-ui/lab/Alert';
+import React, { useEffect, useState } from 'react';
+import { coreComponentsTranslationRef } from '../../translation';
+
+/**
+ * Properties for {@link AlertDisplay}
+ *
+ * @public
+ */
+export type AlertDisplayProps = {
+  anchorOrigin?: {
+    vertical: 'top' | 'bottom';
+    horizontal: 'left' | 'center' | 'right';
+  };
+  transientTimeoutMs?: number;
+};
 
 /**
  * Displays alerts from {@link @backstage/core-plugin-api#AlertApi}
@@ -28,12 +42,35 @@ import pluralize from 'pluralize';
  * @public
  * @remarks
  *
- * Shown as SnackBar at the top of the page
+ * Shown as SnackBar at the center top of the page by default. Configurable with props.
+ *
+ * @param anchorOrigin - The `vertical` property will set the vertical orientation of where the AlertDisplay will be located
+ * and the `horizontal` property will set the horizontal orientation of where the AlertDisplay will be located
+ * @param transientTimeoutMs - Number of milliseconds a transient alert will stay open for. Default value is 5000
+ *
+ * @example
+ * Here's some examples:
+ * ```
+ * // This example shows the default usage, the SnackBar will show up at the top in the center and any transient messages will stay open for 5000ms
+ * <AlertDisplay />
+ *
+ * // With this example the SnackBar will show up in the bottom right hand corner and any transient messages will stay open for 2500ms
+ * <AlertDisplay transientTimeoutMs={2500} anchorOrigin={{vertical: 'bottom', horizontal: 'right'}}/>
+ *
+ * // If you want to just set the time a transientTimeoutMs, you can do that like this:
+ * <AlertDisplay transientTimeoutMs={10000} />
+ * ```
  */
-// TODO: improve on this and promote to a shared component for use by all apps.
-export function AlertDisplay(_props: {}) {
+export function AlertDisplay(props: AlertDisplayProps) {
   const [messages, setMessages] = useState<Array<AlertMessage>>([]);
   const alertApi = useApi(alertApiRef);
+  const { t } = useTranslationRef(coreComponentsTranslationRef);
+
+  const {
+    anchorOrigin = { vertical: 'top', horizontal: 'center' },
+    transientTimeoutMs,
+  } = props;
+  const timeoutMs = transientTimeoutMs ?? 5000;
 
   useEffect(() => {
     const subscription = alertApi
@@ -45,18 +82,31 @@ export function AlertDisplay(_props: {}) {
     };
   }, [alertApi]);
 
+  const [firstMessage] = messages;
+
+  useEffect(() => {
+    if (firstMessage && firstMessage.display === 'transient') {
+      const timeout = setTimeout(() => {
+        setMessages(msgs => {
+          const newMsgs = msgs.filter(msg => msg !== firstMessage);
+          return newMsgs.length === msgs.length ? msgs : newMsgs;
+        });
+      }, timeoutMs);
+      return () => clearTimeout(timeout);
+    }
+    return undefined;
+  }, [firstMessage, timeoutMs]);
+
   if (messages.length === 0) {
     return null;
   }
-
-  const [firstMessage] = messages;
 
   const handleClose = () => {
     setMessages(msgs => msgs.filter(msg => msg !== firstMessage));
   };
 
   return (
-    <Snackbar open anchorOrigin={{ vertical: 'top', horizontal: 'center' }}>
+    <Snackbar open anchorOrigin={anchorOrigin}>
       <Alert
         action={
           <IconButton
@@ -70,15 +120,16 @@ export function AlertDisplay(_props: {}) {
         }
         severity={firstMessage.severity}
       >
-        <span>
-          {firstMessage.message.toString()}
+        <Typography component="span">
+          {String(firstMessage.message)}
           {messages.length > 1 && (
-            <em>{` (${messages.length - 1} older ${pluralize(
-              'message',
-              messages.length - 1,
-            )})`}</em>
+            <em>
+              {t('alertDisplay.message', {
+                count: messages.length - 1,
+              })}
+            </em>
           )}
-        </span>
+        </Typography>
       </Alert>
     </Snackbar>
   );

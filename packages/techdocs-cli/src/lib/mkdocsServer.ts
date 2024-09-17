@@ -21,8 +21,14 @@ export const runMkdocsServer = async (options: {
   port?: string;
   useDocker?: boolean;
   dockerImage?: string;
+  dockerEntrypoint?: string;
+  dockerOptions?: string[];
   stdoutLogFunc?: LogFunc;
   stderrLogFunc?: LogFunc;
+  mkdocsConfigFileName?: string;
+  mkdocsParameterClean?: boolean;
+  mkdocsParameterDirtyReload?: boolean;
+  mkdocsParameterStrict?: boolean;
 }): Promise<ChildProcess> => {
   const port = options.port ?? '8000';
   const useDocker = options.useDocker ?? true;
@@ -41,10 +47,20 @@ export const runMkdocsServer = async (options: {
         '-p',
         `${port}:${port}`,
         '-it',
+        ...(options.dockerEntrypoint
+          ? ['--entrypoint', options.dockerEntrypoint]
+          : []),
+        ...(options.dockerOptions || []),
         dockerImage,
         'serve',
         '--dev-addr',
         `0.0.0.0:${port}`,
+        ...(options.mkdocsConfigFileName
+          ? ['--config-file', options.mkdocsConfigFileName]
+          : []),
+        ...(options.mkdocsParameterClean ? ['--clean'] : []),
+        ...(options.mkdocsParameterDirtyReload ? ['--dirtyreload'] : []),
+        ...(options.mkdocsParameterStrict ? ['--strict'] : []),
       ],
       {
         stdoutLogFunc: options.stdoutLogFunc,
@@ -53,8 +69,22 @@ export const runMkdocsServer = async (options: {
     );
   }
 
-  return await run('mkdocs', ['serve', '--dev-addr', `127.0.0.1:${port}`], {
-    stdoutLogFunc: options.stdoutLogFunc,
-    stderrLogFunc: options.stderrLogFunc,
-  });
+  return await run(
+    'mkdocs',
+    [
+      'serve',
+      '--dev-addr',
+      `127.0.0.1:${port}`,
+      ...(options.mkdocsConfigFileName
+        ? ['--config-file', options.mkdocsConfigFileName]
+        : []),
+      ...(options.mkdocsParameterClean ? ['--clean'] : []),
+      ...(options.mkdocsParameterDirtyReload ? ['--dirtyreload'] : []),
+      ...(options.mkdocsParameterStrict ? ['--strict'] : []),
+    ],
+    {
+      stdoutLogFunc: options.stdoutLogFunc,
+      stderrLogFunc: options.stderrLogFunc,
+    },
+  );
 };

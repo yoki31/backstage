@@ -14,39 +14,92 @@
  * limitations under the License.
  */
 
+import { CatalogApi } from '@backstage/catalog-client';
 import { Config } from '@backstage/config';
-import { ClusterDetails } from '../types/types';
+import { Duration } from 'luxon';
+import { ClusterDetails, KubernetesClustersSupplier } from '../types/types';
+import { AuthenticationStrategy } from '../auth/types';
 import { ConfigClusterLocator } from './ConfigClusterLocator';
 import { GkeClusterLocator } from './GkeClusterLocator';
+import { CatalogClusterLocator } from './CatalogClusterLocator';
+import { LocalKubectlProxyClusterLocator } from './LocalKubectlProxyLocator';
+import {
+  AuthService,
+  BackstageCredentials,
+  LoggerService,
+} from '@backstage/backend-plugin-api';
 
-export const getCombinedClusterDetails = async (
+class CombinedClustersSupplier implements KubernetesClustersSupplier {
+  constructor(
+    readonly clusterSuppliers: KubernetesClustersSupplier[],
+    readonly logger: LoggerService,
+  ) {}
+
+  async getClusters(options: {
+    credentials: BackstageCredentials;
+  }): Promise<ClusterDetails[]> {
+    const clusters = await Promise.all(
+      this.clusterSuppliers.map(supplier => supplier.getClusters(options)),
+    )
+      .then(res => {
+        return res.flat();
+      })
+      .catch(e => {
+        throw e;
+      });
+    return this.warnDuplicates(clusters);
+  }
+
+  private warnDuplicates(clusters: ClusterDetails[]): ClusterDetails[] {
+    const clusterNames = new Set<string>();
+    const duplicatedNames = new Set<string>();
+    for (const clusterName of clusters.map(c => c.name)) {
+      if (clusterNames.has(clusterName)) {
+        duplicatedNames.add(clusterName);
+      } else {
+        clusterNames.add(clusterName);
+      }
+    }
+    for (const clusterName of duplicatedNames) {
+      this.logger.warn(`Duplicate cluster name '${clusterName}'`);
+    }
+    return clusters;
+  }
+}
+
+export const getCombinedClusterSupplier = (
   rootConfig: Config,
-): Promise<ClusterDetails[]> => {
-  return Promise.all(
-    rootConfig
-      .getConfigArray('kubernetes.clusterLocatorMethods')
-      .map(clusterLocatorMethod => {
-        const type = clusterLocatorMethod.getString('type');
-        switch (type) {
-          case 'config':
-            return ConfigClusterLocator.fromConfig(
-              clusterLocatorMethod,
-            ).getClusters();
-          case 'gke':
-            return GkeClusterLocator.fromConfig(
-              clusterLocatorMethod,
-            ).getClusters();
-          default:
-            throw new Error(
-              `Unsupported kubernetes.clusterLocatorMethods: "${type}"`,
-            );
-        }
-      }),
-  )
-    .then(res => {
-      return res.flat();
-    })
-    .catch(e => {
-      throw e;
+  catalogClient: CatalogApi,
+  authStrategy: AuthenticationStrategy,
+  logger: LoggerService,
+  refreshInterval: Duration | undefined = undefined,
+  auth: AuthService,
+): KubernetesClustersSupplier => {
+  const clusterSuppliers = rootConfig
+    .getConfigArray('kubernetes.clusterLocatorMethods')
+    .map(clusterLocatorMethod => {
+      const type = clusterLocatorMethod.getString('type');
+      switch (type) {
+        case 'catalog':
+          return CatalogClusterLocator.fromConfig(catalogClient, auth);
+        case 'localKubectlProxy':
+          return new LocalKubectlProxyClusterLocator();
+        case 'config':
+          return ConfigClusterLocator.fromConfig(
+            clusterLocatorMethod,
+            authStrategy,
+          );
+        case 'gke':
+          return GkeClusterLocator.fromConfig(
+            clusterLocatorMethod,
+            refreshInterval,
+          );
+        default:
+          throw new Error(
+            `Unsupported kubernetes.clusterLocatorMethods: "${type}"`,
+          );
+      }
     });
+
+  return new CombinedClustersSupplier(clusterSuppliers, logger);
 };

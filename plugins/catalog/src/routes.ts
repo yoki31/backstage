@@ -14,15 +14,36 @@
  * limitations under the License.
  */
 
-import { createExternalRouteRef } from '@backstage/core-plugin-api';
+import {
+  createExternalRouteRef,
+  createRouteRef,
+} from '@backstage/core-plugin-api';
 
 export const createComponentRouteRef = createExternalRouteRef({
   id: 'create-component',
   optional: true,
+  defaultTarget: 'scaffolder.createComponent',
 });
 
 export const viewTechDocRouteRef = createExternalRouteRef({
   id: 'view-techdoc',
   optional: true,
   params: ['namespace', 'kind', 'name'],
+  defaultTarget: 'techdocs.docRoot',
+});
+
+export const createFromTemplateRouteRef = createExternalRouteRef({
+  id: 'create-from-template',
+  optional: true,
+  params: ['namespace', 'templateName'],
+  defaultTarget: 'scaffolder.selectedTemplate',
+});
+
+export const unregisterRedirectRouteRef = createExternalRouteRef({
+  id: 'catalog:unregister-redirect',
+  optional: true,
+});
+
+export const rootRouteRef = createRouteRef({
+  id: 'catalog',
 });

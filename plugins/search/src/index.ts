@@ -20,32 +20,34 @@
  * @packageDocumentation
  */
 
-export { searchApiRef } from './apis';
-export type { SearchApi } from './apis';
+export type { HomePageSearchBarProps } from './components/HomePageComponent';
+
 export {
-  Filters,
-  FiltersButton,
-  SearchBar,
-  SearchContextProvider,
-  SearchFilter,
-  SearchFilterNext,
   SearchModal,
-  SearchPage as Router,
-  SearchResultPager,
-  SearchType,
-  SidebarSearch,
-  useSearch,
-} from './components';
-export type { SearchModalProps } from './components';
-export type { FiltersState } from './components';
+  SearchModalProvider,
+  useSearchModal,
+} from './components/SearchModal';
+export type {
+  SearchModalChildrenProps,
+  SearchModalProps,
+  SearchModalProviderProps,
+  SearchModalValue,
+} from './components/SearchModal';
+export { SearchPage as Router } from './components/SearchPage';
+export { SearchType } from './components/SearchType';
+export type {
+  SearchTypeAccordionProps,
+  SearchTypeTabsProps,
+  SearchTypeProps,
+} from './components/SearchType';
+export { SidebarSearch } from './components/SidebarSearch';
+export type { SidebarSearchProps } from './components/SidebarSearch';
+export type { SidebarSearchModalProps } from './components/SidebarSearchModal';
+
 export {
-  DefaultResultListItem,
   HomePageSearchBar,
-  SearchBarNext,
   SearchPage,
-  SearchPageNext,
+  SidebarSearchModal,
   searchPlugin as plugin,
   searchPlugin,
-  SearchResult,
-  SidebarSearchModal,
 } from './plugin';

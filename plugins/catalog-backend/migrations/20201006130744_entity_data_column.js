@@ -31,7 +31,8 @@ exports.up = async function up(knex) {
     // apiVersion and kind should not contain any JSON unsafe chars, and both
     // metadata and spec are already valid serialized JSON
     data: knex.raw(
-      `'{"apiVersion":"' || api_version || '","kind":"' || kind || '","metadata":' || metadata || COALESCE(',"spec":' || spec, '') || '}'`,
+      `'{"apiVersion":"' || ?? || '","kind":"' || ?? || '","metadata":' || ?? || COALESCE(',"spec":' || ??, '') || '}'`,
+      ['api_version', 'kind', 'metadata', 'spec'],
     ),
   });
 
@@ -41,9 +42,9 @@ exports.up = async function up(knex) {
   });
 
   // SQLite does not support ALTER COLUMN.
-  if (knex.client.config.client !== 'sqlite3') {
+  if (!knex.client.config.client.includes('sqlite3')) {
     await knex.schema.alterTable('entities', table => {
-      table.text('data').notNullable().alter();
+      table.text('data').notNullable().alter({ alterNullable: true });
     });
   }
 };

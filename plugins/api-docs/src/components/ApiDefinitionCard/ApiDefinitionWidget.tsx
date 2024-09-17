@@ -17,7 +17,10 @@ import React from 'react';
 import { AsyncApiDefinitionWidget } from '../AsyncApiDefinitionWidget';
 import { GraphQlDefinitionWidget } from '../GraphQlDefinitionWidget';
 import { OpenApiDefinitionWidget } from '../OpenApiDefinitionWidget';
+import { GrpcApiDefinitionWidget } from '../GrpcApiDefinitionWidget';
+import { TrpcApiDefinitionWidget } from '../TrpcDefinitionWidget';
 
+/** @public */
 export type ApiDefinitionWidget = {
   type: string;
   title: string;
@@ -25,6 +28,7 @@ export type ApiDefinitionWidget = {
   rawLanguage?: string;
 };
 
+/** @public */
 export function defaultDefinitionWidgets(): ApiDefinitionWidget[] {
   return [
     {
@@ -49,6 +53,20 @@ export function defaultDefinitionWidgets(): ApiDefinitionWidget[] {
       rawLanguage: 'graphql',
       component: definition => (
         <GraphQlDefinitionWidget definition={definition} />
+      ),
+    },
+    {
+      type: 'grpc',
+      title: 'gRPC',
+      component: definition => (
+        <GrpcApiDefinitionWidget definition={definition} />
+      ),
+    },
+    {
+      type: 'trpc',
+      title: 'tRPC',
+      component: definition => (
+        <TrpcApiDefinitionWidget definition={definition} />
       ),
     },
   ];

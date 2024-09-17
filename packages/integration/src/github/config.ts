@@ -27,7 +27,7 @@ const GITHUB_RAW_BASE_URL = 'https://raw.githubusercontent.com';
  *
  * @public
  */
-export type GitHubIntegrationConfig = {
+export type GithubIntegrationConfig = {
   /**
    * The host of the target that this matches on, e.g. "github.com"
    */
@@ -117,13 +117,13 @@ export type GithubAppConfig = {
  * @param config - The config object of a single integration
  * @public
  */
-export function readGitHubIntegrationConfig(
+export function readGithubIntegrationConfig(
   config: Config,
-): GitHubIntegrationConfig {
+): GithubIntegrationConfig {
   const host = config.getOptionalString('host') ?? GITHUB_HOST;
   let apiBaseUrl = config.getOptionalString('apiBaseUrl');
   let rawBaseUrl = config.getOptionalString('rawBaseUrl');
-  const token = config.getOptionalString('token');
+  const token = config.getOptionalString('token')?.trim();
   const apps = config.getOptionalConfigArray('apps')?.map(c => ({
     appId: c.getNumber('appId'),
     clientId: c.getString('clientId'),
@@ -163,11 +163,11 @@ export function readGitHubIntegrationConfig(
  * @param configs - All of the integration config objects
  * @public
  */
-export function readGitHubIntegrationConfigs(
+export function readGithubIntegrationConfigs(
   configs: Config[],
-): GitHubIntegrationConfig[] {
+): GithubIntegrationConfig[] {
   // First read all the explicit integrations
-  const result = configs.map(readGitHubIntegrationConfig);
+  const result = configs.map(readGithubIntegrationConfig);
 
   // If no explicit github.com integration was added, put one in the list as
   // a convenience

@@ -13,51 +13,63 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { RELATION_MEMBER_OF, UserEntity } from '@backstage/catalog-model';
+
+import {
+  ANNOTATION_EDIT_URL,
+  RELATION_MEMBER_OF,
+  UserEntity,
+} from '@backstage/catalog-model';
+import {
+  Avatar,
+  InfoCard,
+  InfoCardVariants,
+  Link,
+} from '@backstage/core-components';
+import Box from '@material-ui/core/Box';
+import Grid from '@material-ui/core/Grid';
+import IconButton from '@material-ui/core/IconButton';
+import List from '@material-ui/core/List';
+import ListItem from '@material-ui/core/ListItem';
+import ListItemIcon from '@material-ui/core/ListItemIcon';
+import ListItemText from '@material-ui/core/ListItemText';
+import Tooltip from '@material-ui/core/Tooltip';
 import {
   EntityRefLinks,
   getEntityRelations,
   useEntity,
 } from '@backstage/plugin-catalog-react';
-import {
-  Box,
-  Grid,
-  Link,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
-  Tooltip,
-} from '@material-ui/core';
+
+import Alert from '@material-ui/lab/Alert';
+import EditIcon from '@material-ui/icons/Edit';
 import EmailIcon from '@material-ui/icons/Email';
 import GroupIcon from '@material-ui/icons/Group';
+import { LinksGroup } from '../../Meta';
 import PersonIcon from '@material-ui/icons/Person';
-import Alert from '@material-ui/lab/Alert';
 import React from 'react';
-import { Avatar, InfoCard, InfoCardVariants } from '@backstage/core-components';
 
-const CardTitle = ({ title }: { title?: string }) =>
-  title ? (
+const CardTitle = (props: { title?: string }) =>
+  props.title ? (
     <Box display="flex" alignItems="center">
       <PersonIcon fontSize="inherit" />
-      <Box ml={1}>{title}</Box>
+      <Box ml={1}>{props.title}</Box>
     </Box>
   ) : null;
 
-export const UserProfileCard = ({
-  variant,
-}: {
-  /** @deprecated The entity is now grabbed from context instead */
-  entity?: UserEntity;
+/** @public */
+export const UserProfileCard = (props: {
   variant?: InfoCardVariants;
+  showLinks?: boolean;
 }) => {
   const { entity: user } = useEntity<UserEntity>();
   if (!user) {
     return <Alert severity="error">User not found</Alert>;
   }
 
+  const entityMetadataEditUrl =
+    user.metadata.annotations?.[ANNOTATION_EDIT_URL];
+
   const {
-    metadata: { name: metaName },
+    metadata: { name: metaName, description, links },
     spec: { profile },
   } = user;
   const displayName = profile?.displayName ?? metaName;
@@ -67,7 +79,25 @@ export const UserProfileCard = ({
   });
 
   return (
-    <InfoCard title={<CardTitle title={displayName} />} variant={variant}>
+    <InfoCard
+      title={<CardTitle title={displayName} />}
+      subheader={description}
+      variant={props.variant}
+      action={
+        <>
+          {entityMetadataEditUrl && (
+            <IconButton
+              aria-label="Edit"
+              title="Edit Metadata"
+              component={Link}
+              to={entityMetadataEditUrl}
+            >
+              <EditIcon />
+            </IconButton>
+          )}
+        </>
+      }
+    >
       <Grid container spacing={3} alignItems="flex-start">
         <Grid item xs={12} sm={2} xl={1}>
           <Avatar displayName={displayName} picture={profile?.picture} />
@@ -83,7 +113,7 @@ export const UserProfileCard = ({
                   </Tooltip>
                 </ListItemIcon>
                 <ListItemText>
-                  <Link href={emailHref}>{profile.email}</Link>
+                  <Link to={emailHref ?? ''}>{profile.email}</Link>
                 </ListItemText>
               </ListItem>
             )}
@@ -101,6 +131,8 @@ export const UserProfileCard = ({
                 />
               </ListItemText>
             </ListItem>
+
+            {props?.showLinks && <LinksGroup links={links} />}
           </List>
         </Grid>
       </Grid>

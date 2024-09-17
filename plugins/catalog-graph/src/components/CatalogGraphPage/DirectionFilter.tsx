@@ -13,8 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { Select } from '@backstage/core-components';
-import { Box } from '@material-ui/core';
+import { Select, SelectedItems } from '@backstage/core-components';
+import Box from '@material-ui/core/Box';
 import React, { useCallback } from 'react';
 import { Direction } from '../EntityRelationsGraph';
 
@@ -31,7 +31,10 @@ export type Props = {
 };
 
 export const DirectionFilter = ({ value, onChange }: Props) => {
-  const handleChange = useCallback(v => onChange(v as Direction), [onChange]);
+  const handleChange = useCallback(
+    (v: SelectedItems) => onChange(v as Direction),
+    [onChange],
+  );
 
   return (
     <Box pb={1} pt={1}>

@@ -1,5 +1,8 @@
 # catalog-graph
 
+> Disclaimer:
+> If you are looking for documentation on the experimental new frontend system support, please go [here](./README-alpha.md).
+
 Welcome to the catalog graph plugin! The catalog graph visualizes the relations
 between entities, like ownership, grouping or API relationships.
 
@@ -24,9 +27,10 @@ The plugin comes with these features:
 
 To use the catalog graph plugin, you have to add some things to your Backstage app:
 
-1. Add a dependency to your `packages/app/package.json`, run:
+1. Add a dependency to your `packages/app/package.json`:
    ```sh
-    yarn add @backstage/plugin-catalog-graph
+   # From your Backstage root directory
+   yarn --cwd packages/app add @backstage/plugin-catalog-graph
    ```
 2. Add the `CatalogGraphPage` to your `packages/app/src/App.tsx`:
 
@@ -83,3 +87,58 @@ To use the catalog graph plugin, you have to add some things to your Backstage a
      <EntityCatalogGraphCard variant="gridItem" height={400} />
    </Grid>
    ```
+
+### Customization
+
+Copy the default implementation `DefaultRenderNode.tsx` and add more classes to the styles:
+
+```typescript
+const useStyles = makeStyles(
+    theme => ({
+        node: {
+            …
+            '&.system': {
+                fill: '#F5DC70',
+                stroke: '#F2CE34',
+            },
+            '&.domain': {
+                fill: '#F5DC70',
+                stroke: '#F2CE34',
+            },
+        …
+);
+```
+
+Now you can use the new classes in your component with `className={classNames(classes.node, kind?.toLowerCase(), type?.toLowerCase())}`
+
+```tsx
+return (
+  <g onClick={onClick} className={classNames(onClick && classes.clickable)}>
+    <rect
+      className={classNames(
+        classes.node,
+        kind?.toLowerCase(),
+        type?.toLowerCase(),
+      )}
+      width={paddedWidth}
+      height={paddedHeight}
+    />
+    <text
+      ref={idRef}
+      className={classNames(classes.text, focused && 'focused')}
+      y={paddedHeight / 2}
+      x={paddedWidth / 2}
+      textAnchor="middle"
+      alignmentBaseline="middle"
+    >
+      {displayTitle}
+    </text>
+  </g>
+);
+```
+
+## Development
+
+Run `yarn` in the root of this plugin to install all dependencies and then `yarn start` to run a [development version](./dev/index.tsx) of this plugin.
+
+![dev](https://user-images.githubusercontent.com/1190768/167130527-14d787ce-510d-408a-8f93-45bb94b3a9af.png)

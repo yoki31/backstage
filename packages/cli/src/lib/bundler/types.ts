@@ -16,47 +16,61 @@
 
 import { AppConfig, Config } from '@backstage/config';
 import { BundlingPathsOptions } from './paths';
-import { ParallelOption } from '../parallel';
 import { ConfigSchema } from '@backstage/config-loader';
+
+export type ModuleFederationOptions = {
+  // Unique name for this module federation bundle
+  name: string;
+  // Whether this is a host or remote bundle
+  mode: 'host' | 'remote';
+};
 
 export type BundlingOptions = {
   checksEnabled: boolean;
   isDev: boolean;
   frontendConfig: Config;
-  frontendAppConfigs: AppConfig[];
-  baseUrl: URL;
-  parallel?: ParallelOption;
+  getFrontendAppConfigs(): AppConfig[];
+  parallelism?: number;
+  additionalEntryPoints?: string[];
+  // Path to append to the detected public path, e.g. '/public'
+  publicSubPath?: string;
+  // Mode that the app is running in, 'protected' or 'public', default is 'public'
+  appMode?: string;
+  moduleFederation?: ModuleFederationOptions;
 };
 
 export type ServeOptions = BundlingPathsOptions & {
   checksEnabled: boolean;
-  frontendConfig: Config;
-  frontendAppConfigs: AppConfig[];
+  configPaths: string[];
+  verifyVersions?: boolean;
+  skipOpenBrowser?: boolean;
+  moduleFederation?: ModuleFederationOptions;
 };
 
 export type BuildOptions = BundlingPathsOptions & {
+  // Target directory, defaulting to paths.targetDir
+  targetDir?: string;
   statsJsonEnabled: boolean;
-  parallel?: ParallelOption;
+  parallelism?: number;
   schema?: ConfigSchema;
   frontendConfig: Config;
   frontendAppConfigs: AppConfig[];
+  fullConfig: Config;
+  moduleFederation?: ModuleFederationOptions;
 };
 
 export type BackendBundlingOptions = {
   checksEnabled: boolean;
   isDev: boolean;
-  parallel?: ParallelOption;
+  parallelism?: number;
   inspectEnabled: boolean;
   inspectBrkEnabled: boolean;
+  require?: string;
 };
 
 export type BackendServeOptions = BundlingPathsOptions & {
   checksEnabled: boolean;
   inspectEnabled: boolean;
   inspectBrkEnabled: boolean;
-};
-
-export type LernaPackage = {
-  name: string;
-  location: string;
+  require?: string;
 };

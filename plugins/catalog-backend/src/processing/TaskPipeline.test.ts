@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { startTaskPipeline } from './TaskPipeline';
+import { startTaskPipeline, createBarrier } from './TaskPipeline';
 
 function createLimitedLoader(count: number, loadDelay?: number) {
   const items = new Array(count).fill(0).map((_, index) => index);
@@ -42,7 +42,7 @@ function createLimitedLoader(count: number, loadDelay?: number) {
   };
   const processTask = async (item: number) => {
     processedTasks.push(item);
-    await new Promise(resolve => setTimeout(resolve)); // emulate a bit of work
+    await new Promise(resolve => setTimeout(resolve, 10)); // emulate a bit of work
     if (processedTasks.length === count) {
       resolveDone({ processedTasks, loadCounts });
     }
@@ -117,5 +117,90 @@ describe('startTaskPipeline', () => {
         highWatermark: 3,
       });
     }).toThrow('must be lower');
+  });
+});
+
+describe('createBarrier', () => {
+  const tick = (millis: number) =>
+    new Promise(resolve => setTimeout(resolve, millis));
+
+  it('abandons a wait after the timeout expires', async () => {
+    const abortController = new AbortController();
+    const signal = abortController.signal;
+    const barrier = createBarrier({ waitTimeoutMillis: 100, signal });
+
+    const fn1 = jest.fn();
+    barrier.wait().then(fn1);
+
+    await tick(0);
+    expect(fn1).not.toHaveBeenCalled();
+
+    await tick(50);
+    expect(fn1).not.toHaveBeenCalled();
+
+    // start a new wait mid-way through the timeout
+    // should NOT resolve when the first one times out
+    const fn2 = jest.fn();
+    barrier.wait().then(fn2);
+
+    await tick(0);
+    expect(fn2).not.toHaveBeenCalled();
+
+    await tick(50);
+    expect(fn1).toHaveBeenCalledTimes(1);
+    expect(fn2).not.toHaveBeenCalled();
+
+    await tick(50);
+    expect(fn1).toHaveBeenCalledTimes(1);
+    expect(fn2).toHaveBeenCalledTimes(1);
+  });
+
+  it('abandons a wait after aborted', async () => {
+    const abortController = new AbortController();
+    const signal = abortController.signal;
+    const barrier = createBarrier({ waitTimeoutMillis: 100, signal });
+
+    const fn1 = jest.fn();
+    barrier.wait().then(fn1);
+
+    // should resolve immediately, not after timeout
+    await tick(0);
+    expect(fn1).not.toHaveBeenCalled();
+    abortController.abort();
+    await tick(0);
+    expect(fn1).toHaveBeenCalledTimes(1);
+
+    // subsequent waits should be immediate no matter what
+    const fn2 = jest.fn();
+    barrier.wait().then(fn2);
+    await tick(0);
+    expect(fn2).toHaveBeenCalledTimes(1);
+  });
+
+  it('release immediately unblocks all waits', async () => {
+    const abortController = new AbortController();
+    const signal = abortController.signal;
+    const barrier = createBarrier({ waitTimeoutMillis: 100, signal });
+
+    const fn1 = jest.fn();
+    barrier.wait().then(fn1);
+
+    await tick(50);
+    expect(fn1).not.toHaveBeenCalled();
+
+    // start a new wait mid-way through the timeout
+    // SHOULD resolve when releasing
+    const fn2 = jest.fn();
+    barrier.wait().then(fn2);
+
+    await tick(0);
+    expect(fn1).not.toHaveBeenCalled();
+    expect(fn2).not.toHaveBeenCalled();
+
+    barrier.release();
+
+    await tick(0);
+    expect(fn1).toHaveBeenCalledTimes(1);
+    expect(fn2).toHaveBeenCalledTimes(1);
   });
 });

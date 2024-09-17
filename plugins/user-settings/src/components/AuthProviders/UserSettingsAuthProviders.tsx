@@ -15,18 +15,17 @@
  */
 
 import React from 'react';
-import { List } from '@material-ui/core';
+import List from '@material-ui/core/List';
 import { EmptyProviders } from './EmptyProviders';
 import { DefaultProviderSettings } from './DefaultProviderSettings';
-
 import { configApiRef, useApi } from '@backstage/core-plugin-api';
 import { InfoCard } from '@backstage/core-components';
 
-type Props = {
+/** @public */
+export const UserSettingsAuthProviders = (props: {
   providerSettings?: JSX.Element;
-};
-
-export const UserSettingsAuthProviders = ({ providerSettings }: Props) => {
+}) => {
+  const { providerSettings } = props;
   const configApi = useApi(configApiRef);
   const providersConfig = configApi.getOptionalConfig('auth.providers');
   const configuredProviders = providersConfig?.keys() || [];

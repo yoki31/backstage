@@ -14,5 +14,7 @@
  * limitations under the License.
  */
 
+/**
+ * todo(backstage/techdocs-core): stop exporting this in a future release.
+ */
 export { DefaultCatalogCollator } from './DefaultCatalogCollator';
-export type { CatalogEntityDocument } from './DefaultCatalogCollator';

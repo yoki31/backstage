@@ -14,37 +14,23 @@
  * limitations under the License.
  */
 
-import fs from 'fs-extra';
+import {
+  productionPack,
+  revertProductionPack,
+} from '../lib/packager/productionPack';
 import { paths } from '../lib/paths';
-
-const SKIPPED_KEYS = ['access', 'registry', 'tag'];
-
-const PKG_PATH = 'package.json';
-const PKG_BACKUP_PATH = 'package.json-prepack';
+import fs from 'fs-extra';
+import { publishPreflightCheck } from '../lib/publishing';
 
 export const pre = async () => {
-  const pkgPath = paths.resolveTarget(PKG_PATH);
+  publishPreflightCheck({
+    dir: paths.targetDir,
+    packageJson: await fs.readJson(paths.resolveTarget('package.json')),
+  });
 
-  const pkgContent = await fs.readFile(pkgPath, 'utf8');
-  const pkg = JSON.parse(pkgContent);
-  await fs.writeFile(PKG_BACKUP_PATH, pkgContent);
-
-  for (const key of Object.keys(pkg.publishConfig ?? {})) {
-    if (!SKIPPED_KEYS.includes(key)) {
-      pkg[key] = pkg.publishConfig[key];
-    }
-  }
-  await fs.writeJson(pkgPath, pkg, { encoding: 'utf8', spaces: 2 });
+  await productionPack({ packageDir: paths.targetDir });
 };
 
 export const post = async () => {
-  // postpack isn't called by yarn right now, so it needs to be called manually
-  try {
-    await fs.move(PKG_BACKUP_PATH, PKG_PATH, { overwrite: true });
-  } catch (error) {
-    console.warn(
-      `Failed to restore package.json during postpack, ${error}. ` +
-        'Your package will be fine but you may have ended up with some garbage in the repo.',
-    );
-  }
+  await revertProductionPack(paths.targetDir);
 };

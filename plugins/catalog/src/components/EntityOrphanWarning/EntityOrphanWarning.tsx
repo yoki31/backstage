@@ -15,24 +15,38 @@
  */
 
 import { Entity } from '@backstage/catalog-model';
-import { catalogRouteRef, useEntity } from '@backstage/plugin-catalog-react';
-import { Alert } from '@material-ui/lab';
+import { useEntity } from '@backstage/plugin-catalog-react';
+import Alert from '@material-ui/lab/Alert';
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router';
+import { useNavigate } from 'react-router-dom';
 import { DeleteEntityDialog } from './DeleteEntityDialog';
 import { useRouteRef } from '@backstage/core-plugin-api';
-
-export const isOrphan = (entity: Entity) =>
-  entity?.metadata?.annotations?.['backstage.io/orphan'] === 'true';
+import { rootRouteRef } from '../../routes';
+import { catalogTranslationRef } from '../../alpha/translation';
+import { useTranslationRef } from '@backstage/core-plugin-api/alpha';
 
 /**
- * Displays a warning alert if the entity is marked as orphan with the ability to delete said entity.
+ * Returns true if the given entity has the orphan annotation given by the
+ * catalog.
+ *
+ * @public
  */
-export const EntityOrphanWarning = () => {
+export function isOrphan(entity: Entity): boolean {
+  return entity?.metadata?.annotations?.['backstage.io/orphan'] === 'true';
+}
+
+/**
+ * Displays a warning alert if the entity is marked as orphan with the ability
+ * to delete said entity.
+ *
+ * @public
+ */
+export function EntityOrphanWarning() {
   const navigate = useNavigate();
-  const catalogLink = useRouteRef(catalogRouteRef);
+  const catalogLink = useRouteRef(rootRouteRef);
   const [confirmationDialogOpen, setConfirmationDialogOpen] = useState(false);
   const { entity } = useEntity();
+  const { t } = useTranslationRef(catalogTranslationRef);
 
   const cleanUpAfterRemoval = async () => {
     setConfirmationDialogOpen(false);
@@ -42,8 +56,7 @@ export const EntityOrphanWarning = () => {
   return (
     <>
       <Alert severity="warning" onClick={() => setConfirmationDialogOpen(true)}>
-        This entity is not referenced by any location and is therefore not
-        receiving updates. Click here to delete.
+        {t('deleteEntity.description')}
       </Alert>
       <DeleteEntityDialog
         open={confirmationDialogOpen}
@@ -53,4 +66,4 @@ export const EntityOrphanWarning = () => {
       />
     </>
   );
-};
+}

@@ -20,11 +20,11 @@
  * @param {import('knex').Knex} knex
  */
 exports.up = async function up(knex) {
-  if (knex.client.config.client === 'sqlite3') {
+  if (knex.client.config.client.includes('sqlite3')) {
     // sqlite doesn't support dropPrimary so we recreate it properly instead
     await knex.schema.dropTable('entities_relations');
     await knex.schema.createTable('entities_relations', table => {
-      table.comment('All relations between entities in the catalog');
+      table.comment('All relations between entities');
       table
         .uuid('originating_entity_id')
         .references('id')
@@ -58,10 +58,10 @@ exports.up = async function up(knex) {
  * @param {import('knex').Knex} knex
  */
 exports.down = async function down(knex) {
-  if (knex.client.config.client === 'sqlite3') {
+  if (knex.client.config.client.includes('sqlite3')) {
     await knex.schema.dropTable('entities_relations');
     await knex.schema.createTable('entities_relations', table => {
-      table.comment('All relations between entities in the catalog');
+      table.comment('All relations between entities');
       table
         .uuid('originating_entity_id')
         .references('id')

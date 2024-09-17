@@ -15,17 +15,16 @@
  */
 
 import React, { useCallback, useState } from 'react';
-import {
-  List,
-  TextField,
-  IconButton,
-  Grid,
-  Typography,
-} from '@material-ui/core';
+import List from '@material-ui/core/List';
+import TextField from '@material-ui/core/TextField';
+import IconButton from '@material-ui/core/IconButton';
+import Grid from '@material-ui/core/Grid';
+import Typography from '@material-ui/core/Typography';
 import { EmptyFlags } from './EmptyFlags';
 import { FlagItem } from './FeatureFlagsItem';
-
 import {
+  FeatureFlag,
+  FeatureFlagsApi,
   featureFlagsApiRef,
   FeatureFlagState,
   useApi,
@@ -33,9 +32,26 @@ import {
 import { InfoCard } from '@backstage/core-components';
 import ClearIcon from '@material-ui/icons/Clear';
 
+export const sortFlags = (
+  flags: FeatureFlag[],
+  featureFlagsApi: FeatureFlagsApi,
+): FeatureFlag[] => {
+  const activeFlags = flags.filter(flag => featureFlagsApi.isActive(flag.name));
+  const idleFlags = flags.filter(flag => !featureFlagsApi.isActive(flag.name));
+  return [...activeFlags, ...idleFlags];
+};
+
+/** @public */
 export const UserSettingsFeatureFlags = () => {
   const featureFlagsApi = useApi(featureFlagsApiRef);
-  const featureFlags = featureFlagsApi.getRegisteredFlags();
+  const inputRef = React.useRef<HTMLElement>();
+
+  const initialFeatureFlags = featureFlagsApi.getRegisteredFlags();
+  const initialFeatureFlagsSorted = sortFlags(
+    initialFeatureFlags,
+    featureFlagsApi,
+  );
+  const [featureFlags] = useState(initialFeatureFlagsSorted);
 
   const initialFlagState = Object.fromEntries(
     featureFlags.map(({ name }) => [name, featureFlagsApi.isActive(name)]),
@@ -43,7 +59,6 @@ export const UserSettingsFeatureFlags = () => {
 
   const [state, setState] = useState<Record<string, boolean>>(initialFlagState);
   const [filterInput, setFilterInput] = useState<string>('');
-  const inputRef = React.useRef<HTMLElement>();
 
   const toggleFlag = useCallback(
     (flagName: string) => {
@@ -73,23 +88,18 @@ export const UserSettingsFeatureFlags = () => {
     inputRef?.current?.focus();
   };
 
-  let filteredFeatureFlags = Array.from(featureFlags);
-
-  const filterInputParts = filterInput
-    .split(/\s/)
-    .map(part => part.trim().toLocaleLowerCase('en-US'));
-
-  filterInputParts.forEach(
-    part =>
-      (filteredFeatureFlags = filteredFeatureFlags.filter(featureFlag =>
-        featureFlag.name.toLocaleLowerCase('en-US').includes(part),
-      )),
-  );
+  const filteredFeatureFlags = featureFlags.filter(featureFlag => {
+    const featureFlagName = featureFlag.name.toLocaleLowerCase('en-US');
+    return featureFlagName.includes(filterInput.toLocaleLowerCase('en-US'));
+  });
 
   const Header = () => (
     <Grid container style={{ justifyContent: 'space-between' }}>
       <Grid item xs={6} md={8}>
         <Typography variant="h5">Feature Flags</Typography>
+        <Typography variant="subtitle1">
+          Please refresh the page when toggling feature flags
+        </Typography>
       </Grid>
       {featureFlags.length >= 10 && (
         <Grid item xs={6} md={4}>

@@ -14,20 +14,37 @@
  * limitations under the License.
  */
 
-import { Command } from 'commander';
-import { run } from '../lib/run';
+import { OptionValues } from 'commander';
 import { paths } from '../lib/paths';
+import { ESLint } from 'eslint';
 
-export default async (cmd: Command, cmdArgs: string[]) => {
-  const args = [
-    '--ext=js,jsx,ts,tsx,mjs,cjs',
-    '--max-warnings=0',
-    `--format=${cmd.format}`,
-    ...(cmdArgs ?? [paths.targetDir]),
-  ];
-  if (cmd.fix) {
-    args.push('--fix');
+export default async (directories: string[], opts: OptionValues) => {
+  const eslint = new ESLint({
+    cwd: paths.targetDir,
+    fix: opts.fix,
+    extensions: ['js', 'jsx', 'ts', 'tsx', 'mjs', 'cjs'],
+  });
+
+  const results = await eslint.lintFiles(
+    directories.length ? directories : ['.'],
+  );
+
+  if (opts.fix) {
+    await ESLint.outputFixes(results);
   }
 
-  await run('eslint', args);
+  const formatter = await eslint.loadFormatter(opts.format);
+
+  // This formatter uses the cwd to format file paths, so let's have that happen from the root instead
+  if (opts.format === 'eslint-formatter-friendly') {
+    process.chdir(paths.targetRoot);
+  }
+  const resultText = formatter.format(results);
+
+  // If there is any feedback at all, we treat it as a lint failure. This should be
+  // consistent with our old behavior of passing `--max-warnings=0` when invoking eslint.
+  if (resultText) {
+    console.log(resultText);
+    process.exit(1);
+  }
 };

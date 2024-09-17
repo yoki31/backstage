@@ -13,15 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-/**
- * TODO favoriteable capability
- */
-
-import React, { PropsWithChildren, ReactNode } from 'react';
+import Box from '@material-ui/core/Box';
 import { makeStyles } from '@material-ui/core/styles';
 import Typography from '@material-ui/core/Typography';
+import React, { PropsWithChildren, ReactNode } from 'react';
 import { Helmet } from 'react-helmet';
+
+/**
+ * TODO: favoriteable capability
+ */
 
 /** @public */
 export type ContentHeaderClassKey =
@@ -73,10 +73,7 @@ type ContentHeaderTitleProps = {
   className?: string;
 };
 
-const ContentHeaderTitle = ({
-  title = 'Unknown page',
-  className,
-}: ContentHeaderTitleProps) => (
+const ContentHeaderTitle = ({ title, className }: ContentHeaderTitleProps) => (
   <Typography
     variant="h4"
     component="h2"
@@ -94,7 +91,13 @@ type ContentHeaderProps = {
   textAlign?: 'left' | 'right' | 'center';
 };
 
-/** @public */
+/**
+ *  A header at the top inside a {@link Content}.
+ *
+ * @public
+ *
+ */
+
 export function ContentHeader(props: PropsWithChildren<ContentHeaderProps>) {
   const {
     description,
@@ -114,17 +117,17 @@ export function ContentHeader(props: PropsWithChildren<ContentHeaderProps>) {
   return (
     <>
       <Helmet title={title} />
-      <div className={classes.container}>
-        <div className={classes.leftItemsBox}>
+      <Box className={classes.container}>
+        <Box className={classes.leftItemsBox}>
           {renderedTitle}
           {description && (
             <Typography className={classes.description} variant="body2">
               {description}
             </Typography>
           )}
-        </div>
-        <div className={classes.rightItemsBox}>{children}</div>
-      </div>
+        </Box>
+        <Box className={classes.rightItemsBox}>{children}</Box>
+      </Box>
     </>
   );
 }

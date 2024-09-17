@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-import { makeStyles } from '@material-ui/core/styles';
-import Link from '@material-ui/core/Link';
-import Typography from '@material-ui/core/Typography';
 import Grid from '@material-ui/core/Grid';
-import React from 'react';
+import { alpha, makeStyles } from '@material-ui/core/styles';
+import Typography from '@material-ui/core/Typography';
+import React, { PropsWithChildren } from 'react';
+import { Link } from '../../components/Link';
 
 /** @public */
 export type HeaderLabelClassKey = 'root' | 'label' | 'value';
@@ -29,15 +29,15 @@ const useStyles = makeStyles(
       textAlign: 'left',
     },
     label: {
-      color: theme.palette.common.white,
-      fontWeight: 'bold',
+      color: theme.page.fontColor,
+      fontWeight: theme.typography.fontWeightBold,
       letterSpacing: 0,
       fontSize: theme.typography.fontSize,
       marginBottom: theme.spacing(1) / 2,
       lineHeight: 1,
     },
     value: {
-      color: 'rgba(255, 255, 255, 0.8)',
+      color: alpha(theme.page.fontColor, 0.8),
       fontSize: theme.typography.fontSize,
       lineHeight: 1,
     },
@@ -45,37 +45,58 @@ const useStyles = makeStyles(
   { name: 'BackstageHeaderLabel' },
 );
 
-type HeaderLabelContentProps = {
+type HeaderLabelContentProps = PropsWithChildren<{
   value: React.ReactNode;
   className: string;
-};
+  typographyRootComponent?: keyof JSX.IntrinsicElements;
+}>;
 
-const HeaderLabelContent = ({ value, className }: HeaderLabelContentProps) => (
-  <Typography className={className}>{value}</Typography>
-);
+const HeaderLabelContent = ({
+  value,
+  className,
+  typographyRootComponent,
+}: HeaderLabelContentProps) => {
+  return (
+    <Typography
+      component={
+        typographyRootComponent ?? (typeof value === 'string' ? 'p' : 'span')
+      }
+      className={className}
+    >
+      {value}
+    </Typography>
+  );
+};
 
 type HeaderLabelProps = {
   label: string;
   value?: HeaderLabelContentProps['value'];
+  contentTypograpyRootComponent?: HeaderLabelContentProps['typographyRootComponent'];
   url?: string;
 };
 
-/** @public */
+/**
+ * Additional label to main {@link Header}
+ *
+ * @public
+ *
+ */
 export function HeaderLabel(props: HeaderLabelProps) {
-  const { label, value, url } = props;
+  const { label, value, url, contentTypograpyRootComponent } = props;
   const classes = useStyles();
   const content = (
     <HeaderLabelContent
       className={classes.value}
       value={value || '<Unknown>'}
+      typographyRootComponent={contentTypograpyRootComponent}
     />
   );
   return (
     <Grid item>
-      <span className={classes.root}>
+      <Typography component="span" className={classes.root}>
         <Typography className={classes.label}>{label}</Typography>
-        {url ? <Link href={url}>{content}</Link> : content}
-      </span>
+        {url ? <Link to={url}>{content}</Link> : content}
+      </Typography>
     </Grid>
   );
 }

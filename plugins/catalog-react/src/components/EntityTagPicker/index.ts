@@ -15,3 +15,7 @@
  */
 
 export { EntityTagPicker } from './EntityTagPicker';
+export type {
+  CatalogReactEntityTagPickerClassKey,
+  EntityTagPickerProps,
+} from './EntityTagPicker';

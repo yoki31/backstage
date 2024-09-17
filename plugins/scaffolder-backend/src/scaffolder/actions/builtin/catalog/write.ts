@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Spotify AB
+ * Copyright 2021 The Backstage Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,35 +15,61 @@
  */
 
 import fs from 'fs-extra';
-import { createTemplateAction } from '../../createTemplateAction';
+import { createTemplateAction } from '@backstage/plugin-scaffolder-node';
 import * as yaml from 'yaml';
-import { Entity } from '@backstage/catalog-model';
-import { resolveSafeChildPath } from '@backstage/backend-common';
+import { resolveSafeChildPath } from '@backstage/backend-plugin-api';
+import { z } from 'zod';
+import { examples } from './write.examples';
+
+const id = 'catalog:write';
+
+/**
+ * Writes a catalog descriptor file containing the provided entity to a path in the workspace.
+ * @public
+ */
 
 export function createCatalogWriteAction() {
-  return createTemplateAction<{ name?: string; entity: Entity }>({
-    id: 'catalog:write',
+  return createTemplateAction({
+    id,
     description: 'Writes the catalog-info.yaml for your template',
     schema: {
-      input: {
-        type: 'object',
-        properties: {
-          entity: {
-            title: 'Entity info to write catalog-info.yaml',
-            description:
-              'You can provide the same values used in the Entity schema.',
-            type: 'object',
-          },
-        },
-      },
+      input: z.object({
+        filePath: z
+          .string()
+          .optional()
+          .describe('Defaults to catalog-info.yaml'),
+        // TODO: this should reference an zod entity validator if it existed.
+        entity: z
+          .record(z.any())
+          .describe(
+            'You can provide the same values used in the Entity schema.',
+          ),
+      }),
     },
+    examples,
+    supportsDryRun: true,
     async handler(ctx) {
-      ctx.logStream.write(`Writing catalog-info.yaml`);
-      const { entity } = ctx.input;
+      const { filePath, entity } = ctx.input;
+      const entityRef = ctx.templateInfo?.entityRef;
+      const path = filePath ?? 'catalog-info.yaml';
+      ctx.logger.info(`Writing ${path}`);
 
-      await fs.writeFile(
-        resolveSafeChildPath(ctx.workspacePath, 'catalog-info.yaml'),
-        yaml.stringify(entity),
+      await fs.outputFile(
+        resolveSafeChildPath(ctx.workspacePath, path),
+        yaml.stringify({
+          ...entity,
+          metadata: {
+            ...entity.metadata,
+            ...(entityRef
+              ? {
+                  annotations: {
+                    ...entity.metadata.annotations,
+                    'backstage.io/source-template': entityRef,
+                  },
+                }
+              : undefined),
+          },
+        }),
       );
     },
   });

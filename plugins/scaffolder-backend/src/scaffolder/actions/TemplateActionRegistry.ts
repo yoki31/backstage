@@ -14,22 +14,26 @@
  * limitations under the License.
  */
 
-import { InputBase, TemplateAction } from './types';
 import { ConflictError, NotFoundError } from '@backstage/errors';
-
+import { TemplateAction } from '@backstage/plugin-scaffolder-node';
+/**
+ * Registry of all registered template actions.
+ * @public
+ */
 export class TemplateActionRegistry {
-  private readonly actions = new Map<string, TemplateAction<any>>();
+  private readonly actions = new Map<string, TemplateAction>();
 
-  register<Parameters extends InputBase>(action: TemplateAction<Parameters>) {
+  register(action: TemplateAction) {
     if (this.actions.has(action.id)) {
       throw new ConflictError(
         `Template action with ID '${action.id}' has already been registered`,
       );
     }
+
     this.actions.set(action.id, action);
   }
 
-  get(actionId: string): TemplateAction<any> {
+  get(actionId: string): TemplateAction {
     const action = this.actions.get(actionId);
     if (!action) {
       throw new NotFoundError(
@@ -39,7 +43,7 @@ export class TemplateActionRegistry {
     return action;
   }
 
-  list(): TemplateAction<any>[] {
+  list(): TemplateAction[] {
     return [...this.actions.values()];
   }
 }

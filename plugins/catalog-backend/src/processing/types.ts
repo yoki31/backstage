@@ -14,14 +14,26 @@
  * limitations under the License.
  */
 
-import { Entity, EntityRelationSpec } from '@backstage/catalog-model';
+import { Entity } from '@backstage/catalog-model';
 import { JsonObject } from '@backstage/types';
+import {
+  DeferredEntity,
+  EntityRelationSpec,
+} from '@backstage/plugin-catalog-node';
 
+/**
+ * The request to process an entity.
+ * @public
+ */
 export type EntityProcessingRequest = {
   entity: Entity;
   state?: JsonObject; // Versions for multiple deployments etc
 };
 
+/**
+ * The result of processing an entity.
+ * @internal
+ */
 export type EntityProcessingResult =
   | {
       ok: true;
@@ -29,6 +41,7 @@ export type EntityProcessingResult =
       completedEntity: Entity;
       deferredEntities: DeferredEntity[];
       relations: EntityRelationSpec[];
+      refreshKeys: RefreshKeyData[];
       errors: Error[];
     }
   | {
@@ -36,15 +49,27 @@ export type EntityProcessingResult =
       errors: Error[];
     };
 
+/**
+ * A string to associate to the entity itself.
+ */
+export type RefreshKeyData = {
+  key: string;
+};
+
+/**
+ * Responsible for executing the individual processing steps in order to fully process an entity.
+ */
 export interface CatalogProcessingOrchestrator {
   process(request: EntityProcessingRequest): Promise<EntityProcessingResult>;
 }
 
-export type DeferredEntity = {
-  entity: Entity;
-  locationKey?: string;
-};
-
+/**
+ * Represents the engine that drives the processing and stitching loops. Some
+ * backend instances may choose to not call start, if they focus only on API
+ * interactions.
+ *
+ * @public
+ */
 export interface CatalogProcessingEngine {
   start(): Promise<void>;
   stop(): Promise<void>;

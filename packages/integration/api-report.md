@@ -4,7 +4,39 @@
 
 ```ts
 import { Config } from '@backstage/config';
+import { ConsumedResponse } from '@backstage/errors';
 import { RestEndpointMethodTypes } from '@octokit/rest';
+
+// @public
+export class AwsCodeCommitIntegration implements ScmIntegration {
+  constructor(integrationConfig: AwsCodeCommitIntegrationConfig);
+  // (undocumented)
+  get config(): AwsCodeCommitIntegrationConfig;
+  // (undocumented)
+  static factory: ScmIntegrationsFactory<AwsCodeCommitIntegration>;
+  // (undocumented)
+  resolveEditUrl(url: string): string;
+  // (undocumented)
+  resolveUrl(options: {
+    url: string;
+    base: string;
+    lineNumber?: number | undefined;
+  }): string;
+  // (undocumented)
+  get title(): string;
+  // (undocumented)
+  get type(): string;
+}
+
+// @public
+export type AwsCodeCommitIntegrationConfig = {
+  host: string;
+  accessKeyId?: string;
+  secretAccessKey?: string;
+  roleArn?: string;
+  externalId?: string;
+  region: string;
+};
 
 // @public
 export class AwsS3Integration implements ScmIntegration {
@@ -30,10 +62,67 @@ export class AwsS3Integration implements ScmIntegration {
 // @public
 export type AwsS3IntegrationConfig = {
   host: string;
+  endpoint?: string;
+  s3ForcePathStyle?: boolean;
   accessKeyId?: string;
   secretAccessKey?: string;
   roleArn?: string;
+  externalId?: string;
 };
+
+// @public
+export type AzureClientSecretCredential = AzureCredentialBase & {
+  kind: 'ClientSecret';
+  tenantId: string;
+  clientId: string;
+  clientSecret: string;
+};
+
+// @public
+export type AzureCredentialBase = {
+  kind: AzureDevOpsCredentialKind;
+  organizations?: string[];
+};
+
+// @public
+export type AzureDevOpsCredential =
+  | AzureClientSecretCredential
+  | AzureManagedIdentityCredential
+  | PersonalAccessTokenCredential;
+
+// @public
+export type AzureDevOpsCredentialKind =
+  | 'PersonalAccessToken'
+  | 'ClientSecret'
+  | 'ManagedIdentity';
+
+// @public
+export type AzureDevOpsCredentialLike = Omit<
+  Partial<AzureClientSecretCredential> &
+    Partial<AzureManagedIdentityCredential> &
+    Partial<PersonalAccessTokenCredential>,
+  'kind'
+>;
+
+// @public
+export type AzureDevOpsCredentials = {
+  headers: {
+    [name: string]: string;
+  };
+  token: string;
+  type: AzureDevOpsCredentialType;
+};
+
+// @public
+export interface AzureDevOpsCredentialsProvider {
+  // (undocumented)
+  getCredentials(opts: {
+    url: string;
+  }): Promise<AzureDevOpsCredentials | undefined>;
+}
+
+// @public
+export type AzureDevOpsCredentialType = 'bearer' | 'pat';
 
 // @public
 export class AzureIntegration implements ScmIntegration {
@@ -60,9 +149,47 @@ export class AzureIntegration implements ScmIntegration {
 export type AzureIntegrationConfig = {
   host: string;
   token?: string;
+  credential?: AzureDevOpsCredential;
+  credentials?: AzureDevOpsCredential[];
 };
 
 // @public
+export type AzureManagedIdentityCredential = AzureCredentialBase & {
+  kind: 'ManagedIdentity';
+  clientId: string;
+};
+
+// @public
+export class BitbucketCloudIntegration implements ScmIntegration {
+  constructor(integrationConfig: BitbucketCloudIntegrationConfig);
+  // (undocumented)
+  get config(): BitbucketCloudIntegrationConfig;
+  // (undocumented)
+  static factory: ScmIntegrationsFactory<BitbucketCloudIntegration>;
+  // (undocumented)
+  resolveEditUrl(url: string): string;
+  // (undocumented)
+  resolveUrl(options: {
+    url: string;
+    base: string;
+    lineNumber?: number;
+  }): string;
+  // (undocumented)
+  get title(): string;
+  // (undocumented)
+  get type(): string;
+}
+
+// @public
+export type BitbucketCloudIntegrationConfig = {
+  host: string;
+  apiBaseUrl: string;
+  username?: string;
+  appPassword?: string;
+  token?: string;
+};
+
+// @public @deprecated
 export class BitbucketIntegration implements ScmIntegration {
   constructor(integrationConfig: BitbucketIntegrationConfig);
   // (undocumented)
@@ -83,14 +210,89 @@ export class BitbucketIntegration implements ScmIntegration {
   get type(): string;
 }
 
-// @public
+// @public @deprecated
 export type BitbucketIntegrationConfig = {
   host: string;
-  apiBaseUrl?: string;
+  apiBaseUrl: string;
   token?: string;
   username?: string;
   appPassword?: string;
 };
+
+// @public
+export class BitbucketServerIntegration implements ScmIntegration {
+  constructor(integrationConfig: BitbucketServerIntegrationConfig);
+  // (undocumented)
+  get config(): BitbucketServerIntegrationConfig;
+  // (undocumented)
+  static factory: ScmIntegrationsFactory<BitbucketServerIntegration>;
+  // (undocumented)
+  resolveEditUrl(url: string): string;
+  // (undocumented)
+  resolveUrl(options: {
+    url: string;
+    base: string;
+    lineNumber?: number;
+  }): string;
+  // (undocumented)
+  get title(): string;
+  // (undocumented)
+  get type(): string;
+}
+
+// @public
+export type BitbucketServerIntegrationConfig = {
+  host: string;
+  apiBaseUrl: string;
+  token?: string;
+  username?: string;
+  password?: string;
+};
+
+// @public
+export function buildGerritGitilesArchiveUrl(
+  config: GerritIntegrationConfig,
+  project: string,
+  branch: string,
+  filePath: string,
+): string;
+
+// @public
+export class DefaultAzureDevOpsCredentialsProvider
+  implements AzureDevOpsCredentialsProvider
+{
+  // (undocumented)
+  static fromIntegrations(
+    integrations: ScmIntegrationRegistry,
+  ): DefaultAzureDevOpsCredentialsProvider;
+  // (undocumented)
+  getCredentials(opts: {
+    url: string;
+  }): Promise<AzureDevOpsCredentials | undefined>;
+}
+
+// @public
+export class DefaultGithubCredentialsProvider
+  implements GithubCredentialsProvider
+{
+  // (undocumented)
+  static fromIntegrations(
+    integrations: ScmIntegrationRegistry,
+  ): DefaultGithubCredentialsProvider;
+  getCredentials(opts: { url: string }): Promise<GithubCredentials>;
+}
+
+// @public
+export class DefaultGitlabCredentialsProvider
+  implements GitlabCredentialsProvider
+{
+  // (undocumented)
+  static fromIntegrations(
+    integrations: ScmIntegrationRegistry,
+  ): DefaultGitlabCredentialsProvider;
+  // (undocumented)
+  getCredentials(opts: { url: string }): Promise<GitlabCredentials>;
+}
 
 // @public
 export function defaultScmResolveUrl(options: {
@@ -98,6 +300,37 @@ export function defaultScmResolveUrl(options: {
   base: string;
   lineNumber?: number;
 }): string;
+
+// @public
+export class GerritIntegration implements ScmIntegration {
+  constructor(integrationConfig: GerritIntegrationConfig);
+  // (undocumented)
+  get config(): GerritIntegrationConfig;
+  // (undocumented)
+  static factory: ScmIntegrationsFactory<GerritIntegration>;
+  // (undocumented)
+  resolveEditUrl(url: string): string;
+  // (undocumented)
+  resolveUrl(options: {
+    url: string;
+    base: string;
+    lineNumber?: number;
+  }): string;
+  // (undocumented)
+  get title(): string;
+  // (undocumented)
+  get type(): string;
+}
+
+// @public
+export type GerritIntegrationConfig = {
+  host: string;
+  baseUrl?: string;
+  cloneUrl?: string;
+  gitilesBaseUrl: string;
+  username?: string;
+  password?: string;
+};
 
 // @public
 export function getAzureCommitsUrl(url: string): string;
@@ -108,33 +341,58 @@ export function getAzureDownloadUrl(url: string): string;
 // @public
 export function getAzureFileFetchUrl(url: string): string;
 
-// @public
+// @public @deprecated
 export function getAzureRequestOptions(
   config: AzureIntegrationConfig,
   additionalHeaders?: Record<string, string>,
+): Promise<{
+  headers: Record<string, string>;
+}>;
+
+// @public
+export function getBitbucketCloudDefaultBranch(
+  url: string,
+  config: BitbucketCloudIntegrationConfig,
+): Promise<string>;
+
+// @public
+export function getBitbucketCloudDownloadUrl(
+  url: string,
+  config: BitbucketCloudIntegrationConfig,
+): Promise<string>;
+
+// @public
+export function getBitbucketCloudFileFetchUrl(
+  url: string,
+  config: BitbucketCloudIntegrationConfig,
+): string;
+
+// @public
+export function getBitbucketCloudRequestOptions(
+  config: BitbucketCloudIntegrationConfig,
 ): {
   headers: Record<string, string>;
 };
 
-// @public
+// @public @deprecated
 export function getBitbucketDefaultBranch(
   url: string,
   config: BitbucketIntegrationConfig,
 ): Promise<string>;
 
-// @public
+// @public @deprecated
 export function getBitbucketDownloadUrl(
   url: string,
   config: BitbucketIntegrationConfig,
 ): Promise<string>;
 
-// @public
+// @public @deprecated
 export function getBitbucketFileFetchUrl(
   url: string,
   config: BitbucketIntegrationConfig,
 ): string;
 
-// @public
+// @public @deprecated
 export function getBitbucketRequestOptions(
   config: BitbucketIntegrationConfig,
 ): {
@@ -142,15 +400,97 @@ export function getBitbucketRequestOptions(
 };
 
 // @public
-export function getGitHubFileFetchUrl(
+export function getBitbucketServerDefaultBranch(
   url: string,
-  config: GitHubIntegrationConfig,
+  config: BitbucketServerIntegrationConfig,
+): Promise<string>;
+
+// @public
+export function getBitbucketServerDownloadUrl(
+  url: string,
+  config: BitbucketServerIntegrationConfig,
+): Promise<string>;
+
+// @public
+export function getBitbucketServerFileFetchUrl(
+  url: string,
+  config: BitbucketServerIntegrationConfig,
+): string;
+
+// @public
+export function getBitbucketServerRequestOptions(
+  config: BitbucketServerIntegrationConfig,
+): {
+  headers: Record<string, string>;
+};
+
+// @public
+export function getGerritBranchApiUrl(
+  config: GerritIntegrationConfig,
+  url: string,
+): string;
+
+// @public
+export function getGerritCloneRepoUrl(
+  config: GerritIntegrationConfig,
+  url: string,
+): string;
+
+// @public
+export function getGerritFileContentsApiUrl(
+  config: GerritIntegrationConfig,
+  url: string,
+): string;
+
+// @public
+export function getGerritProjectsApiUrl(
+  config: GerritIntegrationConfig,
+): string;
+
+// @public
+export function getGerritRequestOptions(config: GerritIntegrationConfig): {
+  headers?: Record<string, string>;
+};
+
+// @public
+export function getGiteaArchiveUrl(
+  config: GiteaIntegrationConfig,
+  url: string,
+): string;
+
+// @public
+export function getGiteaEditContentsUrl(
+  config: GiteaIntegrationConfig,
+  url: string,
+): string;
+
+// @public
+export function getGiteaFileContentsUrl(
+  config: GiteaIntegrationConfig,
+  url: string,
+): string;
+
+// @public
+export function getGiteaLatestCommitUrl(
+  config: GiteaIntegrationConfig,
+  url: string,
+): string;
+
+// @public
+export function getGiteaRequestOptions(config: GiteaIntegrationConfig): {
+  headers?: Record<string, string>;
+};
+
+// @public
+export function getGithubFileFetchUrl(
+  url: string,
+  config: GithubIntegrationConfig,
   credentials: GithubCredentials,
 ): string;
 
 // @public @deprecated
 export function getGitHubRequestOptions(
-  config: GitHubIntegrationConfig,
+  config: GithubIntegrationConfig,
   credentials: GithubCredentials,
 ): {
   headers: Record<string, string>;
@@ -163,8 +503,68 @@ export function getGitLabFileFetchUrl(
 ): Promise<string>;
 
 // @public
-export function getGitLabRequestOptions(config: GitLabIntegrationConfig): {
+export function getGitLabIntegrationRelativePath(
+  config: GitLabIntegrationConfig,
+): string;
+
+// @public
+export function getGitLabRequestOptions(
+  config: GitLabIntegrationConfig,
+  token?: string,
+): {
   headers: Record<string, string>;
+};
+
+// @public
+export function getHarnessArchiveUrl(
+  config: HarnessIntegrationConfig,
+  url: string,
+): string;
+
+// @public
+export function getHarnessFileContentsUrl(
+  config: HarnessIntegrationConfig,
+  url: string,
+): string;
+
+// @public
+export function getHarnessLatestCommitUrl(
+  config: HarnessIntegrationConfig,
+  url: string,
+): string;
+
+// @public
+export function getHarnessRequestOptions(config: HarnessIntegrationConfig): {
+  headers?: Record<string, string>;
+};
+
+// @public
+export class GiteaIntegration implements ScmIntegration {
+  constructor(config: GiteaIntegrationConfig);
+  // (undocumented)
+  readonly config: GiteaIntegrationConfig;
+  // (undocumented)
+  static factory: ScmIntegrationsFactory<GiteaIntegration>;
+  // (undocumented)
+  resolveEditUrl(url: string): string;
+  // (undocumented)
+  resolveUrl(options: {
+    url: string;
+    base: string;
+    lineNumber?: number | undefined;
+  }): string;
+  // (undocumented)
+  get title(): string;
+  // (undocumented)
+  get type(): string;
+}
+
+// @public
+export type GiteaIntegrationConfig = {
+  host: string;
+  baseUrl?: string;
+  username?: string;
+  password?: string;
 };
 
 // @public
@@ -179,7 +579,7 @@ export type GithubAppConfig = {
 
 // @public
 export class GithubAppCredentialsMux {
-  constructor(config: GitHubIntegrationConfig);
+  constructor(config: GithubIntegrationConfig);
   // (undocumented)
   getAllInstallations(): Promise<
     RestEndpointMethodTypes['apps']['listInstallations']['response']['data']
@@ -198,9 +598,8 @@ export type GithubCredentials = {
 };
 
 // @public
-export class GithubCredentialsProvider {
+export interface GithubCredentialsProvider {
   // (undocumented)
-  static create(config: GitHubIntegrationConfig): GithubCredentialsProvider;
   getCredentials(opts: { url: string }): Promise<GithubCredentials>;
 }
 
@@ -208,12 +607,14 @@ export class GithubCredentialsProvider {
 export type GithubCredentialType = 'app' | 'token';
 
 // @public
-export class GitHubIntegration implements ScmIntegration {
-  constructor(integrationConfig: GitHubIntegrationConfig);
+export class GithubIntegration implements ScmIntegration {
+  constructor(integrationConfig: GithubIntegrationConfig);
   // (undocumented)
-  get config(): GitHubIntegrationConfig;
+  get config(): GithubIntegrationConfig;
   // (undocumented)
-  static factory: ScmIntegrationsFactory<GitHubIntegration>;
+  static factory: ScmIntegrationsFactory<GithubIntegration>;
+  // (undocumented)
+  parseRateLimitInfo(response: ConsumedResponse): RateLimitInfo;
   // (undocumented)
   resolveEditUrl(url: string): string;
   // (undocumented)
@@ -229,13 +630,27 @@ export class GitHubIntegration implements ScmIntegration {
 }
 
 // @public
-export type GitHubIntegrationConfig = {
+export type GithubIntegrationConfig = {
   host: string;
   apiBaseUrl?: string;
   rawBaseUrl?: string;
   token?: string;
   apps?: GithubAppConfig[];
 };
+
+// @public (undocumented)
+export type GitlabCredentials = {
+  headers?: {
+    [name: string]: string;
+  };
+  token?: string;
+};
+
+// @public (undocumented)
+export interface GitlabCredentialsProvider {
+  // (undocumented)
+  getCredentials(opts: { url: string }): Promise<GitlabCredentials>;
+}
 
 // @public
 export class GitLabIntegration implements ScmIntegration {
@@ -273,18 +688,133 @@ export type GoogleGcsIntegrationConfig = {
 };
 
 // @public
+export class HarnessIntegration implements ScmIntegration {
+  constructor(config: HarnessIntegrationConfig);
+  // (undocumented)
+  readonly config: HarnessIntegrationConfig;
+  // (undocumented)
+  static factory: ScmIntegrationsFactory<HarnessIntegration>;
+  // (undocumented)
+  resolveEditUrl(url: string): string;
+  // (undocumented)
+  resolveUrl(options: {
+    url: string;
+    base: string;
+    lineNumber?: number | undefined;
+  }): string;
+  // (undocumented)
+  get title(): string;
+  // (undocumented)
+  get type(): string;
+}
+
+// @public
+export type HarnessIntegrationConfig = {
+  host: string;
+  token?: string;
+  apiKey?: string;
+};
+
+// @public
 export interface IntegrationsByType {
+  // (undocumented)
+  awsCodeCommit: ScmIntegrationsGroup<AwsCodeCommitIntegration>;
   // (undocumented)
   awsS3: ScmIntegrationsGroup<AwsS3Integration>;
   // (undocumented)
   azure: ScmIntegrationsGroup<AzureIntegration>;
-  // (undocumented)
+  // @deprecated (undocumented)
   bitbucket: ScmIntegrationsGroup<BitbucketIntegration>;
   // (undocumented)
-  github: ScmIntegrationsGroup<GitHubIntegration>;
+  bitbucketCloud: ScmIntegrationsGroup<BitbucketCloudIntegration>;
+  // (undocumented)
+  bitbucketServer: ScmIntegrationsGroup<BitbucketServerIntegration>;
+  // (undocumented)
+  gerrit: ScmIntegrationsGroup<GerritIntegration>;
+  // (undocumented)
+  gitea: ScmIntegrationsGroup<GiteaIntegration>;
+  // (undocumented)
+  github: ScmIntegrationsGroup<GithubIntegration>;
   // (undocumented)
   gitlab: ScmIntegrationsGroup<GitLabIntegration>;
+  // (undocumented)
+  harness: ScmIntegrationsGroup<HarnessIntegration>;
 }
+
+// @public
+export function parseGerritGitilesUrl(
+  config: GerritIntegrationConfig,
+  url: string,
+): {
+  branch: string;
+  filePath: string;
+  project: string;
+};
+
+// @public
+export function parseGerritJsonResponse(response: Response): Promise<unknown>;
+
+// @public
+export function parseGiteaUrl(
+  config: GiteaIntegrationConfig,
+  url: string,
+): {
+  url: string;
+  owner: string;
+  name: string;
+  ref: string;
+  path: string;
+};
+
+// @public
+export function parseGitilesUrlRef(
+  config: GerritIntegrationConfig,
+  url: string,
+): {
+  project: string;
+  path: string;
+  ref: string;
+  refType: 'sha' | 'branch' | 'tag' | 'head';
+  basePath: string;
+};
+
+// @public
+export function parseHarnessUrl(
+  config: HarnessIntegrationConfig,
+  url: string,
+): {
+  baseUrl: string;
+  accountId: string;
+  orgName: string;
+  projectName: string;
+  refString: string;
+  repoName: string;
+  path: string;
+  refDashStr: string;
+  branch: string;
+};
+
+// @public
+export type PersonalAccessTokenCredential = AzureCredentialBase & {
+  kind: 'PersonalAccessToken';
+  personalAccessToken: string;
+};
+
+// @public
+export interface RateLimitInfo {
+  // (undocumented)
+  isRateLimited: boolean;
+}
+
+// @public
+export function readAwsCodeCommitIntegrationConfig(
+  config: Config,
+): AwsCodeCommitIntegrationConfig;
+
+// @public
+export function readAwsCodeCommitIntegrationConfigs(
+  configs: Config[],
+): AwsCodeCommitIntegrationConfig[];
 
 // @public
 export function readAwsS3IntegrationConfig(
@@ -307,24 +837,57 @@ export function readAzureIntegrationConfigs(
 ): AzureIntegrationConfig[];
 
 // @public
+export function readBitbucketCloudIntegrationConfig(
+  config: Config,
+): BitbucketCloudIntegrationConfig;
+
+// @public
+export function readBitbucketCloudIntegrationConfigs(
+  configs: Config[],
+): BitbucketCloudIntegrationConfig[];
+
+// @public @deprecated
 export function readBitbucketIntegrationConfig(
   config: Config,
 ): BitbucketIntegrationConfig;
 
-// @public
+// @public @deprecated
 export function readBitbucketIntegrationConfigs(
   configs: Config[],
 ): BitbucketIntegrationConfig[];
 
 // @public
-export function readGitHubIntegrationConfig(
+export function readBitbucketServerIntegrationConfig(
   config: Config,
-): GitHubIntegrationConfig;
+): BitbucketServerIntegrationConfig;
 
 // @public
-export function readGitHubIntegrationConfigs(
+export function readBitbucketServerIntegrationConfigs(
   configs: Config[],
-): GitHubIntegrationConfig[];
+): BitbucketServerIntegrationConfig[];
+
+// @public
+export function readGerritIntegrationConfig(
+  config: Config,
+): GerritIntegrationConfig;
+
+// @public
+export function readGerritIntegrationConfigs(
+  configs: Config[],
+): GerritIntegrationConfig[];
+
+// @public
+export function readGiteaConfig(config: Config): GiteaIntegrationConfig;
+
+// @public
+export function readGithubIntegrationConfig(
+  config: Config,
+): GithubIntegrationConfig;
+
+// @public
+export function readGithubIntegrationConfigs(
+  configs: Config[],
+): GithubIntegrationConfig[];
 
 // @public
 export function readGitLabIntegrationConfig(
@@ -342,7 +905,16 @@ export function readGoogleGcsIntegrationConfig(
 ): GoogleGcsIntegrationConfig;
 
 // @public
-export function replaceGitHubUrlType(
+export function readHarnessConfig(config: Config): HarnessIntegrationConfig;
+
+// @public
+export function replaceGithubUrlType(
+  url: string,
+  type: 'blob' | 'tree' | 'edit',
+): string;
+
+// @public
+export function replaceGitLabUrlType(
   url: string,
   type: 'blob' | 'tree' | 'edit',
 ): string;
@@ -363,15 +935,27 @@ export interface ScmIntegration {
 export interface ScmIntegrationRegistry
   extends ScmIntegrationsGroup<ScmIntegration> {
   // (undocumented)
+  awsCodeCommit: ScmIntegrationsGroup<AwsCodeCommitIntegration>;
+  // (undocumented)
   awsS3: ScmIntegrationsGroup<AwsS3Integration>;
   // (undocumented)
   azure: ScmIntegrationsGroup<AzureIntegration>;
-  // (undocumented)
+  // @deprecated (undocumented)
   bitbucket: ScmIntegrationsGroup<BitbucketIntegration>;
   // (undocumented)
-  github: ScmIntegrationsGroup<GitHubIntegration>;
+  bitbucketCloud: ScmIntegrationsGroup<BitbucketCloudIntegration>;
+  // (undocumented)
+  bitbucketServer: ScmIntegrationsGroup<BitbucketServerIntegration>;
+  // (undocumented)
+  gerrit: ScmIntegrationsGroup<GerritIntegration>;
+  // (undocumented)
+  gitea: ScmIntegrationsGroup<GiteaIntegration>;
+  // (undocumented)
+  github: ScmIntegrationsGroup<GithubIntegration>;
   // (undocumented)
   gitlab: ScmIntegrationsGroup<GitLabIntegration>;
+  // (undocumented)
+  harness: ScmIntegrationsGroup<HarnessIntegration>;
   resolveEditUrl(url: string): string;
   resolveUrl(options: {
     url: string;
@@ -384,11 +968,17 @@ export interface ScmIntegrationRegistry
 export class ScmIntegrations implements ScmIntegrationRegistry {
   constructor(integrationsByType: IntegrationsByType);
   // (undocumented)
+  get awsCodeCommit(): ScmIntegrationsGroup<AwsCodeCommitIntegration>;
+  // (undocumented)
   get awsS3(): ScmIntegrationsGroup<AwsS3Integration>;
   // (undocumented)
   get azure(): ScmIntegrationsGroup<AzureIntegration>;
-  // (undocumented)
+  // @deprecated (undocumented)
   get bitbucket(): ScmIntegrationsGroup<BitbucketIntegration>;
+  // (undocumented)
+  get bitbucketCloud(): ScmIntegrationsGroup<BitbucketCloudIntegration>;
+  // (undocumented)
+  get bitbucketServer(): ScmIntegrationsGroup<BitbucketServerIntegration>;
   // (undocumented)
   byHost(host: string): ScmIntegration | undefined;
   // (undocumented)
@@ -396,9 +986,15 @@ export class ScmIntegrations implements ScmIntegrationRegistry {
   // (undocumented)
   static fromConfig(config: Config): ScmIntegrations;
   // (undocumented)
-  get github(): ScmIntegrationsGroup<GitHubIntegration>;
+  get gerrit(): ScmIntegrationsGroup<GerritIntegration>;
+  // (undocumented)
+  get gitea(): ScmIntegrationsGroup<GiteaIntegration>;
+  // (undocumented)
+  get github(): ScmIntegrationsGroup<GithubIntegration>;
   // (undocumented)
   get gitlab(): ScmIntegrationsGroup<GitLabIntegration>;
+  // (undocumented)
+  get harness(): ScmIntegrationsGroup<HarnessIntegration>;
   // (undocumented)
   list(): ScmIntegration[];
   // (undocumented)
@@ -423,8 +1019,12 @@ export interface ScmIntegrationsGroup<T extends ScmIntegration> {
   list(): T[];
 }
 
-// Warnings were encountered during analysis:
-//
-// src/gitlab/config.d.ts:29:68 - (tsdoc-escape-right-brace) The "}" character should be escaped using a backslash to avoid confusion with a TSDoc inline tag
-// src/gitlab/config.d.ts:29:63 - (tsdoc-malformed-inline-tag) Expecting a TSDoc tag starting with "{@"
+// @public
+export class SingleInstanceGithubCredentialsProvider
+  implements GithubCredentialsProvider
+{
+  // (undocumented)
+  static create: (config: GithubIntegrationConfig) => GithubCredentialsProvider;
+  getCredentials(opts: { url: string }): Promise<GithubCredentials>;
+}
 ```

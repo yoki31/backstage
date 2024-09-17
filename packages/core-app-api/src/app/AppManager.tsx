@@ -18,22 +18,18 @@ import { Config } from '@backstage/config';
 import React, {
   ComponentType,
   PropsWithChildren,
-  ReactElement,
-  useEffect,
+  Suspense,
   useMemo,
-  useState,
+  useRef,
 } from 'react';
-import { Route, Routes } from 'react-router-dom';
-import { useAsync } from 'react-use';
+import useAsync from 'react-use/esm/useAsync';
 import {
   ApiProvider,
-  ApiRegistry,
   AppThemeSelector,
   ConfigReader,
   LocalStorageFeatureFlags,
 } from '../apis';
 import {
-  useApi,
   AnyApiFactory,
   ApiHolder,
   IconComponent,
@@ -43,14 +39,20 @@ import {
   AppThemeApi,
   ConfigApi,
   featureFlagsApiRef,
-  IdentityApi,
   identityApiRef,
   BackstagePlugin,
-  RouteRef,
-  SubRouteRef,
-  ExternalRouteRef,
+  FeatureFlag,
+  fetchApiRef,
+  discoveryApiRef,
+  errorApiRef,
 } from '@backstage/core-plugin-api';
-import { UserIdentity } from '@backstage/core-components';
+import {
+  AppLanguageApi,
+  appLanguageApiRef,
+  translationApiRef,
+  TranslationMessages,
+  TranslationResource,
+} from '@backstage/core-plugin-api/alpha';
 import { ApiFactoryRegistry, ApiResolver } from '../apis/system';
 import {
   childDiscoverer,
@@ -60,13 +62,14 @@ import {
 import { pluginCollector } from '../plugins/collectors';
 import {
   featureFlagCollector,
-  routeObjectCollector,
-  routeParentCollector,
-  routePathCollector,
+  routingV1Collector,
+  routingV2Collector,
 } from '../routing/collectors';
 import { RoutingProvider } from '../routing/RoutingProvider';
-import { RouteTracker } from '../routing/RouteTracker';
-import { validateRoutes } from '../routing/validation';
+import {
+  validateRouteParameters,
+  validateRouteBindings,
+} from '../routing/validation';
 import { AppContextProvider } from './AppContext';
 import { AppIdentityProxy } from '../apis/implementations/IdentityApi/AppIdentityProxy';
 import {
@@ -74,55 +77,25 @@ import {
   AppConfigLoader,
   AppContext,
   AppOptions,
-  AppRouteBinder,
   BackstageApp,
-  SignInPageProps,
 } from './types';
 import { AppThemeProvider } from './AppThemeProvider';
 import { defaultConfigLoader } from './defaultConfigLoader';
+import { ApiRegistry } from '../apis/system/ApiRegistry';
+import { resolveRouteBindings } from './resolveRouteBindings';
+import { isReactRouterBeta } from './isReactRouterBeta';
+import { InternalAppContext } from './InternalAppContext';
+import { AppRouter, getBasePath } from './AppRouter';
+import { AppLanguageSelector } from '../apis/implementations/AppLanguageApi';
+import { I18nextTranslationApi } from '../apis/implementations/TranslationApi';
+import { overrideBaseUrlConfigs } from './overrideBaseUrlConfigs';
+import { isProtectedApp } from './isProtectedApp';
 
-export function generateBoundRoutes(bindRoutes: AppOptions['bindRoutes']) {
-  const result = new Map<ExternalRouteRef, RouteRef | SubRouteRef>();
-
-  if (bindRoutes) {
-    const bind: AppRouteBinder = (
-      externalRoutes,
-      targetRoutes: { [name: string]: RouteRef | SubRouteRef },
-    ) => {
-      for (const [key, value] of Object.entries(targetRoutes)) {
-        const externalRoute = externalRoutes[key];
-        if (!externalRoute) {
-          throw new Error(`Key ${key} is not an existing external route`);
-        }
-        if (!value && !externalRoute.optional) {
-          throw new Error(
-            `External route ${key} is required but was undefined`,
-          );
-        }
-        if (value) {
-          result.set(externalRoute, value);
-        }
-      }
-    };
-    bindRoutes({ bind });
-  }
-
-  return result;
-}
-
-/**
- * Get the app base path from the configured app baseUrl.
- *
- * The returned path does not have a trailing slash.
- */
-function getBasePath(configApi: Config) {
-  let { pathname } = new URL(
-    configApi.getOptionalString('app.baseUrl') ?? '/',
-    'http://dummy.dev', // baseUrl can be specified as just a path
-  );
-  pathname = pathname.replace(/\/*$/, '');
-  return pathname;
-}
+type CompatiblePlugin =
+  | BackstagePlugin
+  | (Omit<BackstagePlugin, 'getFeatureFlags'> & {
+      output(): Array<{ type: 'feature-flag'; name: string }>;
+    });
 
 function useConfigLoader(
   configLoader: AppConfigLoader | undefined,
@@ -149,14 +122,16 @@ function useConfigLoader(
   if (noConfigNode) {
     return {
       node: (
-        <ApiProvider apis={ApiRegistry.from([[appThemeApiRef, appThemeApi]])}>
+        <ApiProvider apis={ApiRegistry.with(appThemeApiRef, appThemeApi)}>
           <ThemeProvider>{noConfigNode}</ThemeProvider>
         </ApiProvider>
       ),
     };
   }
 
-  const configReader = ConfigReader.fromConfigs(config.value ?? []);
+  const configReader = ConfigReader.fromConfigs(
+    config.value?.length ? overrideBaseUrlConfigs(config.value) : [],
+  );
 
   return { api: configReader };
 }
@@ -164,12 +139,16 @@ function useConfigLoader(
 class AppContextImpl implements AppContext {
   constructor(private readonly app: AppManager) {}
 
-  getPlugins(): BackstagePlugin<any, any>[] {
+  getPlugins(): BackstagePlugin[] {
     return this.app.getPlugins();
   }
 
   getSystemIcon(key: string): IconComponent | undefined {
     return this.app.getSystemIcon(key);
+  }
+
+  getSystemIcons(): Record<string, IconComponent> {
+    return this.app.getSystemIcons();
   }
 
   getComponents(): AppComponents {
@@ -183,12 +162,18 @@ export class AppManager implements BackstageApp {
 
   private readonly apis: Iterable<AnyApiFactory>;
   private readonly icons: NonNullable<AppOptions['icons']>;
-  private readonly plugins: Set<BackstagePlugin<any, any>>;
+  private readonly plugins: Set<CompatiblePlugin>;
+  private readonly featureFlags: (FeatureFlag &
+    Omit<FeatureFlag, 'pluginId'>)[];
   private readonly components: AppComponents;
   private readonly themes: AppTheme[];
   private readonly configLoader?: AppConfigLoader;
   private readonly defaultApis: Iterable<AnyApiFactory>;
   private readonly bindRoutes: AppOptions['bindRoutes'];
+  private readonly appLanguageApi: AppLanguageApi;
+  private readonly translationResources: Array<
+    TranslationResource | TranslationMessages
+  >;
 
   private readonly appIdentityProxy = new AppIdentityProxy();
   private readonly apiFactoryRegistry: ApiFactoryRegistry;
@@ -196,65 +181,104 @@ export class AppManager implements BackstageApp {
   constructor(options: AppOptions) {
     this.apis = options.apis ?? [];
     this.icons = options.icons;
-    this.plugins = new Set(
-      (options.plugins as BackstagePlugin<any, any>[]) ?? [],
-    );
+    this.plugins = new Set((options.plugins as CompatiblePlugin[]) ?? []);
+    this.featureFlags = options.featureFlags ?? [];
     this.components = options.components;
     this.themes = options.themes as AppTheme[];
     this.configLoader = options.configLoader ?? defaultConfigLoader;
     this.defaultApis = options.defaultApis ?? [];
     this.bindRoutes = options.bindRoutes;
     this.apiFactoryRegistry = new ApiFactoryRegistry();
+    this.appLanguageApi = AppLanguageSelector.createWithStorage({
+      defaultLanguage: options.__experimentalTranslations?.defaultLanguage,
+      availableLanguages:
+        options.__experimentalTranslations?.availableLanguages,
+    });
+    this.translationResources =
+      options.__experimentalTranslations?.resources ?? [];
   }
 
-  getPlugins(): BackstagePlugin<any, any>[] {
-    return Array.from(this.plugins);
+  getPlugins(): BackstagePlugin[] {
+    return Array.from(this.plugins) as BackstagePlugin[];
   }
 
   getSystemIcon(key: string): IconComponent | undefined {
     return this.icons[key];
   }
 
+  getSystemIcons(): Record<string, IconComponent> {
+    return this.icons;
+  }
+
   getComponents(): AppComponents {
     return this.components;
   }
 
-  getProvider(): ComponentType<{}> {
+  createRoot(element: JSX.Element): ComponentType<PropsWithChildren<{}>> {
+    const AppProvider = this.getProvider();
+    const AppRoot = () => {
+      return <AppProvider>{element}</AppProvider>;
+    };
+    return AppRoot;
+  }
+
+  #getProviderCalled = false;
+  getProvider(): ComponentType<PropsWithChildren<{}>> {
+    if (this.#getProviderCalled) {
+      throw new Error(
+        'app.getProvider() or app.createRoot() has already been called, and can only be called once',
+      );
+    }
+    this.#getProviderCalled = true;
+
     const appContext = new AppContextImpl(this);
 
+    // We only bind and validate routes once
+    let routeBindings: ReturnType<typeof resolveRouteBindings>;
+    // Store and keep throwing the same error if we encounter one
+    let routeValidationError: Error | undefined = undefined;
+
     const Provider = ({ children }: PropsWithChildren<{}>) => {
+      const needsFeatureFlagRegistrationRef = useRef(true);
       const appThemeApi = useMemo(
         () => AppThemeSelector.createWithStorage(this.themes),
         [],
       );
 
-      const { routePaths, routeParents, routeObjects, featureFlags } =
-        useMemo(() => {
-          const result = traverseElementTree({
-            root: children,
-            discoverers: [childDiscoverer, routeElementDiscoverer],
-            collectors: {
-              routePaths: routePathCollector,
-              routeParents: routeParentCollector,
-              routeObjects: routeObjectCollector,
-              collectedPlugins: pluginCollector,
-              featureFlags: featureFlagCollector,
-            },
-          });
+      const { routing, featureFlags } = useMemo(() => {
+        const usesReactRouterBeta = isReactRouterBeta();
+        if (usesReactRouterBeta) {
+          // eslint-disable-next-line no-console
+          console.warn(`
+DEPRECATION WARNING: React Router Beta is deprecated and support for it will be removed in a future release.
+                     Please migrate to use React Router v6 stable.
+                     See https://backstage.io/docs/tutorials/react-router-stable-migration
+`);
+        }
 
-          validateRoutes(result.routePaths, result.routeParents);
+        const result = traverseElementTree({
+          root: children,
+          discoverers: [childDiscoverer, routeElementDiscoverer],
+          collectors: {
+            routing: usesReactRouterBeta
+              ? routingV1Collector
+              : routingV2Collector,
+            collectedPlugins: pluginCollector,
+            featureFlags: featureFlagCollector,
+          },
+        });
 
-          // TODO(Rugvip): Restructure the public API so that we can get an immediate view of
-          //               the app, rather than having to wait for the provider to render.
-          //               For now we need to push the additional plugins we find during
-          //               collection and then make sure we initialize things afterwards.
-          result.collectedPlugins.forEach(plugin => this.plugins.add(plugin));
-          this.verifyPlugins(this.plugins);
+        // TODO(Rugvip): Restructure the public API so that we can get an immediate view of
+        //               the app, rather than having to wait for the provider to render.
+        //               For now we need to push the additional plugins we find during
+        //               collection and then make sure we initialize things afterwards.
+        result.collectedPlugins.forEach(plugin => this.plugins.add(plugin));
+        this.verifyPlugins(this.plugins);
 
-          // Initialize APIs once all plugins are available
-          this.getApiHolder();
-          return result;
-        }, [children]);
+        // Initialize APIs once all plugins are available
+        this.getApiHolder();
+        return result;
+      }, [children]);
 
       const loadedConfig = useConfigLoader(
         this.configLoader,
@@ -268,10 +292,45 @@ export class AppManager implements BackstageApp {
         this.configApi = api;
       }
 
-      useEffect(() => {
-        if (hasConfigApi) {
-          const featureFlagsApi = this.getApiHolder().get(featureFlagsApiRef)!;
+      if ('node' in loadedConfig) {
+        // Loading or error
+        return loadedConfig.node;
+      }
 
+      if (routeValidationError) {
+        throw routeValidationError;
+      } else if (!routeBindings) {
+        try {
+          routeBindings = resolveRouteBindings(
+            this.bindRoutes,
+            loadedConfig.api,
+            this.plugins,
+          );
+
+          validateRouteParameters(routing.paths, routing.parents);
+          validateRouteBindings(routeBindings, this.plugins);
+        } catch (error) {
+          routeValidationError = error;
+          throw error;
+        }
+      }
+
+      // We can't register feature flags just after the element traversal, because the
+      // config API isn't available yet and implementations frequently depend on it.
+      // Instead we make it happen immediately, to make sure all flags are available
+      // for the first render.
+      if (hasConfigApi && needsFeatureFlagRegistrationRef.current) {
+        needsFeatureFlagRegistrationRef.current = false;
+
+        const featureFlagsApi = this.getApiHolder().get(featureFlagsApiRef)!;
+
+        if (featureFlagsApi) {
+          for (const flag of this.featureFlags) {
+            featureFlagsApi.registerFlag({
+              ...flag,
+              pluginId: '',
+            });
+          }
           for (const plugin of this.plugins.values()) {
             if ('getFeatureFlags' in plugin) {
               for (const flag of plugin.getFeatureFlags()) {
@@ -282,16 +341,11 @@ export class AppManager implements BackstageApp {
               }
             } else {
               for (const output of plugin.output()) {
-                switch (output.type) {
-                  case 'feature-flag': {
-                    featureFlagsApi.registerFlag({
-                      name: output.name,
-                      pluginId: plugin.getId(),
-                    });
-                    break;
-                  }
-                  default:
-                    break;
+                if (output.type === 'feature-flag') {
+                  featureFlagsApi.registerFlag({
+                    name: output.name,
+                    pluginId: plugin.getId(),
+                  });
                 }
               }
             }
@@ -299,31 +353,56 @@ export class AppManager implements BackstageApp {
 
           // Go through the featureFlags returned from the traversal and
           // register those now the configApi has been loaded
+          const registeredFlags = featureFlagsApi.getRegisteredFlags();
+          const flagNames = new Set(registeredFlags.map(f => f.name));
           for (const name of featureFlags) {
-            featureFlagsApi.registerFlag({ name, pluginId: '' });
+            // Prevents adding duplicate feature flags
+            if (!flagNames.has(name)) {
+              featureFlagsApi.registerFlag({ name, pluginId: '' });
+            }
           }
         }
-      }, [hasConfigApi, loadedConfig, featureFlags]);
-
-      if ('node' in loadedConfig) {
-        // Loading or error
-        return loadedConfig.node;
       }
 
-      const { ThemeProvider = AppThemeProvider } = this.components;
+      const { ThemeProvider = AppThemeProvider, Progress } = this.components;
+
+      const apis = this.getApiHolder();
+
+      if (isProtectedApp()) {
+        const errorApi = apis.get(errorApiRef);
+        const fetchApi = apis.get(fetchApiRef);
+        const discoveryApi = apis.get(discoveryApiRef);
+        if (!errorApi || !fetchApi || !discoveryApi) {
+          throw new Error(
+            'App is running in protected mode but missing required APIs',
+          );
+        }
+        this.appIdentityProxy.enableCookieAuth({
+          errorApi,
+          fetchApi,
+          discoveryApi,
+        });
+      }
 
       return (
-        <ApiProvider apis={this.getApiHolder()}>
+        <ApiProvider apis={apis}>
           <AppContextProvider appContext={appContext}>
             <ThemeProvider>
               <RoutingProvider
-                routePaths={routePaths}
-                routeParents={routeParents}
-                routeObjects={routeObjects}
-                routeBindings={generateBoundRoutes(this.bindRoutes)}
+                routePaths={routing.paths}
+                routeParents={routing.parents}
+                routeObjects={routing.objects}
+                routeBindings={routeBindings}
                 basePath={getBasePath(loadedConfig.api)}
               >
-                {children}
+                <InternalAppContext.Provider
+                  value={{
+                    routeObjects: routing.objects,
+                    appIdentityProxy: this.appIdentityProxy,
+                  }}
+                >
+                  <Suspense fallback={<Progress />}>{children}</Suspense>
+                </InternalAppContext.Provider>
               </RoutingProvider>
             </ThemeProvider>
           </AppContextProvider>
@@ -333,58 +412,7 @@ export class AppManager implements BackstageApp {
     return Provider;
   }
 
-  getRouter(): ComponentType<{}> {
-    const { Router: RouterComponent, SignInPage: SignInPageComponent } =
-      this.components;
-
-    // This wraps the sign-in page and waits for sign-in to be completed before rendering the app
-    const SignInPageWrapper = ({
-      component: Component,
-      children,
-    }: {
-      component: ComponentType<SignInPageProps>;
-      children: ReactElement;
-    }) => {
-      const [identityApi, setIdentityApi] = useState<IdentityApi>();
-
-      if (!identityApi) {
-        return <Component onSignInSuccess={setIdentityApi} />;
-      }
-
-      this.appIdentityProxy.setTarget(identityApi);
-      return children;
-    };
-
-    const AppRouter = ({ children }: PropsWithChildren<{}>) => {
-      const configApi = useApi(configApiRef);
-      const mountPath = `${getBasePath(configApi)}/*`;
-
-      // If the app hasn't configured a sign-in page, we just continue as guest.
-      if (!SignInPageComponent) {
-        this.appIdentityProxy.setTarget(UserIdentity.createGuest());
-
-        return (
-          <RouterComponent>
-            <RouteTracker tree={children} />
-            <Routes>
-              <Route path={mountPath} element={<>{children}</>} />
-            </Routes>
-          </RouterComponent>
-        );
-      }
-
-      return (
-        <RouterComponent>
-          <RouteTracker tree={children} />
-          <SignInPageWrapper component={SignInPageComponent}>
-            <Routes>
-              <Route path={mountPath} element={<>{children}</>} />
-            </Routes>
-          </SignInPageWrapper>
-        </RouterComponent>
-      );
-    };
-
+  getRouter(): ComponentType<PropsWithChildren<{}>> {
     return AppRouter;
   }
 
@@ -427,6 +455,23 @@ export class AppManager implements BackstageApp {
       deps: {},
       factory: () => this.appIdentityProxy,
     });
+    this.apiFactoryRegistry.register('static', {
+      api: appLanguageApiRef,
+      deps: {},
+      factory: () => this.appLanguageApi,
+    });
+
+    // The translation API is registered as a default API so that it can be overridden.
+    // It will be up to the implementer of the new API to register translation resources.
+    this.apiFactoryRegistry.register('default', {
+      api: translationApiRef,
+      deps: { languageApi: appLanguageApiRef },
+      factory: ({ languageApi }) =>
+        I18nextTranslationApi.create({
+          languageApi,
+          resources: this.translationResources,
+        }),
+    });
 
     // It's possible to replace the feature flag API, but since we must have at least
     // one implementation we add it here directly instead of through the defaultApis.
@@ -468,7 +513,7 @@ export class AppManager implements BackstageApp {
     return this.apiHolder;
   }
 
-  private verifyPlugins(plugins: Iterable<BackstagePlugin>) {
+  private verifyPlugins(plugins: Iterable<CompatiblePlugin>) {
     const pluginIds = new Set<string>();
 
     for (const plugin of plugins) {

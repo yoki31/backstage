@@ -25,6 +25,16 @@ export type CreateSessionOptions = {
  */
 export type AuthConnector<AuthSession> = {
   createSession(options: CreateSessionOptions): Promise<AuthSession>;
-  refreshSession(): Promise<AuthSession>;
+  refreshSession(scopes?: Set<string>): Promise<AuthSession>;
   removeSession(): Promise<void>;
+};
+
+/**
+ * Options for login popup
+ * @public
+ */
+export type PopupOptions = {
+  size?:
+    | { width: number; height: number; fullscreen?: never }
+    | { width?: never; height?: never; fullscreen: boolean };
 };

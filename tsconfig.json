@@ -2,12 +2,15 @@
   "extends": "@backstage/cli/config/tsconfig.json",
   "include": [
     "packages/*/src",
+    "packages/*/config.d.ts",
     "plugins/*/src",
+    "plugins/*/config.d.ts",
     "plugins/*/dev",
     "plugins/*/migrations"
   ],
   "compilerOptions": {
     "outDir": "dist-types",
-    "rootDir": "."
+    "rootDir": ".",
+    "useUnknownInCatchVariables": false
   }
 }

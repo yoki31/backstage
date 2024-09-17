@@ -5,508 +5,653 @@
 ```ts
 /// <reference types="node" />
 
+import { ActionContext as ActionContext_2 } from '@backstage/plugin-scaffolder-node';
+import { AuthService } from '@backstage/backend-plugin-api';
+import { AutocompleteHandler } from '@backstage/plugin-scaffolder-node/alpha';
+import * as azure from '@backstage/plugin-scaffolder-backend-module-azure';
+import { BackstageCredentials } from '@backstage/backend-plugin-api';
+import * as bitbucket from '@backstage/plugin-scaffolder-backend-module-bitbucket';
+import * as bitbucketCloud from '@backstage/plugin-scaffolder-backend-module-bitbucket-cloud';
+import * as bitbucketServer from '@backstage/plugin-scaffolder-backend-module-bitbucket-server';
 import { CatalogApi } from '@backstage/catalog-client';
-import { CatalogProcessor } from '@backstage/plugin-catalog-backend';
-import { CatalogProcessorEmit } from '@backstage/plugin-catalog-backend';
 import { Config } from '@backstage/config';
-import { ContainerRunner } from '@backstage/backend-common';
-import { createFetchCookiecutterAction } from '@backstage/plugin-scaffolder-backend-module-cookiecutter';
-import { createPullRequest } from 'octokit-plugin-create-pull-request';
-import { Entity } from '@backstage/catalog-model';
+import { DatabaseService } from '@backstage/backend-plugin-api';
+import { DiscoveryService } from '@backstage/backend-plugin-api';
+import { Duration } from 'luxon';
+import { executeShellCommand as executeShellCommand_2 } from '@backstage/plugin-scaffolder-node';
+import { ExecuteShellCommandOptions } from '@backstage/plugin-scaffolder-node';
 import express from 'express';
+import { fetchContents as fetchContents_2 } from '@backstage/plugin-scaffolder-node';
+import * as gerrit from '@backstage/plugin-scaffolder-backend-module-gerrit';
+import * as github from '@backstage/plugin-scaffolder-backend-module-github';
+import * as gitlab from '@backstage/plugin-scaffolder-backend-module-gitlab';
+import { HttpAuthService } from '@backstage/backend-plugin-api';
+import { HumanDuration } from '@backstage/types';
+import { IdentityApi } from '@backstage/plugin-auth-node';
 import { JsonObject } from '@backstage/types';
 import { JsonValue } from '@backstage/types';
 import { Knex } from 'knex';
-import { LocationSpec } from '@backstage/catalog-model';
-import { Logger as Logger_2 } from 'winston';
-import { Octokit } from '@octokit/rest';
+import { LifecycleService } from '@backstage/backend-plugin-api';
+import { Logger } from 'winston';
+import { PermissionEvaluator } from '@backstage/plugin-permission-common';
+import { PermissionRule } from '@backstage/plugin-permission-node';
+import { PermissionRuleParams } from '@backstage/plugin-permission-common';
+import { PermissionsService } from '@backstage/backend-plugin-api';
 import { PluginDatabaseManager } from '@backstage/backend-common';
+import { RESOURCE_TYPE_SCAFFOLDER_ACTION } from '@backstage/plugin-scaffolder-common/alpha';
+import { RESOURCE_TYPE_SCAFFOLDER_TEMPLATE } from '@backstage/plugin-scaffolder-common/alpha';
+import { ScaffolderEntitiesProcessor as ScaffolderEntitiesProcessor_2 } from '@backstage/plugin-catalog-backend-module-scaffolder-entity-model';
+import { SchedulerService } from '@backstage/backend-plugin-api';
 import { Schema } from 'jsonschema';
 import { ScmIntegrationRegistry } from '@backstage/integration';
 import { ScmIntegrations } from '@backstage/integration';
-import { SpawnOptionsWithoutStdio } from 'child_process';
-import { TemplateEntityV1beta2 } from '@backstage/catalog-model';
-import { UrlReader } from '@backstage/backend-common';
-import { Writable } from 'stream';
+import { SerializedTask as SerializedTask_2 } from '@backstage/plugin-scaffolder-node';
+import { SerializedTaskEvent as SerializedTaskEvent_2 } from '@backstage/plugin-scaffolder-node';
+import { TaskBroker as TaskBroker_2 } from '@backstage/plugin-scaffolder-node';
+import { TaskBrokerDispatchOptions as TaskBrokerDispatchOptions_2 } from '@backstage/plugin-scaffolder-node';
+import { TaskBrokerDispatchResult as TaskBrokerDispatchResult_2 } from '@backstage/plugin-scaffolder-node';
+import { TaskCompletionState as TaskCompletionState_2 } from '@backstage/plugin-scaffolder-node';
+import { TaskContext as TaskContext_2 } from '@backstage/plugin-scaffolder-node';
+import { TaskEventType as TaskEventType_2 } from '@backstage/plugin-scaffolder-node';
+import { TaskRecovery } from '@backstage/plugin-scaffolder-common';
+import { TaskSecrets as TaskSecrets_2 } from '@backstage/plugin-scaffolder-node';
+import { TaskSpec } from '@backstage/plugin-scaffolder-common';
+import { TaskSpecV1beta3 } from '@backstage/plugin-scaffolder-common';
+import { TaskStatus as TaskStatus_2 } from '@backstage/plugin-scaffolder-node';
+import { TemplateAction as TemplateAction_2 } from '@backstage/plugin-scaffolder-node';
+import { TemplateActionOptions } from '@backstage/plugin-scaffolder-node';
+import { TemplateEntityStepV1beta3 } from '@backstage/plugin-scaffolder-common';
+import { TemplateFilter as TemplateFilter_2 } from '@backstage/plugin-scaffolder-node';
+import { TemplateGlobal as TemplateGlobal_2 } from '@backstage/plugin-scaffolder-node';
+import { TemplateParametersV1beta3 } from '@backstage/plugin-scaffolder-common';
+import { UrlReaderService } from '@backstage/backend-plugin-api';
+import { WorkspaceProvider } from '@backstage/plugin-scaffolder-node/alpha';
+import { ZodType } from 'zod';
+import { ZodTypeDef } from 'zod';
 
-// Warning: (ae-forgotten-export) The symbol "InputBase" needs to be exported by the entry point index.d.ts
-// Warning: (ae-missing-release-tag) "ActionContext" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
+// @public @deprecated (undocumented)
+export type ActionContext<TInput extends JsonObject> = ActionContext_2<TInput>;
+
 // @public (undocumented)
-export type ActionContext<Input extends InputBase> = {
-  baseUrl?: string;
-  logger: Logger_2;
-  logStream: Writable;
-  token?: string | undefined;
-  workspacePath: string;
-  input: Input;
-  output(name: string, value: JsonValue): void;
-  createTemporaryDirectory(): Promise<string>;
-  metadata?: TemplateMetadata;
-};
+export type ActionPermissionRuleInput<
+  TParams extends PermissionRuleParams = PermissionRuleParams,
+> = PermissionRule<
+  TemplateEntityStepV1beta3 | TemplateParametersV1beta3,
+  {},
+  typeof RESOURCE_TYPE_SCAFFOLDER_ACTION,
+  TParams
+>;
 
-// Warning: (ae-missing-release-tag) "CatalogEntityClient" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public
-export class CatalogEntityClient {
-  constructor(catalogClient: CatalogApi);
-  findTemplate(
-    templateName: string,
-    options?: {
-      token?: string;
-    },
-  ): Promise<TemplateEntityV1beta2>;
+export const createBuiltinActions: (
+  options: CreateBuiltInActionsOptions,
+) => TemplateAction_2[];
+
+// @public
+export interface CreateBuiltInActionsOptions {
+  additionalTemplateFilters?: Record<string, TemplateFilter_2>;
+  // (undocumented)
+  additionalTemplateGlobals?: Record<string, TemplateGlobal_2>;
+  auth?: AuthService;
+  catalogClient: CatalogApi;
+  config: Config;
+  integrations: ScmIntegrations;
+  reader: UrlReaderService;
 }
 
 // @public
-export type CompletedTaskState = 'failed' | 'completed';
-
-// Warning: (ae-missing-release-tag) "createBuiltinActions" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
-// @public (undocumented)
-export const createBuiltinActions: (options: {
-  reader: UrlReader;
-  integrations: ScmIntegrations;
-  catalogClient: CatalogApi;
-  containerRunner: ContainerRunner;
-  config: Config;
-}) => TemplateAction<any>[];
-
-// Warning: (ae-missing-release-tag) "createCatalogRegisterAction" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
-// @public (undocumented)
 export function createCatalogRegisterAction(options: {
   catalogClient: CatalogApi;
   integrations: ScmIntegrations;
-}): TemplateAction<any>;
+  auth?: AuthService;
+}): TemplateAction_2<
+  | {
+      catalogInfoUrl: string;
+      optional?: boolean | undefined;
+    }
+  | {
+      repoContentsUrl: string;
+      catalogInfoPath?: string | undefined;
+      optional?: boolean | undefined;
+    },
+  JsonObject
+>;
 
-// Warning: (ae-missing-release-tag) "createCatalogWriteAction" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
-// @public (undocumented)
-export function createCatalogWriteAction(): TemplateAction<any>;
-
-// Warning: (ae-missing-release-tag) "createDebugLogAction" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public
-export function createDebugLogAction(): TemplateAction<any>;
+export function createCatalogWriteAction(): TemplateAction_2<
+  {
+    entity: Record<string, any>;
+    filePath?: string | undefined;
+  },
+  JsonObject
+>;
 
-export { createFetchCookiecutterAction };
+// @public
+export function createDebugLogAction(): TemplateAction_2<
+  {
+    message?: string | undefined;
+    listWorkspace?: boolean | 'with-contents' | 'with-filenames' | undefined;
+  },
+  JsonObject
+>;
 
-// Warning: (ae-missing-release-tag) "createFetchPlainAction" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
-// @public (undocumented)
+// @public
+export function createFetchCatalogEntityAction(options: {
+  catalogClient: CatalogApi;
+  auth?: AuthService;
+}): TemplateAction_2<
+  {
+    optional?: boolean | undefined;
+    defaultKind?: string | undefined;
+    defaultNamespace?: string | undefined;
+    entityRef?: string | undefined;
+    entityRefs?: string[] | undefined;
+  },
+  {
+    entities?: any[] | undefined;
+    entity?: any;
+  }
+>;
+
+// @public
 export function createFetchPlainAction(options: {
-  reader: UrlReader;
+  reader: UrlReaderService;
   integrations: ScmIntegrations;
-}): TemplateAction<any>;
+}): TemplateAction_2<
+  {
+    url: string;
+    targetPath?: string | undefined;
+    token?: string | undefined;
+  },
+  JsonObject
+>;
 
-// Warning: (ae-missing-release-tag) "createFetchTemplateAction" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
-// @public (undocumented)
-export function createFetchTemplateAction(options: {
-  reader: UrlReader;
-  integrations: ScmIntegrations;
-}): TemplateAction<any>;
-
-// Warning: (ae-missing-release-tag) "createFilesystemDeleteAction" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
-// @public (undocumented)
-export const createFilesystemDeleteAction: () => TemplateAction<any>;
-
-// Warning: (ae-missing-release-tag) "createFilesystemRenameAction" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
-// @public (undocumented)
-export const createFilesystemRenameAction: () => TemplateAction<any>;
-
-// Warning: (ae-missing-release-tag) "createGithubActionsDispatchAction" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
-// @public (undocumented)
-export function createGithubActionsDispatchAction(options: {
-  integrations: ScmIntegrationRegistry;
-}): TemplateAction<any>;
-
-// Warning: (ae-missing-release-tag) "createGithubWebhookAction" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
-// @public (undocumented)
-export function createGithubWebhookAction(options: {
-  integrations: ScmIntegrationRegistry;
-  defaultWebhookSecret?: string;
-}): TemplateAction<any>;
-
-// Warning: (ae-missing-release-tag) "createPublishAzureAction" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
-// @public (undocumented)
-export function createPublishAzureAction(options: {
-  integrations: ScmIntegrationRegistry;
-  config: Config;
-}): TemplateAction<any>;
-
-// Warning: (ae-missing-release-tag) "createPublishBitbucketAction" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
-// @public (undocumented)
-export function createPublishBitbucketAction(options: {
-  integrations: ScmIntegrationRegistry;
-  config: Config;
-}): TemplateAction<any>;
-
-// Warning: (ae-missing-release-tag) "createPublishFileAction" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public
-export function createPublishFileAction(): TemplateAction<any>;
+export function createFetchPlainFileAction(options: {
+  reader: UrlReaderService;
+  integrations: ScmIntegrations;
+}): TemplateAction_2<
+  {
+    url: string;
+    targetPath: string;
+    token?: string | undefined;
+  },
+  JsonObject
+>;
 
-// Warning: (ae-missing-release-tag) "createPublishGithubAction" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
-// @public (undocumented)
-export function createPublishGithubAction(options: {
+// @public
+export function createFetchTemplateAction(options: {
+  reader: UrlReaderService;
+  integrations: ScmIntegrations;
+  additionalTemplateFilters?: Record<string, TemplateFilter_2>;
+  additionalTemplateGlobals?: Record<string, TemplateGlobal_2>;
+}): TemplateAction_2<
+  {
+    url: string;
+    targetPath?: string | undefined;
+    values: any;
+    templateFileExtension?: string | boolean | undefined;
+    copyWithoutRender?: string[] | undefined;
+    copyWithoutTemplating?: string[] | undefined;
+    cookiecutterCompat?: boolean | undefined;
+    replace?: boolean | undefined;
+    trimBlocks?: boolean | undefined;
+    lstripBlocks?: boolean | undefined;
+    token?: string | undefined;
+  },
+  JsonObject
+>;
+
+// @public
+export const createFilesystemDeleteAction: () => TemplateAction_2<
+  {
+    files: string[];
+  },
+  JsonObject
+>;
+
+// @public
+export const createFilesystemRenameAction: () => TemplateAction_2<
+  {
+    files: Array<{
+      from: string;
+      to: string;
+      overwrite?: boolean;
+    }>;
+  },
+  JsonObject
+>;
+
+// @public @deprecated (undocumented)
+export const createGithubActionsDispatchAction: typeof github.createGithubActionsDispatchAction;
+
+// @public @deprecated (undocumented)
+export const createGithubDeployKeyAction: typeof github.createGithubDeployKeyAction;
+
+// @public @deprecated (undocumented)
+export const createGithubEnvironmentAction: typeof github.createGithubEnvironmentAction;
+
+// @public @deprecated (undocumented)
+export const createGithubIssuesLabelAction: typeof github.createGithubIssuesLabelAction;
+
+// @public @deprecated (undocumented)
+export type CreateGithubPullRequestActionOptions =
+  github.CreateGithubPullRequestActionOptions;
+
+// @public @deprecated (undocumented)
+export const createGithubRepoCreateAction: typeof github.createGithubRepoCreateAction;
+
+// @public @deprecated (undocumented)
+export const createGithubRepoPushAction: typeof github.createGithubRepoPushAction;
+
+// @public @deprecated (undocumented)
+export const createGithubWebhookAction: typeof github.createGithubWebhookAction;
+
+// @public @deprecated (undocumented)
+export const createPublishAzureAction: typeof azure.createPublishAzureAction;
+
+// @public @deprecated (undocumented)
+export const createPublishBitbucketAction: typeof bitbucket.createPublishBitbucketAction;
+
+// @public @deprecated (undocumented)
+export const createPublishBitbucketCloudAction: typeof bitbucketCloud.createPublishBitbucketCloudAction;
+
+// @public @deprecated (undocumented)
+export const createPublishBitbucketServerAction: typeof bitbucketServer.createPublishBitbucketServerAction;
+
+// @public @deprecated (undocumented)
+export const createPublishBitbucketServerPullRequestAction: typeof bitbucketServer.createPublishBitbucketServerPullRequestAction;
+
+// @public @deprecated (undocumented)
+export const createPublishGerritAction: typeof gerrit.createPublishGerritAction;
+
+// @public @deprecated (undocumented)
+export const createPublishGerritReviewAction: typeof gerrit.createPublishGerritReviewAction;
+
+// @public @deprecated (undocumented)
+export const createPublishGithubAction: typeof github.createPublishGithubAction;
+
+// @public @deprecated (undocumented)
+export const createPublishGithubPullRequestAction: (
+  options: github.CreateGithubPullRequestActionOptions,
+) => TemplateAction_2<
+  {
+    title: string;
+    branchName: string;
+    targetBranchName?: string | undefined;
+    description: string;
+    repoUrl: string;
+    draft?: boolean | undefined;
+    targetPath?: string | undefined;
+    sourcePath?: string | undefined;
+    token?: string | undefined;
+    reviewers?: string[] | undefined;
+    teamReviewers?: string[] | undefined;
+    commitMessage?: string | undefined;
+    update?: boolean | undefined;
+    forceFork?: boolean | undefined;
+    gitAuthorName?: string | undefined;
+    gitAuthorEmail?: string | undefined;
+    forceEmptyGitAuthor?: boolean | undefined;
+  },
+  JsonObject
+>;
+
+// @public @deprecated (undocumented)
+export const createPublishGitlabAction: typeof gitlab.createPublishGitlabAction;
+
+// @public @deprecated (undocumented)
+export const createPublishGitlabMergeRequestAction: (options: {
   integrations: ScmIntegrationRegistry;
-  config: Config;
-}): TemplateAction<any>;
+}) => TemplateAction_2<
+  {
+    repoUrl: string;
+    title: string;
+    description: string;
+    branchName: string;
+    targetBranchName?: string | undefined;
+    sourcePath?: string | undefined;
+    targetPath?: string | undefined;
+    token?: string | undefined;
+    commitAction?: 'auto' | 'update' | 'delete' | 'create' | undefined;
+    projectid?: string | undefined;
+    removeSourceBranch?: boolean | undefined;
+    assignee?: string | undefined;
+  },
+  JsonObject
+>;
 
-// Warning: (ae-forgotten-export) The symbol "CreateGithubPullRequestActionOptions" needs to be exported by the entry point index.d.ts
-// Warning: (ae-missing-release-tag) "createPublishGithubPullRequestAction" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
-// @public (undocumented)
-export const createPublishGithubPullRequestAction: ({
-  integrations,
-  clientFactory,
-}: CreateGithubPullRequestActionOptions) => TemplateAction<any>;
-
-// Warning: (ae-missing-release-tag) "createPublishGitlabAction" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
-// @public (undocumented)
-export function createPublishGitlabAction(options: {
-  integrations: ScmIntegrationRegistry;
-  config: Config;
-}): TemplateAction<any>;
-
-// Warning: (ae-missing-release-tag) "createRouter" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
-// @public (undocumented)
+// @public @deprecated
 export function createRouter(options: RouterOptions): Promise<express.Router>;
 
-// Warning: (ae-missing-release-tag) "createTemplateAction" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
-// @public (undocumented)
+// @public @deprecated (undocumented)
 export const createTemplateAction: <
-  Input extends Partial<{
-    [name: string]: JsonValue | Partial<JsonObject> | undefined;
-  }>,
+  TInputParams extends JsonObject = JsonObject,
+  TOutputParams extends JsonObject = JsonObject,
+  TInputSchema extends ZodType<any, ZodTypeDef, any> | Schema = {},
+  TOutputSchema extends ZodType<any, ZodTypeDef, any> | Schema = {},
+  TActionInput extends JsonObject = TInputSchema extends ZodType<
+    any,
+    any,
+    infer IReturn
+  >
+    ? IReturn
+    : TInputParams,
+  TActionOutput extends JsonObject = TOutputSchema extends ZodType<
+    any,
+    any,
+    infer IReturn_1
+  >
+    ? IReturn_1
+    : TOutputParams,
 >(
-  templateAction: TemplateAction<Input>,
-) => TemplateAction<any>;
+  action: TemplateActionOptions<
+    TActionInput,
+    TActionOutput,
+    TInputSchema,
+    TOutputSchema
+  >,
+) => TemplateAction_2<TActionInput, TActionOutput>;
+
+// @public
+export function createWaitAction(options?: {
+  maxWaitTime?: Duration | HumanDuration;
+}): TemplateAction_2<HumanDuration, JsonObject>;
 
 // @public
 export type CreateWorkerOptions = {
-  taskBroker: TaskBroker;
+  taskBroker: TaskBroker_2;
   actionRegistry: TemplateActionRegistry;
   integrations: ScmIntegrations;
   workingDirectory: string;
-  logger: Logger_2;
+  logger: Logger;
+  additionalTemplateFilters?: Record<string, TemplateFilter_2>;
+  concurrentTasksLimit?: number;
+  additionalTemplateGlobals?: Record<string, TemplateGlobal_2>;
+  permissions?: PermissionEvaluator;
 };
 
 // @public
+export interface CurrentClaimedTask {
+  createdBy?: string;
+  secrets?: TaskSecrets_2;
+  spec: TaskSpec;
+  state?: JsonObject;
+  taskId: string;
+  // (undocumented)
+  workspace?: Promise<Buffer>;
+}
+
+// @public
 export class DatabaseTaskStore implements TaskStore {
-  constructor(options: DatabaseTaskStoreOptions);
   // (undocumented)
-  claimTask(): Promise<SerializedTask | undefined>;
+  cancelTask(
+    options: TaskStoreEmitOptions<
+      {
+        message: string;
+      } & JsonObject
+    >,
+  ): Promise<void>;
   // (undocumented)
-  completeTask({
-    taskId,
-    status,
-    eventBody,
-  }: {
+  claimTask(): Promise<SerializedTask_2 | undefined>;
+  // (undocumented)
+  cleanWorkspace({ taskId }: { taskId: string }): Promise<void>;
+  // (undocumented)
+  completeTask(options: {
     taskId: string;
-    status: Status;
+    status: TaskStatus_2;
     eventBody: JsonObject;
   }): Promise<void>;
-  // Warning: (ae-forgotten-export) The symbol "DatabaseTaskStoreOptions" needs to be exported by the entry point index.d.ts
-  //
   // (undocumented)
   static create(options: DatabaseTaskStoreOptions): Promise<DatabaseTaskStore>;
   // (undocumented)
   createTask(
-    spec: TaskSpec,
-    secrets?: TaskSecrets,
-  ): Promise<{
-    taskId: string;
-  }>;
+    options: TaskStoreCreateTaskOptions,
+  ): Promise<TaskStoreCreateTaskResult>;
   // (undocumented)
-  emitLogEvent({ taskId, body }: TaskStoreEmitOptions): Promise<void>;
+  emitLogEvent(
+    options: TaskStoreEmitOptions<
+      {
+        message: string;
+      } & JsonObject
+    >,
+  ): Promise<void>;
   // (undocumented)
-  getTask(taskId: string): Promise<SerializedTask>;
+  getTask(taskId: string): Promise<SerializedTask_2>;
+  // (undocumented)
+  getTaskState({ taskId }: { taskId: string }): Promise<
+    | {
+        state: JsonObject;
+      }
+    | undefined
+  >;
   // (undocumented)
   heartbeatTask(taskId: string): Promise<void>;
   // (undocumented)
-  listEvents({ taskId, after }: TaskStoreListEventsOptions): Promise<{
-    events: SerializedTaskEvent[];
+  list(options: { createdBy?: string; status?: TaskStatus_2 }): Promise<{
+    tasks: SerializedTask_2[];
   }>;
   // (undocumented)
-  listStaleTasks({ timeoutS }: { timeoutS: number }): Promise<{
+  listEvents(options: TaskStoreListEventsOptions): Promise<{
+    events: SerializedTaskEvent_2[];
+  }>;
+  // (undocumented)
+  listStaleTasks(options: { timeoutS: number }): Promise<{
     tasks: {
       taskId: string;
+      recovery?: TaskRecovery;
     }[];
   }>;
+  // (undocumented)
+  recoverTasks(options: TaskStoreRecoverTaskOptions): Promise<{
+    ids: string[];
+  }>;
+  // (undocumented)
+  rehydrateWorkspace(options: {
+    taskId: string;
+    targetPath: string;
+  }): Promise<void>;
+  // (undocumented)
+  saveTaskState(options: { taskId: string; state?: JsonObject }): Promise<void>;
+  // (undocumented)
+  serializeWorkspace(options: { path: string; taskId: string }): Promise<void>;
+  // (undocumented)
+  shutdownTask(options: TaskStoreShutDownTaskOptions): Promise<void>;
 }
 
 // @public
-export type DispatchResult = {
-  taskId: string;
+export type DatabaseTaskStoreOptions = {
+  database: PluginDatabaseManager | Knex;
 };
 
-// Warning: (ae-missing-release-tag) "fetchContents" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
-// @public (undocumented)
-export function fetchContents({
-  reader,
-  integrations,
-  baseUrl,
-  fetchUrl,
-  outputPath,
-}: {
-  reader: UrlReader;
-  integrations: ScmIntegrations;
-  baseUrl?: string;
-  fetchUrl?: JsonValue;
-  outputPath: string;
-}): Promise<void>;
+// @public @deprecated
+export const executeShellCommand: typeof executeShellCommand_2;
 
-// Warning: (ae-missing-release-tag) "OctokitProvider" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
-// @public
-export class OctokitProvider {
-  constructor(integrations: ScmIntegrationRegistry);
-  // Warning: (tsdoc-param-tag-missing-hyphen) The @param block should be followed by a parameter name and then a hyphen
-  // Warning: (ae-forgotten-export) The symbol "OctokitIntegration" needs to be exported by the entry point index.d.ts
-  getOctokit(repoUrl: string): Promise<OctokitIntegration>;
-}
+// @public @deprecated
+export const fetchContents: typeof fetchContents_2;
 
-// @public
+// @public @deprecated
 export interface RouterOptions {
   // (undocumented)
-  actions?: TemplateAction<any>[];
+  actions?: TemplateAction_2<any, any>[];
+  // (undocumented)
+  additionalTemplateFilters?: Record<string, TemplateFilter_2>;
+  // (undocumented)
+  additionalTemplateGlobals?: Record<string, TemplateGlobal_2>;
+  // (undocumented)
+  additionalWorkspaceProviders?: Record<string, WorkspaceProvider>;
+  // (undocumented)
+  auth?: AuthService;
+  // (undocumented)
+  autocompleteHandlers?: Record<string, AutocompleteHandler>;
   // (undocumented)
   catalogClient: CatalogApi;
+  concurrentTasksLimit?: number;
   // (undocumented)
   config: Config;
   // (undocumented)
-  containerRunner: ContainerRunner;
+  database: DatabaseService;
   // (undocumented)
-  database: PluginDatabaseManager;
+  discovery?: DiscoveryService;
   // (undocumented)
-  logger: Logger_2;
+  httpAuth?: HttpAuthService;
   // (undocumented)
-  reader: UrlReader;
+  identity?: IdentityApi;
   // (undocumented)
-  taskBroker?: TaskBroker;
+  lifecycle?: LifecycleService;
   // (undocumented)
+  logger: Logger;
+  // (undocumented)
+  permissionRules?: Array<
+    TemplatePermissionRuleInput | ActionPermissionRuleInput
+  >;
+  // (undocumented)
+  permissions?: PermissionsService;
+  // (undocumented)
+  reader: UrlReaderService;
+  // (undocumented)
+  scheduler?: SchedulerService;
+  // (undocumented)
+  taskBroker?: TaskBroker_2;
+  // @deprecated (undocumented)
   taskWorkers?: number;
 }
 
-// Warning: (ae-forgotten-export) The symbol "RunCommandOptions" needs to be exported by the entry point index.d.ts
-// Warning: (ae-missing-release-tag) "runCommand" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
-// @public
-export const runCommand: ({
-  command,
-  args,
-  logStream,
-  options,
-}: RunCommandOptions) => Promise<void>;
+// @public @deprecated
+export type RunCommandOptions = ExecuteShellCommandOptions;
 
-// @public (undocumented)
-export class ScaffolderEntitiesProcessor implements CatalogProcessor {
-  // (undocumented)
-  postProcessEntity(
-    entity: Entity,
-    _location: LocationSpec,
-    emit: CatalogProcessorEmit,
-  ): Promise<Entity>;
-  // (undocumented)
-  validateEntityKind(entity: Entity): Promise<boolean>;
-}
+// @public @deprecated
+export const ScaffolderEntitiesProcessor: typeof ScaffolderEntitiesProcessor_2;
 
-// @public
-export type SerializedTask = {
-  id: string;
-  spec: TaskSpec;
-  status: Status;
-  createdAt: string;
-  lastHeartbeatAt?: string;
-  secrets?: TaskSecrets;
-};
+// @public @deprecated
+export type SerializedTask = SerializedTask_2;
+
+// @public @deprecated
+export type SerializedTaskEvent = SerializedTaskEvent_2;
+
+// @public @deprecated
+export type TaskBroker = TaskBroker_2;
+
+// @public @deprecated
+export type TaskBrokerDispatchOptions = TaskBrokerDispatchOptions_2;
+
+// @public @deprecated
+export type TaskBrokerDispatchResult = TaskBrokerDispatchResult_2;
+
+// @public @deprecated
+export type TaskCompletionState = TaskCompletionState_2;
+
+// @public @deprecated
+export type TaskContext = TaskContext_2;
+
+// @public @deprecated
+export type TaskEventType = TaskEventType_2;
 
 // @public
-export type SerializedTaskEvent = {
-  id: number;
-  taskId: string;
-  body: JsonObject;
-  type: TaskEventType;
-  createdAt: string;
-};
-
-// @public
-export type Status =
-  | 'open'
-  | 'processing'
-  | 'failed'
-  | 'cancelled'
-  | 'completed';
-
-// @public
-export interface TaskBroker {
+export class TaskManager implements TaskContext_2 {
   // (undocumented)
-  claim(): Promise<TaskContext>;
+  get cancelSignal(): AbortSignal;
   // (undocumented)
-  dispatch(spec: TaskSpec, secrets?: TaskSecrets): Promise<DispatchResult>;
+  cleanWorkspace?(): Promise<void>;
   // (undocumented)
-  get(taskId: string): Promise<SerializedTask>;
-  // (undocumented)
-  observe(
-    options: {
-      taskId: string;
-      after: number | undefined;
-    },
-    callback: (
-      error: Error | undefined,
-      result: {
-        events: SerializedTaskEvent[];
-      },
-    ) => void,
-  ): {
-    unsubscribe: () => void;
-  };
-  // (undocumented)
-  vacuumTasks(timeoutS: { timeoutS: number }): Promise<void>;
-}
-
-// @public
-export interface TaskContext {
-  // (undocumented)
-  complete(result: CompletedTaskState, metadata?: JsonValue): Promise<void>;
-  // (undocumented)
-  done: boolean;
-  // (undocumented)
-  emitLog(message: string, metadata?: JsonValue): Promise<void>;
-  // (undocumented)
-  getWorkspaceName(): Promise<string>;
-  // (undocumented)
-  secrets?: TaskSecrets;
-  // (undocumented)
-  spec: TaskSpec;
-}
-
-// @public
-export type TaskEventType = 'completion' | 'log';
-
-// @public
-export class TaskManager implements TaskContext {
-  // (undocumented)
-  complete(result: CompletedTaskState, metadata?: JsonObject): Promise<void>;
+  complete(result: TaskCompletionState_2, metadata?: JsonObject): Promise<void>;
   // (undocumented)
   static create(
-    state: TaskState,
+    task: CurrentClaimedTask,
     storage: TaskStore,
-    logger: Logger_2,
+    abortSignal: AbortSignal,
+    logger: Logger,
+    auth?: AuthService,
+    config?: Config,
+    additionalWorkspaceProviders?: Record<string, WorkspaceProvider>,
   ): TaskManager;
+  // (undocumented)
+  get createdBy(): string | undefined;
   // (undocumented)
   get done(): boolean;
   // (undocumented)
-  emitLog(message: string, metadata?: JsonObject): Promise<void>;
+  emitLog(message: string, logMetadata?: JsonObject): Promise<void>;
+  // (undocumented)
+  getInitiatorCredentials(): Promise<BackstageCredentials>;
+  // (undocumented)
+  getTaskState?(): Promise<
+    | {
+        state?: JsonObject;
+      }
+    | undefined
+  >;
   // (undocumented)
   getWorkspaceName(): Promise<string>;
   // (undocumented)
-  get secrets(): TaskSecrets | undefined;
+  rehydrateWorkspace?(options: {
+    taskId: string;
+    targetPath: string;
+  }): Promise<void>;
   // (undocumented)
-  get spec(): TaskSpec;
+  get secrets(): TaskSecrets_2 | undefined;
+  // (undocumented)
+  serializeWorkspace?(options: { path: string }): Promise<void>;
+  // (undocumented)
+  get spec(): TaskSpecV1beta3;
+  // (undocumented)
+  updateCheckpoint?(
+    options:
+      | {
+          key: string;
+          status: 'success';
+          value: JsonValue;
+        }
+      | {
+          key: string;
+          status: 'failed';
+          reason: string;
+        },
+  ): Promise<void>;
 }
 
-// @public
-export type TaskSecrets = {
-  token: string | undefined;
-};
+// @public @deprecated (undocumented)
+export type TaskSecrets = TaskSecrets_2;
 
-// @public
-export type TaskSpec = TaskSpecV1beta2 | TaskSpecV1beta3;
-
-// @public
-export interface TaskSpecV1beta2 {
-  // (undocumented)
-  apiVersion: 'backstage.io/v1beta2';
-  // (undocumented)
-  baseUrl?: string;
-  // (undocumented)
-  metadata?: TemplateMetadata;
-  // (undocumented)
-  output: {
-    [name: string]: string;
-  };
-  // (undocumented)
-  steps: Array<{
-    id: string;
-    name: string;
-    action: string;
-    input?: JsonObject;
-    if?: string | boolean;
-  }>;
-  // (undocumented)
-  values: JsonObject;
-}
-
-// @public
-export interface TaskSpecV1beta3 {
-  // (undocumented)
-  apiVersion: 'scaffolder.backstage.io/v1beta3';
-  // (undocumented)
-  baseUrl?: string;
-  // (undocumented)
-  metadata?: TemplateMetadata;
-  // (undocumented)
-  output: {
-    [name: string]: JsonValue;
-  };
-  // (undocumented)
-  parameters: JsonObject;
-  // Warning: (ae-forgotten-export) The symbol "TaskStep" needs to be exported by the entry point index.d.ts
-  //
-  // (undocumented)
-  steps: TaskStep[];
-}
-
-// @public
-export interface TaskState {
-  // (undocumented)
-  secrets?: TaskSecrets;
-  // (undocumented)
-  spec: TaskSpec;
-  // (undocumented)
-  taskId: string;
-}
+// @public @deprecated
+export type TaskStatus = TaskStatus_2;
 
 // @public
 export interface TaskStore {
   // (undocumented)
+  cancelTask?(options: TaskStoreEmitOptions): Promise<void>;
+  // (undocumented)
   claimTask(): Promise<SerializedTask | undefined>;
+  // (undocumented)
+  cleanWorkspace?({ taskId }: { taskId: string }): Promise<void>;
   // (undocumented)
   completeTask(options: {
     taskId: string;
-    status: Status;
+    status: TaskStatus;
     eventBody: JsonObject;
   }): Promise<void>;
   // (undocumented)
   createTask(
-    task: TaskSpec,
-    secrets?: TaskSecrets,
-  ): Promise<{
-    taskId: string;
-  }>;
+    options: TaskStoreCreateTaskOptions,
+  ): Promise<TaskStoreCreateTaskResult>;
   // (undocumented)
-  emitLogEvent({ taskId, body }: TaskStoreEmitOptions): Promise<void>;
+  emitLogEvent(options: TaskStoreEmitOptions): Promise<void>;
   // (undocumented)
   getTask(taskId: string): Promise<SerializedTask>;
   // (undocumented)
+  getTaskState?({ taskId }: { taskId: string }): Promise<
+    | {
+        state: JsonObject;
+      }
+    | undefined
+  >;
+  // (undocumented)
   heartbeatTask(taskId: string): Promise<void>;
   // (undocumented)
-  listEvents({ taskId, after }: TaskStoreListEventsOptions): Promise<{
+  list?(options: { createdBy?: string; status?: TaskStatus }): Promise<{
+    tasks: SerializedTask[];
+  }>;
+  // (undocumented)
+  listEvents(options: TaskStoreListEventsOptions): Promise<{
     events: SerializedTaskEvent[];
   }>;
   // (undocumented)
@@ -515,12 +660,48 @@ export interface TaskStore {
       taskId: string;
     }[];
   }>;
+  // (undocumented)
+  recoverTasks?(options: TaskStoreRecoverTaskOptions): Promise<{
+    ids: string[];
+  }>;
+  // (undocumented)
+  rehydrateWorkspace?(options: {
+    taskId: string;
+    targetPath: string;
+  }): Promise<void>;
+  // (undocumented)
+  saveTaskState?(options: {
+    taskId: string;
+    state?: JsonObject;
+  }): Promise<void>;
+  // (undocumented)
+  serializeWorkspace?({
+    path,
+    taskId,
+  }: {
+    path: string;
+    taskId: string;
+  }): Promise<void>;
+  // (undocumented)
+  shutdownTask?(options: TaskStoreShutDownTaskOptions): Promise<void>;
 }
 
 // @public
-export type TaskStoreEmitOptions = {
+export type TaskStoreCreateTaskOptions = {
+  spec: TaskSpec;
+  createdBy?: string;
+  secrets?: TaskSecrets_2;
+};
+
+// @public
+export type TaskStoreCreateTaskResult = {
   taskId: string;
-  body: JsonObject;
+};
+
+// @public
+export type TaskStoreEmitOptions<TBody = JsonObject> = {
+  taskId: string;
+  body: TBody;
 };
 
 // @public
@@ -530,44 +711,58 @@ export type TaskStoreListEventsOptions = {
 };
 
 // @public
+export type TaskStoreRecoverTaskOptions = {
+  timeout: HumanDuration;
+};
+
+// @public
+export type TaskStoreShutDownTaskOptions = {
+  taskId: string;
+};
+
+// @public
 export class TaskWorker {
   // (undocumented)
   static create(options: CreateWorkerOptions): Promise<TaskWorker>;
   // (undocumented)
-  runOneTask(task: TaskContext): Promise<void>;
+  protected onReadyToClaimTask(): Promise<void>;
+  // (undocumented)
+  recoverTasks(): Promise<void>;
+  // (undocumented)
+  runOneTask(task: TaskContext_2): Promise<void>;
   // (undocumented)
   start(): void;
+  // (undocumented)
+  stop(): void;
 }
 
-// Warning: (ae-missing-release-tag) "TemplateAction" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
-// @public (undocumented)
-export type TemplateAction<Input extends InputBase> = {
-  id: string;
-  description?: string;
-  schema?: {
-    input?: Schema;
-    output?: Schema;
-  };
-  handler: (ctx: ActionContext<Input>) => Promise<void>;
-};
-
-// Warning: (ae-missing-release-tag) "TemplateActionRegistry" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
-// @public (undocumented)
-export class TemplateActionRegistry {
-  // (undocumented)
-  get(actionId: string): TemplateAction<any>;
-  // (undocumented)
-  list(): TemplateAction<any>[];
-  // (undocumented)
-  register<Parameters extends InputBase>(
-    action: TemplateAction<Parameters>,
-  ): void;
-}
+// @public @deprecated (undocumented)
+export type TemplateAction<TInput extends JsonObject> =
+  TemplateAction_2<TInput>;
 
 // @public
-export type TemplateMetadata = {
-  name: string;
-};
+export class TemplateActionRegistry {
+  // (undocumented)
+  get(actionId: string): TemplateAction_2;
+  // (undocumented)
+  list(): TemplateAction_2[];
+  // (undocumented)
+  register(action: TemplateAction_2): void;
+}
+
+// @public @deprecated (undocumented)
+export type TemplateFilter = TemplateFilter_2;
+
+// @public @deprecated (undocumented)
+export type TemplateGlobal = TemplateGlobal_2;
+
+// @public (undocumented)
+export type TemplatePermissionRuleInput<
+  TParams extends PermissionRuleParams = PermissionRuleParams,
+> = PermissionRule<
+  TemplateEntityStepV1beta3 | TemplateParametersV1beta3,
+  {},
+  typeof RESOURCE_TYPE_SCAFFOLDER_TEMPLATE,
+  TParams
+>;
 ```

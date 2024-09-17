@@ -28,14 +28,9 @@ import { ProvidingComponentsCard } from './ProvidingComponentsCard';
 
 describe('<ProvidingComponentsCard />', () => {
   const catalogApi: jest.Mocked<CatalogApi> = {
-    getLocationById: jest.fn(),
-    getEntityByName: jest.fn(),
-    getEntities: jest.fn(),
-    addLocation: jest.fn(),
-    getLocationByEntity: jest.fn(),
-    removeEntityByUid: jest.fn(),
+    getEntitiesByRefs: jest.fn(),
   } as any;
-  let Wrapper: React.ComponentType;
+  let Wrapper: React.ComponentType<React.PropsWithChildren<{}>>;
 
   beforeEach(() => {
     Wrapper = ({ children }: { children?: React.ReactNode }) => (
@@ -97,16 +92,12 @@ describe('<ProvidingComponentsCard />', () => {
       },
       relations: [
         {
-          target: {
-            kind: 'Component',
-            namespace: 'my-namespace',
-            name: 'target-name',
-          },
+          targetRef: 'component:my-namespace/target-name',
           type: RELATION_API_PROVIDED_BY,
         },
       ],
     };
-    catalogApi.getEntities.mockResolvedValue({
+    catalogApi.getEntitiesByRefs.mockResolvedValue({
       items: [
         {
           apiVersion: 'v1',

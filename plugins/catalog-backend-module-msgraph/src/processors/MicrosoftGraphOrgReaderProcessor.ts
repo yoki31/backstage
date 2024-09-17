@@ -14,14 +14,13 @@
  * limitations under the License.
  */
 
-import { LocationSpec } from '@backstage/catalog-model';
 import { Config } from '@backstage/config';
 import {
   CatalogProcessor,
   CatalogProcessorEmit,
-  results,
-} from '@backstage/plugin-catalog-backend';
-import { Logger } from 'winston';
+  processingResult,
+} from '@backstage/plugin-catalog-node';
+import { LocationSpec } from '@backstage/plugin-catalog-common';
 import {
   GroupTransformer,
   MicrosoftGraphClient,
@@ -31,13 +30,17 @@ import {
   readMicrosoftGraphOrg,
   UserTransformer,
 } from '../microsoftGraph';
+import { LoggerService } from '@backstage/backend-plugin-api';
 
 /**
- * Extracts teams and users out of a the Microsoft Graph API.
+ * Extracts teams and users out of the Microsoft Graph API.
+ *
+ * @public
+ * @deprecated Use the MicrosoftGraphOrgEntityProvider instead.
  */
 export class MicrosoftGraphOrgReaderProcessor implements CatalogProcessor {
   private readonly providers: MicrosoftGraphProviderConfig[];
-  private readonly logger: Logger;
+  private readonly logger: LoggerService;
   private readonly userTransformer?: UserTransformer;
   private readonly groupTransformer?: GroupTransformer;
   private readonly organizationTransformer?: OrganizationTransformer;
@@ -45,7 +48,7 @@ export class MicrosoftGraphOrgReaderProcessor implements CatalogProcessor {
   static fromConfig(
     config: Config,
     options: {
-      logger: Logger;
+      logger: LoggerService;
       userTransformer?: UserTransformer;
       groupTransformer?: GroupTransformer;
       organizationTransformer?: OrganizationTransformer;
@@ -60,16 +63,23 @@ export class MicrosoftGraphOrgReaderProcessor implements CatalogProcessor {
 
   constructor(options: {
     providers: MicrosoftGraphProviderConfig[];
-    logger: Logger;
+    logger: LoggerService;
     userTransformer?: UserTransformer;
     groupTransformer?: GroupTransformer;
     organizationTransformer?: OrganizationTransformer;
   }) {
+    options.logger.warn(
+      'MicrosoftGraphOrgReaderProcessor is deprecated. Please use MicrosoftGraphOrgEntityProvider instead. More info at https://github.com/backstage/backstage/blob/master/plugins/catalog-backend-module-msgraph/CHANGELOG.md#040-next1',
+    );
     this.providers = options.providers;
     this.logger = options.logger;
     this.userTransformer = options.userTransformer;
     this.groupTransformer = options.groupTransformer;
     this.organizationTransformer = options.organizationTransformer;
+  }
+
+  getProcessorName(): string {
+    return 'MicrosoftGraphOrgReaderProcessor';
   }
 
   async readLocation(
@@ -90,7 +100,7 @@ export class MicrosoftGraphOrgReaderProcessor implements CatalogProcessor {
       );
     }
 
-    // Read out all of the raw data
+    // Read out all the raw data
     const startTimestamp = Date.now();
     this.logger.info('Reading Microsoft Graph users and groups');
 
@@ -100,9 +110,17 @@ export class MicrosoftGraphOrgReaderProcessor implements CatalogProcessor {
       client,
       provider.tenantId,
       {
+        userExpand: provider.userExpand,
         userFilter: provider.userFilter,
+        userSelect: provider.userSelect,
+        loadUserPhotos: provider.loadUserPhotos,
         userGroupMemberFilter: provider.userGroupMemberFilter,
+        userGroupMemberSearch: provider.userGroupMemberSearch,
+        groupExpand: provider.groupExpand,
         groupFilter: provider.groupFilter,
+        groupSearch: provider.groupSearch,
+        groupSelect: provider.groupSelect,
+        queryMode: provider.queryMode,
         userTransformer: this.userTransformer,
         groupTransformer: this.groupTransformer,
         organizationTransformer: this.organizationTransformer,
@@ -117,10 +135,10 @@ export class MicrosoftGraphOrgReaderProcessor implements CatalogProcessor {
 
     // Done!
     for (const group of groups) {
-      emit(results.entity(location, group));
+      emit(processingResult.entity(location, group));
     }
     for (const user of users) {
-      emit(results.entity(location, user));
+      emit(processingResult.entity(location, user));
     }
 
     return true;

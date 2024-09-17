@@ -14,13 +14,19 @@
  * limitations under the License.
  */
 
-import { CircularProgress, TextField } from '@material-ui/core';
+import CircularProgress from '@material-ui/core/CircularProgress';
+import TextField from '@material-ui/core/TextField';
 import { TextFieldProps } from '@material-ui/core/TextField/TextField';
-import { Autocomplete } from '@material-ui/lab';
+import Autocomplete from '@material-ui/lab/Autocomplete';
 import React from 'react';
 import { Controller, FieldErrors } from 'react-hook-form';
 
-type Props<TFieldValue extends string> = {
+/**
+ * Props for {@link AutocompleteTextField}.
+ *
+ * @public
+ */
+export interface AutocompleteTextFieldProps<TFieldValue extends string> {
   name: TFieldValue;
   options: string[];
   required?: boolean;
@@ -35,20 +41,29 @@ type Props<TFieldValue extends string> = {
   errorHelperText?: string;
 
   textFieldProps?: Omit<TextFieldProps, 'required' | 'fullWidth'>;
-};
+}
 
-export const AutocompleteTextField = <TFieldValue extends string>({
-  name,
-  options,
-  required,
-  errors,
-  rules,
-  loading = false,
-  loadingText,
-  helperText,
-  errorHelperText,
-  textFieldProps = {},
-}: Props<TFieldValue>) => {
+/**
+ * An autocompletion text field for the catalog import flows.
+ *
+ * @public
+ */
+export const AutocompleteTextField = <TFieldValue extends string>(
+  props: AutocompleteTextFieldProps<TFieldValue>,
+) => {
+  const {
+    name,
+    options,
+    required,
+    errors,
+    rules,
+    loading = false,
+    loadingText,
+    helperText,
+    errorHelperText,
+    textFieldProps = {},
+  } = props;
+
   return (
     <Controller
       name={name}

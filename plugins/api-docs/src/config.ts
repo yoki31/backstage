@@ -18,11 +18,12 @@ import { ApiEntity } from '@backstage/catalog-model';
 import { ApiDefinitionWidget } from './components/ApiDefinitionCard/ApiDefinitionWidget';
 import { createApiRef } from '@backstage/core-plugin-api';
 
+/** @public */
 export const apiDocsConfigRef = createApiRef<ApiDocsConfig>({
   id: 'plugin.api-docs.config',
-  description: 'Used to configure api-docs widgets',
 });
 
+/** @public */
 export interface ApiDocsConfig {
   getApiDefinitionWidget: (
     apiEntity: ApiEntity,

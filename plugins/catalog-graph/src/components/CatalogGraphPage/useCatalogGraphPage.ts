@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 import {
-  EntityName,
+  CompoundEntityRef,
   parseEntityRef,
   stringifyEntityRef,
 } from '@backstage/catalog-model';
@@ -27,13 +27,12 @@ import {
   useMemo,
   useState,
 } from 'react';
-import { useLocation } from 'react-router';
-import { usePrevious } from 'react-use';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Direction } from '../EntityRelationsGraph';
 
 export type CatalogGraphPageValue = {
-  rootEntityNames: EntityName[];
-  setRootEntityNames: Dispatch<React.SetStateAction<EntityName[]>>;
+  rootEntityNames: CompoundEntityRef[];
+  setRootEntityNames: (value: CompoundEntityRef[]) => void;
   maxDepth: number;
   setMaxDepth: Dispatch<React.SetStateAction<number>>;
   selectedRelations: string[] | undefined;
@@ -46,6 +45,10 @@ export type CatalogGraphPageValue = {
   setMergeRelations: Dispatch<React.SetStateAction<boolean>>;
   direction: Direction;
   setDirection: Dispatch<React.SetStateAction<Direction>>;
+  curve: 'curveStepBefore' | 'curveMonotoneX';
+  setCurve: Dispatch<
+    React.SetStateAction<'curveStepBefore' | 'curveMonotoneX'>
+  >;
   showFilters: boolean;
   toggleShowFilters: DispatchWithoutAction;
 };
@@ -62,9 +65,12 @@ export function useCatalogGraphPage({
     mergeRelations?: boolean;
     direction?: Direction;
     showFilters?: boolean;
+    curve?: 'curveStepBefore' | 'curveMonotoneX';
   };
 }): CatalogGraphPageValue {
   const location = useLocation();
+  const navigate = useNavigate();
+
   const query = useMemo(
     () =>
       (qs.parse(location.search, { arrayLimit: 0, ignoreQueryPrefix: true }) ||
@@ -77,22 +83,51 @@ export function useCatalogGraphPage({
         mergeRelations?: string[] | string;
         direction?: string[] | Direction;
         showFilters?: string[] | string;
+        curve?: string[] | 'curveStepBefore' | 'curveMonotoneX';
       },
     [location.search],
   );
 
-  // Initial state
-  const [rootEntityNames, setRootEntityNames] = useState<EntityName[]>(() =>
-    (Array.isArray(query.rootEntityRefs)
-      ? query.rootEntityRefs
-      : initialState?.rootEntityRefs ?? []
-    ).map(r => parseEntityRef(r)),
+  const rootEntityNames = useMemo(
+    () =>
+      (Array.isArray(query.rootEntityRefs)
+        ? query.rootEntityRefs
+        : initialState?.rootEntityRefs ?? []
+      ).map(r => parseEntityRef(r)),
+    [initialState?.rootEntityRefs, query.rootEntityRefs],
   );
+
+  const setRootEntityNames = useCallback(
+    (value: CompoundEntityRef[]) => {
+      const areSame =
+        rootEntityNames.length === value.length &&
+        rootEntityNames.every(
+          (r, i) => stringifyEntityRef(r) === stringifyEntityRef(value[i]),
+        );
+
+      if (areSame) {
+        return;
+      }
+
+      const newSearch = qs.stringify(
+        {
+          ...query,
+          rootEntityRefs: value.map(r => stringifyEntityRef(r)),
+        },
+        { arrayFormat: 'brackets', addQueryPrefix: true },
+      );
+
+      navigate(newSearch);
+    },
+    [rootEntityNames, navigate, query],
+  );
+
   const [maxDepth, setMaxDepth] = useState<number>(() =>
     typeof query.maxDepth === 'string'
       ? parseMaxDepth(query.maxDepth)
       : initialState?.maxDepth ?? Number.POSITIVE_INFINITY,
   );
+
   const [selectedRelations, setSelectedRelations] = useState<
     string[] | undefined
   >(() =>
@@ -100,100 +135,53 @@ export function useCatalogGraphPage({
       ? query.selectedRelations
       : initialState?.selectedRelations,
   );
+
   const [selectedKinds, setSelectedKinds] = useState<string[] | undefined>(() =>
     (Array.isArray(query.selectedKinds)
       ? query.selectedKinds
       : initialState?.selectedKinds
     )?.map(k => k.toLocaleLowerCase('en-US')),
   );
+
   const [unidirectional, setUnidirectional] = useState<boolean>(() =>
     typeof query.unidirectional === 'string'
       ? query.unidirectional === 'true'
       : initialState?.unidirectional ?? true,
   );
+
   const [mergeRelations, setMergeRelations] = useState<boolean>(() =>
     typeof query.mergeRelations === 'string'
       ? query.mergeRelations === 'true'
       : initialState?.mergeRelations ?? true,
   );
+
   const [direction, setDirection] = useState<Direction>(() =>
     typeof query.direction === 'string'
       ? query.direction
       : initialState?.direction ?? Direction.LEFT_RIGHT,
   );
+
+  const [curve, setCurve] = useState<'curveStepBefore' | 'curveMonotoneX'>(() =>
+    typeof query.curve === 'string'
+      ? query.curve
+      : initialState?.curve ?? 'curveMonotoneX',
+  );
+
   const [showFilters, setShowFilters] = useState<boolean>(() =>
     typeof query.showFilters === 'string'
       ? query.showFilters === 'true'
       : initialState?.showFilters ?? true,
   );
+
   const toggleShowFilters = useCallback(
     () => setShowFilters(s => !s),
     [setShowFilters],
   );
 
-  // Update from query parameters
-  const prevQueryParams = usePrevious(location.search);
   useEffect(() => {
-    // Only respond to changes to url query params
-    if (location.search === prevQueryParams) {
-      return;
-    }
-
-    if (Array.isArray(query.rootEntityRefs)) {
-      setRootEntityNames(query.rootEntityRefs.map(r => parseEntityRef(r)));
-    }
-
-    if (typeof query.maxDepth === 'string') {
-      setMaxDepth(parseMaxDepth(query.maxDepth));
-    }
-
-    if (Array.isArray(query.selectedKinds)) {
-      setSelectedKinds(query.selectedKinds);
-    }
-
-    if (Array.isArray(query.selectedRelations)) {
-      setSelectedRelations(query.selectedRelations);
-    }
-
-    if (typeof query.unidirectional === 'string') {
-      setUnidirectional(query.unidirectional === 'true');
-    }
-
-    if (typeof query.mergeRelations === 'string') {
-      setMergeRelations(query.mergeRelations === 'true');
-    }
-
-    if (typeof query.direction === 'string') {
-      setDirection(query.direction);
-    }
-
-    if (typeof query.showFilters === 'string') {
-      setShowFilters(query.showFilters === 'true');
-    }
-  }, [
-    prevQueryParams,
-    location.search,
-    query,
-    setRootEntityNames,
-    setMaxDepth,
-    setSelectedKinds,
-    setSelectedRelations,
-    setUnidirectional,
-    setMergeRelations,
-    setDirection,
-    setShowFilters,
-  ]);
-
-  // Update query parameters
-  const previousRootEntityRefs = usePrevious(
-    rootEntityNames.map(e => stringifyEntityRef(e)),
-  );
-
-  useEffect(() => {
-    const rootEntityRefs = rootEntityNames.map(e => stringifyEntityRef(e));
     const newParams = qs.stringify(
       {
-        rootEntityRefs,
+        rootEntityRefs: rootEntityNames.map(stringifyEntityRef),
         maxDepth: isFinite(maxDepth) ? maxDepth : '∞',
         selectedKinds,
         selectedRelations,
@@ -201,36 +189,23 @@ export function useCatalogGraphPage({
         mergeRelations,
         direction,
         showFilters,
+        curve,
       },
       { arrayFormat: 'brackets', addQueryPrefix: true },
     );
-    const newUrl = `${window.location.pathname}${newParams}`;
 
-    // We directly manipulate window history here in order to not re-render
-    // infinitely (state => location => state => etc). The intention of this
-    // code is just to ensure the right query/filters are loaded when a user
-    // clicks the "back" button after clicking a result.
-    // Only push a new history entry if we switched to another entity, but not
-    // if we just changed a viewer setting.
-    if (
-      !previousRootEntityRefs ||
-      (rootEntityRefs.length === previousRootEntityRefs.length &&
-        rootEntityRefs.every((v, i) => v === previousRootEntityRefs[i]))
-    ) {
-      window.history.replaceState(null, document.title, newUrl);
-    } else {
-      window.history.pushState(null, document.title, newUrl);
-    }
+    navigate(newParams, { replace: true });
   }, [
-    rootEntityNames,
     maxDepth,
+    curve,
     selectedKinds,
     selectedRelations,
     unidirectional,
     mergeRelations,
     direction,
     showFilters,
-    previousRootEntityRefs,
+    rootEntityNames,
+    navigate,
   ]);
 
   return {
@@ -248,6 +223,8 @@ export function useCatalogGraphPage({
     setMergeRelations,
     direction,
     setDirection,
+    curve,
+    setCurve,
     showFilters,
     toggleShowFilters,
   };

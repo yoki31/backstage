@@ -13,16 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { EntityName } from '@backstage/catalog-model';
-import { useAsyncRetry } from 'react-use';
-import { AsyncState } from 'react-use/lib/useAsync';
+import { CompoundEntityRef } from '@backstage/catalog-model';
+import useAsyncRetry from 'react-use/esm/useAsyncRetry';
+import { AsyncState } from 'react-use/esm/useAsync';
 import { techdocsStorageApiRef } from '../../api';
 import { useApi } from '@backstage/core-plugin-api';
 
 export type RawPage = {
   content: string;
   path: string;
-  entityId: EntityName;
+  entityId: CompoundEntityRef;
 };
 
 export function useRawPage(

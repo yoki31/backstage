@@ -14,22 +14,29 @@
  * limitations under the License.
  */
 
-import React, { PropsWithChildren } from 'react';
-import { BackstageTheme } from '@backstage/theme';
-import { makeStyles, ThemeProvider } from '@material-ui/core/styles';
+import React from 'react';
+import { makeStyles, Theme, ThemeProvider } from '@material-ui/core/styles';
 
 export type PageClassKey = 'root';
 
 const useStyles = makeStyles(
-  () => ({
+  theme => ({
     root: {
       display: 'grid',
       gridTemplateAreas:
         "'pageHeader pageHeader pageHeader' 'pageSubheader pageSubheader pageSubheader' 'pageNav pageContent pageSidebar'",
       gridTemplateRows: 'max-content auto 1fr',
       gridTemplateColumns: 'auto 1fr auto',
-      height: '100vh',
       overflowY: 'auto',
+      height: '100vh',
+      [theme.breakpoints.down('xs')]: {
+        height: '100%',
+      },
+      '@media print': {
+        display: 'block',
+        height: 'auto',
+        overflowY: 'inherit',
+      },
     },
   }),
   { name: 'BackstagePage' },
@@ -37,19 +44,20 @@ const useStyles = makeStyles(
 
 type Props = {
   themeId: string;
+  children?: React.ReactNode;
 };
 
-export function Page(props: PropsWithChildren<Props>) {
+export function Page(props: Props) {
   const { themeId, children } = props;
   const classes = useStyles();
   return (
     <ThemeProvider
-      theme={(baseTheme: BackstageTheme) => ({
+      theme={(baseTheme: Theme) => ({
         ...baseTheme,
         page: baseTheme.getPageTheme({ themeId }),
       })}
     >
-      <div className={classes.root}>{children}</div>
+      <main className={classes.root}>{children}</main>
     </ThemeProvider>
   );
 }

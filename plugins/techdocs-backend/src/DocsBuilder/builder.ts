@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 import {
+  DEFAULT_NAMESPACE,
   Entity,
-  ENTITY_DEFAULT_NAMESPACE,
   stringifyEntityRef,
 } from '@backstage/catalog-model';
 import { Config } from '@backstage/config';
@@ -28,8 +28,7 @@ import {
   PreparerBase,
   PreparerBuilder,
   PublisherBase,
-  UrlPreparer,
-} from '@backstage/techdocs-common';
+} from '@backstage/plugin-techdocs-node';
 import fs from 'fs-extra';
 import os from 'os';
 import path from 'path';
@@ -111,8 +110,7 @@ export class DocsBuilder {
       try {
         storedEtag = (
           await this.publisher.fetchTechDocsMetadata({
-            namespace:
-              this.entity.metadata.namespace ?? ENTITY_DEFAULT_NAMESPACE,
+            namespace: this.entity.metadata.namespace ?? DEFAULT_NAMESPACE,
             kind: this.entity.kind,
             name: this.entity.metadata.name,
           })
@@ -187,12 +185,15 @@ export class DocsBuilder {
       etag: newEtag,
       logger: this.logger,
       logStream: this.logStream,
+      siteOptions: {
+        name: this.entity.metadata.title ?? this.entity.metadata.name,
+      },
     });
 
     // Remove Prepared directory since it is no longer needed.
     // Caveat: Can not remove prepared directory in case of git preparer since the
     // local git repository is used to get etag on subsequent requests.
-    if (this.preparer instanceof UrlPreparer) {
+    if (this.preparer.shouldCleanPreparedDirectory()) {
       this.logger.debug(
         `Removing prepared directory ${preparedDir} since the site has been generated`,
       );

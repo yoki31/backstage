@@ -2,6 +2,7 @@
 id: adrs-overview
 title: Architecture Decision Records (ADR)
 sidebar_label: Overview
+# prettier-ignore
 description: Overview of Architecture Decision Records (ADR)
 ---
 
@@ -26,12 +27,12 @@ Records should be stored under the `architecture-decisions` directory.
 - Address and integrate feedback from the community
 - Eventually, assign a number
 - Add the path of the ADR to the microsite sidebar in
-  [`sidebars.json`](https://github.com/backstage/backstage/blob/master/microsite/sidebars.json)
+  [`sidebars.js`](https://github.com/backstage/backstage/blob/master/microsite/sidebars.js)
 - Add the path of the ADR to the
   [`mkdocs.yml`](https://github.com/backstage/backstage/blob/master/mkdocs.yml)
 - Merge the pull request
 
 ## Superseding an ADR
 
-If an ADR supersedes an older ADR then the older ADR's status is changed to
-superseded by ADR-XXXX and links to the new ADR.
+If an ADR supersedes an older ADR then the status of the older ADR is changed to
+"superseded by ADR-XXXX", and links to the new ADR.

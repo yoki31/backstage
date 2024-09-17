@@ -34,7 +34,7 @@ describe('logCollector', () => {
     expect(logs.error).toEqual(['c', '3']);
   });
 
-  it('should collect some logs asynchrnously', async () => {
+  it('should collect some logs asynchronously', async () => {
     const logs = await withLogCollector(async () => {
       console.log('a');
       console.warn('b');
@@ -62,8 +62,7 @@ describe('logCollector', () => {
 
       expect(logs.log).toEqual(['a', '1']);
       expect(logs.warn).toEqual(['b', '2']);
-      // @ts-ignore
-      expect(logs.error).toEqual([]);
+      expect((logs as any).error).toEqual([]);
     });
 
     expect(missedLogs.log).toEqual([]);
@@ -71,7 +70,7 @@ describe('logCollector', () => {
     expect(missedLogs.error).toEqual(['c', '3']);
   });
 
-  it('should collect specific logs asynchrnously', async () => {
+  it('should collect specific logs asynchronously', async () => {
     const missedLogs = await withLogCollector(async () => {
       const logs = await withLogCollector(['error'], async () => {
         console.log('a');
@@ -82,10 +81,8 @@ describe('logCollector', () => {
         console.log('1');
       });
 
-      // @ts-ignore
-      expect(logs.log).toEqual([]);
-      // @ts-ignore
-      expect(logs.warn).toEqual([]);
+      expect((logs as any).log).toEqual([]);
+      expect((logs as any).warn).toEqual([]);
       expect(logs.error).toEqual(['c', '3']);
     });
 

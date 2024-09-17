@@ -13,29 +13,52 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { FieldProps } from '@rjsf/core';
 import React from 'react';
-import { EntityPicker } from '../EntityPicker';
+import { EntityPicker } from '../EntityPicker/EntityPicker';
+import { OwnerPickerProps } from './schema';
+import { useTranslationRef } from '@backstage/core-plugin-api/alpha';
+import { scaffolderTranslationRef } from '../../../translation';
 
-export const OwnerPicker = ({
-  schema: { title = 'Owner', description = 'The owner of the component' },
-  uiSchema,
-  ...props
-}: FieldProps<string>) => {
+export { OwnerPickerSchema } from './schema';
+
+/**
+ * The underlying component that is rendered in the form for the `OwnerPicker`
+ * field extension.
+ *
+ * @public
+ */
+export const OwnerPicker = (props: OwnerPickerProps) => {
+  const { t } = useTranslationRef(scaffolderTranslationRef);
+  const {
+    schema: {
+      title = t('fields.ownerPicker.title'),
+      description = t('fields.ownerPicker.description'),
+    },
+    uiSchema,
+    ...restProps
+  } = props;
+
+  const defaultNamespace = uiSchema['ui:options']?.defaultNamespace;
+  const allowedKinds = uiSchema['ui:options']?.allowedKinds;
+
+  const catalogFilter = uiSchema['ui:options']?.catalogFilter || {
+    kind: allowedKinds || ['Group', 'User'],
+  };
+
   const ownerUiSchema = {
     ...uiSchema,
     'ui:options': {
-      allowedKinds: (uiSchema['ui:options']?.allowedKinds || [
-        'Group',
-        'User',
-      ]) as string[],
+      catalogFilter,
       defaultKind: 'Group',
+      allowArbitraryValues:
+        uiSchema['ui:options']?.allowArbitraryValues ?? true,
+      ...(defaultNamespace !== undefined ? { defaultNamespace } : {}),
     },
   };
 
   return (
     <EntityPicker
-      {...props}
+      {...restProps}
       schema={{ title, description }}
       uiSchema={ownerUiSchema}
     />

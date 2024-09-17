@@ -16,14 +16,20 @@
 
 import {
   IndexableDocument,
+  IndexableResultSet,
   SearchQuery,
-  SearchResultSet,
-  QueryTranslator,
-  SearchEngine,
-} from '@backstage/search-common';
+} from '@backstage/plugin-search-common';
+import { QueryTranslator, SearchEngine } from '../types';
+import { MissingIndexError } from '../errors';
 import lunr from 'lunr';
-import { Logger } from 'winston';
+import { v4 as uuid } from 'uuid';
+import { LunrSearchEngineIndexer } from './LunrSearchEngineIndexer';
+import { LoggerService } from '@backstage/backend-plugin-api';
 
+/**
+ * Type of translated query for the Lunr Search Engine.
+ * @public
+ */
 export type ConcreteLunrQuery = {
   lunrQueryBuilder: lunr.Index.QueryBuilder;
   documentTypes?: string[];
@@ -35,30 +41,44 @@ type LunrResultEnvelope = {
   type: string;
 };
 
-type LunrQueryTranslator = (query: SearchQuery) => ConcreteLunrQuery;
+/**
+ * Translator responsible for translating search term and filters to a query that the Lunr Search Engine understands.
+ * @public
+ */
+export type LunrQueryTranslator = (query: SearchQuery) => ConcreteLunrQuery;
 
+/**
+ * Lunr specific search engine implementation.
+ * @public
+ */
 export class LunrSearchEngine implements SearchEngine {
   protected lunrIndices: Record<string, lunr.Index> = {};
   protected docStore: Record<string, IndexableDocument>;
-  protected logger: Logger;
+  protected logger: LoggerService;
+  protected highlightPreTag: string;
+  protected highlightPostTag: string;
 
-  constructor({ logger }: { logger: Logger }) {
-    this.logger = logger;
+  constructor(options: { logger: LoggerService }) {
+    this.logger = options.logger;
     this.docStore = {};
+    const uuidTag = uuid();
+    this.highlightPreTag = `<${uuidTag}>`;
+    this.highlightPostTag = `</${uuidTag}>`;
   }
 
   protected translator: QueryTranslator = ({
     term,
     filters,
     types,
+    pageLimit,
   }: SearchQuery): ConcreteLunrQuery => {
-    const pageSize = 25;
+    const pageSize = pageLimit || 25;
 
     return {
       lunrQueryBuilder: q => {
         const termToken = lunr.tokenizer(term);
 
-        // Support for typeahead seach is based on https://github.com/olivernn/lunr.js/issues/256#issuecomment-295407852
+        // Support for typeahead search is based on https://github.com/olivernn/lunr.js/issues/256#issuecomment-295407852
         // look for an exact match and apply a large positive boost
         q.term(termToken, {
           usePipeline: true,
@@ -94,10 +114,16 @@ export class LunrSearchEngine implements SearchEngine {
 
             // Require that the given field has the given value
             if (['string', 'number', 'boolean'].includes(typeof value)) {
-              q.term(lunr.tokenizer(value?.toString()), {
-                presence: lunr.Query.presence.REQUIRED,
-                fields: [field],
-              });
+              q.term(
+                lunr
+                  .tokenizer(value?.toString())
+                  .map(lunr.stopWordFilter)
+                  .filter(element => element !== undefined),
+                {
+                  presence: lunr.Query.presence.REQUIRED,
+                  fields: [field],
+                },
+              );
             } else if (Array.isArray(value)) {
               // Illustrate how multi-value filters could work.
               // But warn that Lurn supports this poorly.
@@ -124,63 +150,83 @@ export class LunrSearchEngine implements SearchEngine {
     this.translator = translator;
   }
 
-  async index(type: string, documents: IndexableDocument[]): Promise<void> {
-    const lunrBuilder = new lunr.Builder();
+  async getIndexer(type: string) {
+    const indexer = new LunrSearchEngineIndexer();
+    const indexerLogger = this.logger.child({ documentType: type });
+    let errorThrown: Error | undefined;
 
-    lunrBuilder.pipeline.add(lunr.trimmer, lunr.stopWordFilter, lunr.stemmer);
-    lunrBuilder.searchPipeline.add(lunr.stemmer);
-
-    // Make this lunr index aware of all relevant fields.
-    Object.keys(documents[0]).forEach(field => {
-      lunrBuilder.field(field);
+    indexer.on('error', err => {
+      errorThrown = err;
     });
 
-    // Set "location" field as reference field
-    lunrBuilder.ref('location');
+    indexer.on('close', () => {
+      // Once the stream is closed, build the index and store the documents in
+      // memory for later retrieval.
+      const newDocuments = indexer.getDocumentStore();
+      const docStoreExists = this.lunrIndices[type] !== undefined;
+      const documentsIndexed = Object.keys(newDocuments).length;
 
-    documents.forEach((document: IndexableDocument) => {
-      // Add document to Lunar index
-      lunrBuilder.add(document);
-      // Store documents in memory to be able to look up document using the ref during query time
-      // This is not how you should implement your SearchEngine implementation! Do not copy!
-      this.docStore[document.location] = document;
+      // Do not set the index if there was an error or if no documents were
+      // indexed. This ensures search continues to work for an index, even in
+      // case of transient issues in underlying collators.
+      if (!errorThrown && documentsIndexed > 0) {
+        this.lunrIndices[type] = indexer.buildIndex();
+        this.docStore = { ...this.docStore, ...newDocuments };
+      } else {
+        indexerLogger.warn(
+          `Index for ${type} was not ${
+            docStoreExists ? 'replaced' : 'created'
+          }: ${
+            errorThrown
+              ? 'an error was encountered'
+              : 'indexer received 0 documents'
+          }`,
+        );
+      }
     });
 
-    // "Rotate" the index by simply overwriting any existing index of the same name.
-    this.lunrIndices[type] = lunrBuilder.build();
+    return indexer;
   }
 
-  async query(query: SearchQuery): Promise<SearchResultSet> {
+  async query(query: SearchQuery): Promise<IndexableResultSet> {
     const { lunrQueryBuilder, documentTypes, pageSize } = this.translator(
       query,
     ) as ConcreteLunrQuery;
 
     const results: LunrResultEnvelope[] = [];
 
+    const indexKeys = Object.keys(this.lunrIndices).filter(
+      type => !documentTypes || documentTypes.includes(type),
+    );
+
+    if (documentTypes?.length && !indexKeys.length) {
+      throw new MissingIndexError(
+        `Missing index for ${documentTypes?.toString()}. This could be because the index hasn't been created yet or there was a problem during index creation.`,
+      );
+    }
+
     // Iterate over the filtered list of this.lunrIndex keys.
-    Object.keys(this.lunrIndices)
-      .filter(type => !documentTypes || documentTypes.includes(type))
-      .forEach(type => {
-        try {
-          results.push(
-            ...this.lunrIndices[type].query(lunrQueryBuilder).map(result => {
-              return {
-                result: result,
-                type: type,
-              };
-            }),
-          );
-        } catch (err) {
-          // if a field does not exist on a index, we can see that as a no-match
-          if (
-            err instanceof Error &&
-            err.message.startsWith('unrecognised field')
-          ) {
-            return;
-          }
-          throw err;
+    indexKeys.forEach(type => {
+      try {
+        results.push(
+          ...this.lunrIndices[type].query(lunrQueryBuilder).map(result => {
+            return {
+              result: result,
+              type: type,
+            };
+          }),
+        );
+      } catch (err) {
+        // if a field does not exist on a index, we can see that as a no-match
+        if (
+          err instanceof Error &&
+          err.message.startsWith('unrecognised field')
+        ) {
+          return;
         }
-      });
+        throw err;
+      }
+    });
 
     // Sort results.
     results.sort((doc1, doc2) => {
@@ -199,11 +245,24 @@ export class LunrSearchEngine implements SearchEngine {
       ? encodePageCursor({ page: page - 1 })
       : undefined;
 
-    // Translate results into SearchResultSet
-    const realResultSet: SearchResultSet = {
-      results: results.slice(offset, offset + pageSize).map(d => {
-        return { type: d.type, document: this.docStore[d.result.ref] };
-      }),
+    // Translate results into IndexableResultSet
+    const realResultSet: IndexableResultSet = {
+      results: results.slice(offset, offset + pageSize).map((d, index) => ({
+        type: d.type,
+        document: this.docStore[d.result.ref],
+        rank: page * pageSize + index + 1,
+        highlight: {
+          preTag: this.highlightPreTag,
+          postTag: this.highlightPostTag,
+          fields: parseHighlightFields({
+            preTag: this.highlightPreTag,
+            postTag: this.highlightPostTag,
+            doc: this.docStore[d.result.ref],
+            positionMetadata: d.result.matchData.metadata as any,
+          }),
+        },
+      })),
+      numberOfResults: results.length,
       nextPageCursor,
       previousPageCursor,
     };
@@ -224,4 +283,58 @@ export function decodePageCursor(pageCursor?: string): { page: number } {
 
 export function encodePageCursor({ page }: { page: number }): string {
   return Buffer.from(`${page}`, 'utf-8').toString('base64');
+}
+
+type ParseHighlightFieldsProps = {
+  preTag: string;
+  postTag: string;
+  doc: any;
+  positionMetadata: {
+    [term: string]: {
+      [field: string]: {
+        position: number[][];
+      };
+    };
+  };
+};
+
+export function parseHighlightFields({
+  preTag,
+  postTag,
+  doc,
+  positionMetadata,
+}: ParseHighlightFieldsProps): { [field: string]: string } {
+  // Merge the field positions across all query terms
+  const highlightFieldPositions = Object.values(positionMetadata).reduce(
+    (fieldPositions, metadata) => {
+      Object.keys(metadata).map(fieldKey => {
+        const validFieldMetadataPositions = metadata[
+          fieldKey
+        ]?.position?.filter(position => Array.isArray(position));
+        if (validFieldMetadataPositions.length) {
+          fieldPositions[fieldKey] = fieldPositions[fieldKey] ?? [];
+          fieldPositions[fieldKey].push(...validFieldMetadataPositions);
+        }
+      });
+
+      return fieldPositions;
+    },
+    {} as { [field: string]: number[][] },
+  );
+
+  return Object.fromEntries(
+    Object.entries(highlightFieldPositions).map(([field, positions]) => {
+      positions.sort((a, b) => b[0] - a[0]);
+
+      const highlightedField = positions.reduce((content, pos) => {
+        return (
+          `${String(content).substring(0, pos[0])}${preTag}` +
+          `${String(content).substring(pos[0], pos[0] + pos[1])}` +
+          `${postTag}${String(content).substring(pos[0] + pos[1])}`
+        );
+      }, doc[field] ?? '');
+
+      return [field, highlightedField];
+    }),
+  );
 }

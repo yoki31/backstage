@@ -79,7 +79,7 @@ proxy:
 ```ts
 // Inside your component
 const backendUrl = config.getString('backend.baseUrl');
-fetch(`${backendUrl}/proxy/frobs/list`)
+fetch(`${backendUrl}/api/proxy/frobs/list`)
   .then(response => response.json())
   .then(payload => setFrobs(payload as Frob[]));
 ```
@@ -132,14 +132,13 @@ router.use('/summary', async (req, res) => {
   ]).then(async ([frobs, flerps, thunk]) => {
     return computeAggregate(await frobs.json(), await flerps.json(), thunk);
   });
-  res.status(200).send(agg);
+  res.status(200).json(agg);
 });
 ```
 
 For a more detailed example, see
-[the lighthouse plugin](https://github.com/backstage/backstage/tree/master/plugins/lighthouse)
-that stores some state in a database and adds new capabilities to the underlying
-API.
+[the user-settings plugin backend](https://github.com/backstage/backstage/tree/master/plugins/user-settings-backend)
+that stores some state in a database and surfaces an API for the frontend plugin to use.
 
 Internally at Spotify, this has been a fairly popular choice for different
 reasons. Commonly, the backend has been used as a caching and data massaging

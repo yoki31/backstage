@@ -1,6 +1,7 @@
 ---
 id: adrs-adr006
-title: ADR006: Avoid React.FC and React.SFC
+title: 'ADR006: Avoid React.FC and React.SFC'
+# prettier-ignore
 description: Architecture Decision Record (ADR) log on Avoid React.FC and React.SFC
 ---
 
@@ -44,7 +45,7 @@ const GoodComponent = ({ text, children }: GoodProps) => (
   </div>
 );
 
-/* Or as a shorthand, if no specifc child type is required */
+/* Or as a shorthand, if no specific child type is required */
 type GoodProps = PropsWithChildren<{ text: string }>;
 const GoodComponent = ({ text, children }: GoodProps) => (
   <div>

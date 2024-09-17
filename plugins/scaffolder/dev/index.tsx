@@ -14,54 +14,71 @@
  * limitations under the License.
  */
 
-import { CatalogClient } from '@backstage/catalog-client';
 import { createDevApp } from '@backstage/dev-utils';
 import { scmIntegrationsApiRef } from '@backstage/integration-react';
 import {
-  catalogApiRef,
   starredEntitiesApiRef,
-  DefaultStarredEntitiesApi,
+  MockStarredEntitiesApi,
 } from '@backstage/plugin-catalog-react';
 import React from 'react';
-import { scaffolderApiRef, ScaffolderClient } from '../src';
+import { ScaffolderClient } from '../src';
+import { scaffolderApiRef } from '@backstage/plugin-scaffolder-react';
 import { ScaffolderPage } from '../src/plugin';
 import {
-  configApiRef,
   discoveryApiRef,
+  fetchApiRef,
   identityApiRef,
-  storageApiRef,
 } from '@backstage/core-plugin-api';
-import { CatalogEntityPage } from '@backstage/plugin-catalog';
+import { CatalogEntityPage, catalogPlugin } from '@backstage/plugin-catalog';
 
 createDevApp()
-  .addPage({
-    path: '/catalog/:kind/:namespace/:name',
-    element: <CatalogEntityPage />,
-  })
-  .registerApi({
-    api: catalogApiRef,
-    deps: { discoveryApi: discoveryApiRef },
-    factory: ({ discoveryApi }) => new CatalogClient({ discoveryApi }),
-  })
+  .registerPlugin(catalogPlugin)
   .registerApi({
     api: starredEntitiesApiRef,
-    deps: { storageApi: storageApiRef },
-    factory: ({ storageApi }) => new DefaultStarredEntitiesApi({ storageApi }),
+    deps: {},
+    factory: () => new MockStarredEntitiesApi(),
   })
   .registerApi({
     api: scaffolderApiRef,
     deps: {
       discoveryApi: discoveryApiRef,
-      identityApi: identityApiRef,
-      configApi: configApiRef,
+      fetchApi: fetchApiRef,
       scmIntegrationsApi: scmIntegrationsApiRef,
+      identityApi: identityApiRef,
     },
-    factory: ({ discoveryApi, identityApi, scmIntegrationsApi }) =>
-      new ScaffolderClient({ discoveryApi, identityApi, scmIntegrationsApi }),
+    factory: ({ discoveryApi, fetchApi, scmIntegrationsApi, identityApi }) =>
+      new ScaffolderClient({
+        discoveryApi,
+        fetchApi,
+        scmIntegrationsApi,
+        identityApi,
+      }),
+  })
+  .addPage({
+    path: '/catalog/:kind/:namespace/:name',
+    element: <CatalogEntityPage />,
   })
   .addPage({
     path: '/create',
     title: 'Create',
     element: <ScaffolderPage />,
+  })
+  .addPage({
+    path: '/create-groups',
+    title: 'Groups',
+    element: (
+      <ScaffolderPage
+        groups={[
+          {
+            filter: e => e.metadata.tags?.includes('techdocs') || false,
+            title: 'Techdocs',
+          },
+          {
+            filter: e => e.metadata.tags?.includes('react') || false,
+            title: 'React',
+          },
+        ]}
+      />
+    ),
   })
   .render();

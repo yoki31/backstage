@@ -15,59 +15,68 @@
  */
 
 import {
-  DocumentCollator,
-  DocumentDecorator,
-  IndexableDocument,
-  SearchEngine,
-} from '@backstage/search-common';
-import { Logger } from 'winston';
-import { Scheduler } from './index';
+  DocumentDecoratorFactory,
+  DocumentTypeInfo,
+} from '@backstage/plugin-search-common';
+import { pipeline, Transform } from 'stream';
+import { Scheduler } from './Scheduler';
 import {
+  IndexBuilderOptions,
   RegisterCollatorParameters,
   RegisterDecoratorParameters,
+  SearchEngine,
 } from './types';
+import { LoggerService } from '@backstage/backend-plugin-api';
 
-interface CollatorEnvelope {
-  collate: DocumentCollator;
-  refreshInterval: number;
-}
-
-type IndexBuilderOptions = {
-  searchEngine: SearchEngine;
-  logger: Logger;
-};
-
+/**
+ * Used for adding collators, decorators and compile them into tasks which are added to a scheduler returned to the caller.
+ * @public
+ */
 export class IndexBuilder {
-  private collators: Record<string, CollatorEnvelope>;
-  private decorators: Record<string, DocumentDecorator[]>;
+  private collators: Record<string, RegisterCollatorParameters>;
+  private decorators: Record<string, DocumentDecoratorFactory[]>;
+  private documentTypes: Record<string, DocumentTypeInfo>;
   private searchEngine: SearchEngine;
-  private logger: Logger;
+  private logger: LoggerService;
 
-  constructor({ logger, searchEngine }: IndexBuilderOptions) {
+  constructor(options: IndexBuilderOptions) {
     this.collators = {};
     this.decorators = {};
-    this.logger = logger;
-    this.searchEngine = searchEngine;
+    this.documentTypes = {};
+    this.logger = options.logger;
+    this.searchEngine = options.searchEngine;
   }
 
+  /**
+   * Responsible for returning the registered search engine.
+   */
   getSearchEngine(): SearchEngine {
     return this.searchEngine;
+  }
+
+  /**
+   * Responsible for returning the registered document types.
+   */
+  getDocumentTypes(): Record<string, DocumentTypeInfo> {
+    return this.documentTypes;
   }
 
   /**
    * Makes the index builder aware of a collator that should be executed at the
    * given refresh interval.
    */
-  addCollator({
-    collator,
-    defaultRefreshIntervalSeconds,
-  }: RegisterCollatorParameters): void {
+  addCollator(options: RegisterCollatorParameters): void {
+    const { factory, schedule } = options;
+
     this.logger.info(
-      `Added ${collator.constructor.name} collator for type ${collator.type}`,
+      `Added ${factory.constructor.name} collator factory for type ${factory.type}`,
     );
-    this.collators[collator.type] = {
-      refreshInterval: defaultRefreshIntervalSeconds,
-      collate: collator,
+    this.collators[factory.type] = {
+      factory,
+      schedule,
+    };
+    this.documentTypes[factory.type] = {
+      visibilityPermission: factory.visibilityPermission,
     };
   }
 
@@ -76,18 +85,19 @@ export class IndexBuilder {
    * the decorator, it will be applied to documents from all known collators,
    * otherwise it will only be applied to documents of the given types.
    */
-  addDecorator({ decorator }: RegisterDecoratorParameters): void {
-    const types = decorator.types || ['*'];
+  addDecorator(options: RegisterDecoratorParameters): void {
+    const { factory } = options;
+    const types = factory.types || ['*'];
     this.logger.info(
-      `Added decorator ${decorator.constructor.name} to types ${types.join(
+      `Added decorator ${factory.constructor.name} to types ${types.join(
         ', ',
       )}`,
     );
     types.forEach(type => {
       if (this.decorators.hasOwnProperty(type)) {
-        this.decorators[type].push(decorator);
+        this.decorators[type].push(factory);
       } else {
-        this.decorators[type] = [decorator];
+        this.decorators[type] = [factory];
       }
     });
   }
@@ -97,51 +107,58 @@ export class IndexBuilder {
    * scheduler returned to the caller.
    */
   async build(): Promise<{ scheduler: Scheduler }> {
-    const scheduler = new Scheduler({ logger: this.logger });
+    const scheduler = new Scheduler({
+      logger: this.logger,
+    });
 
     Object.keys(this.collators).forEach(type => {
-      scheduler.addToSchedule(async () => {
-        // Collate, Decorate, Index.
-        const decorators: DocumentDecorator[] = (
-          this.decorators['*'] || []
-        ).concat(this.decorators[type] || []);
-
-        this.logger.debug(
-          `Collating documents for ${type} via ${this.collators[type].collate.constructor.name}`,
-        );
-        let documents: IndexableDocument[];
-
-        try {
-          documents = await this.collators[type].collate.execute();
-        } catch (e) {
-          this.logger.error(
-            `Collating documents for ${type} via ${this.collators[type].collate.constructor.name} failed: ${e}`,
+      const taskLogger = this.logger.child({ documentType: type });
+      scheduler.addToSchedule({
+        id: `search_index_${type.replace('-', '_').toLocaleLowerCase('en-US')}`,
+        scheduledRunner: this.collators[type].schedule,
+        task: async () => {
+          // Instantiate the collator.
+          const collator = await this.collators[type].factory.getCollator();
+          taskLogger.info(
+            `Collating documents for ${type} via ${this.collators[type].factory.constructor.name}`,
           );
-          return;
-        }
 
-        for (let i = 0; i < decorators.length; i++) {
-          this.logger.debug(
-            `Decorating ${type} documents via ${decorators[i].constructor.name}`,
+          // Instantiate all relevant decorators.
+          const decorators: Transform[] = await Promise.all(
+            (this.decorators['*'] || [])
+              .concat(this.decorators[type] || [])
+              .map(async factory => {
+                const decorator = await factory.getDecorator();
+                taskLogger.info(
+                  `Attached decorator via ${factory.constructor.name} to ${type} index pipeline.`,
+                );
+                return decorator;
+              }),
           );
-          try {
-            documents = await decorators[i].execute(documents);
-          } catch (e) {
-            this.logger.error(
-              `Decorating ${type} documents via ${decorators[i].constructor.name} failed: ${e}`,
+
+          // Instantiate the indexer.
+          const indexer = await this.searchEngine.getIndexer(type);
+
+          // Compose collator/decorators/indexer into a pipeline
+          return new Promise<void>((resolve, reject) => {
+            pipeline(
+              [collator, ...decorators, indexer],
+              (error: NodeJS.ErrnoException | null) => {
+                if (error) {
+                  taskLogger.error(
+                    `Collating documents for ${type} failed: ${error}`,
+                  );
+                  reject(error);
+                } else {
+                  // Signal index pipeline completion!
+                  taskLogger.info(`Collating documents for ${type} succeeded`);
+                  resolve();
+                }
+              },
             );
-            return;
-          }
-        }
-
-        if (!documents || documents.length === 0) {
-          this.logger.debug(`No documents for type "${type}" to index`);
-          return;
-        }
-
-        // pushing documents to index to a configured search engine.
-        await this.searchEngine.index(type, documents);
-      }, this.collators[type].refreshInterval * 1000);
+          });
+        },
+      });
     });
 
     return {

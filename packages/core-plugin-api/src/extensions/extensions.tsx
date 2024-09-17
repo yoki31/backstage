@@ -14,13 +14,14 @@
  * limitations under the License.
  */
 
-import React, { lazy, Suspense } from 'react';
-import { AnalyticsContext } from '../analytics/AnalyticsContext';
+import React, { lazy, Suspense, useEffect } from 'react';
+import { AnalyticsContext, useAnalytics } from '../analytics';
 import { useApp } from '../app';
 import { RouteRef, useRouteRef } from '../routing';
 import { attachComponentData } from './componentData';
-import { Extension, BackstagePlugin } from '../plugin/types';
+import { Extension, BackstagePlugin } from '../plugin';
 import { PluginErrorBoundary } from './PluginErrorBoundary';
+import { routableExtensionRenderedEvent } from '../analytics/Tracker';
 
 /**
  * Lazy or synchronous retrieving of extension components.
@@ -81,6 +82,8 @@ export function createRoutableExtension<
         component().then(
           InnerComponent => {
             const RoutableExtensionWrapper: any = (props: any) => {
+              const analytics = useAnalytics();
+
               // Validate that the routing is wired up correctly in the App.tsx
               try {
                 useRouteRef(mountPoint);
@@ -100,6 +103,15 @@ export function createRoutableExtension<
                 }
                 throw error;
               }
+
+              // This event, never exposed to end-users of the analytics API,
+              // helps inform which extension metadata gets associated with a
+              // navigation event when the route navigated to is a gathered
+              // mountpoint.
+              useEffect(() => {
+                analytics.captureEvent(routableExtensionRenderedEvent, '');
+              }, [analytics]);
+
               return <InnerComponent {...props} />;
             };
 
@@ -225,7 +237,7 @@ export function createReactExtension<
     'Component';
 
   return {
-    expose(plugin: BackstagePlugin<any, any>) {
+    expose(plugin: BackstagePlugin) {
       const Result: any = (props: any) => {
         const app = useApp();
         const { Progress } = app.getComponents();
@@ -253,6 +265,7 @@ export function createReactExtension<
       };
 
       attachComponentData(Result, 'core.plugin', plugin);
+      attachComponentData(Result, 'core.extensionName', name);
       for (const [key, value] of Object.entries(data)) {
         attachComponentData(Result, key, value);
       }

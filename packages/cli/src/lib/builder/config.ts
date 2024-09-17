@@ -16,8 +16,7 @@
 
 import chalk from 'chalk';
 import fs from 'fs-extra';
-import { relative as relativePath } from 'path';
-import peerDepsExternal from 'rollup-plugin-peer-deps-external';
+import { relative as relativePath, resolve as resolvePath } from 'path';
 import commonjs from '@rollup/plugin-commonjs';
 import resolve from '@rollup/plugin-node-resolve';
 import postcss from 'rollup-plugin-postcss';
@@ -26,17 +25,91 @@ import svgr from '@svgr/rollup';
 import dts from 'rollup-plugin-dts';
 import json from '@rollup/plugin-json';
 import yaml from '@rollup/plugin-yaml';
-import { RollupOptions, OutputOptions } from 'rollup';
+import {
+  RollupOptions,
+  OutputOptions,
+  WarningHandlerWithDefault,
+} from 'rollup';
 
 import { forwardFileImports } from './plugins';
 import { BuildOptions, Output } from './types';
 import { paths } from '../paths';
+import { BackstagePackageJson } from '@backstage/cli-node';
 import { svgrTemplate } from '../svgrTemplate';
+import { readEntryPoints } from '../entryPoints';
 
-export const makeConfigs = async (
+const SCRIPT_EXTS = ['.js', '.jsx', '.ts', '.tsx'];
+
+function isFileImport(source: string) {
+  if (source.startsWith('.')) {
+    return true;
+  }
+  if (source.startsWith('/')) {
+    return true;
+  }
+  if (source.match(/[a-z]:/i)) {
+    return true;
+  }
+  return false;
+}
+
+function buildInternalImportPattern(options: BuildOptions) {
+  const inlinedPackages = options.workspacePackages.filter(
+    pkg => pkg.packageJson.backstage?.inline,
+  );
+  for (const { packageJson } of inlinedPackages) {
+    if (!packageJson.private) {
+      throw new Error(
+        `Inlined package ${packageJson.name} must be marked as private`,
+      );
+    }
+  }
+  const names = inlinedPackages.map(pkg => pkg.packageJson.name);
+  return new RegExp(`^(?:${names.join('|')})(?:$|/)`);
+}
+
+export async function makeRollupConfigs(
   options: BuildOptions,
-): Promise<RollupOptions[]> => {
+): Promise<RollupOptions[]> {
   const configs = new Array<RollupOptions>();
+  const targetDir = options.targetDir ?? paths.targetDir;
+
+  let targetPkg = options.packageJson;
+  if (!targetPkg) {
+    const packagePath = resolvePath(targetDir, 'package.json');
+    targetPkg = (await fs.readJson(packagePath)) as BackstagePackageJson;
+  }
+
+  const onwarn: WarningHandlerWithDefault = ({ code, message }) => {
+    if (code === 'EMPTY_BUNDLE') {
+      return; // We don't care about this one
+    }
+    if (options.logPrefix) {
+      console.log(options.logPrefix + message);
+    } else {
+      console.log(message);
+    }
+  };
+
+  const distDir = resolvePath(targetDir, 'dist');
+  const entryPoints = readEntryPoints(targetPkg);
+
+  const scriptEntryPoints = entryPoints.filter(e =>
+    SCRIPT_EXTS.includes(e.ext),
+  );
+
+  const internalImportPattern = buildInternalImportPattern(options);
+  const external = (
+    source: string,
+    importer: string | undefined,
+    isResolved: boolean,
+  ) =>
+    Boolean(
+      importer &&
+        !isResolved &&
+        !internalImportPattern.test(source) &&
+        !isFileImport(source),
+    );
 
   if (options.outputs.has(Output.cjs) || options.outputs.has(Output.esm)) {
     const output = new Array<OutputOptions>();
@@ -44,34 +117,40 @@ export const makeConfigs = async (
 
     if (options.outputs.has(Output.cjs)) {
       output.push({
-        dir: 'dist',
-        entryFileNames: 'index.cjs.js',
-        chunkFileNames: 'cjs/[name]-[hash].cjs.js',
+        dir: distDir,
+        entryFileNames: `[name].cjs.js`,
+        chunkFileNames: `cjs/[name]-[hash].cjs.js`,
         format: 'commonjs',
+        interop: 'compat',
         sourcemap: true,
+        exports: 'named',
       });
     }
     if (options.outputs.has(Output.esm)) {
       output.push({
-        dir: 'dist',
-        entryFileNames: 'index.esm.js',
-        chunkFileNames: 'esm/[name]-[hash].esm.js',
+        dir: distDir,
+        entryFileNames: `[name].esm.js`,
+        chunkFileNames: `esm/[name]-[hash].esm.js`,
         format: 'module',
         sourcemap: true,
+        preserveModules: true,
+        preserveModulesRoot: `${targetDir}/src`,
       });
       // Assume we're building for the browser if ESM output is included
       mainFields.unshift('browser');
     }
 
     configs.push({
-      input: 'src/index.ts',
+      input: Object.fromEntries(
+        scriptEntryPoints.map(e => [e.name, resolvePath(targetDir, e.path)]),
+      ),
       output,
+      onwarn,
+      makeAbsoluteExternalsRelative: false,
       preserveEntrySignatures: 'strict',
-      external: require('module').builtinModules,
+      // All module imports are always marked as external
+      external,
       plugins: [
-        peerDepsExternal({
-          includeDependencies: true,
-        }),
         resolve({ mainFields }),
         commonjs({
           include: /node_modules/,
@@ -90,6 +169,7 @@ export const makeConfigs = async (
             /\.woff$/,
             /\.woff2$/,
             /\.ttf$/,
+            /\.md$/,
           ],
         }),
         json(),
@@ -99,7 +179,7 @@ export const makeConfigs = async (
           template: svgrTemplate,
         }),
         esbuild({
-          target: 'es2019',
+          target: 'ES2022',
           minify: options.minify,
         }),
       ],
@@ -107,31 +187,44 @@ export const makeConfigs = async (
   }
 
   if (options.outputs.has(Output.types)) {
-    const typesInput = paths.resolveTargetRoot(
-      'dist-types',
-      relativePath(paths.targetRoot, paths.targetDir),
-      'src/index.d.ts',
+    const input = Object.fromEntries(
+      scriptEntryPoints.map(e => [
+        e.name,
+        paths.resolveTargetRoot(
+          'dist-types',
+          relativePath(paths.targetRoot, targetDir),
+          e.path.replace(/\.(?:ts|tsx)$/, '.d.ts'),
+        ),
+      ]),
     );
 
-    const declarationsExist = await fs.pathExists(typesInput);
-    if (!declarationsExist) {
-      const path = relativePath(paths.targetDir, typesInput);
-      throw new Error(
-        `No declaration files found at ${path}, be sure to run ${chalk.bgRed.white(
-          'yarn tsc',
-        )} to generate .d.ts files before packaging`,
-      );
+    for (const path of Object.values(input)) {
+      const declarationsExist = await fs.pathExists(path);
+      if (!declarationsExist) {
+        const declarationPath = relativePath(targetDir, path);
+        throw new Error(
+          `No declaration files found at ${declarationPath}, be sure to run ${chalk.bgRed.white(
+            'yarn tsc',
+          )} to generate .d.ts files before packaging`,
+        );
+      }
     }
 
     configs.push({
-      input: typesInput,
+      input,
       output: {
-        file: 'dist/index.d.ts',
+        dir: distDir,
+        entryFileNames: `[name].d.ts`,
+        chunkFileNames: `types/[name]-[hash].d.ts`,
         format: 'es',
       },
-      plugins: [dts()],
+      external: (source, importer, isResolved) =>
+        /\.css|scss|sass|svg|eot|woff|woff2|ttf$/.test(source) ||
+        external(source, importer, isResolved),
+      onwarn,
+      plugins: [dts({ respectExternal: true })],
     });
   }
 
   return configs;
-};
+}

@@ -16,67 +16,86 @@
 
 import fetch from 'node-fetch';
 import { z } from 'zod';
-import { PluginEndpointDiscovery } from '@backstage/backend-common';
 import {
   AuthorizeResult,
-  PermissionCondition,
-  PermissionCriteria,
+  ConditionalPolicyDecision,
 } from '@backstage/plugin-permission-common';
 import {
-  ApplyConditionsRequest,
-  ApplyConditionsResponse,
+  ApplyConditionsRequestEntry,
+  ApplyConditionsResponseEntry,
 } from '@backstage/plugin-permission-node';
+import {
+  AuthService,
+  BackstageCredentials,
+  DiscoveryService,
+} from '@backstage/backend-plugin-api';
+import { ResponseError } from '@backstage/errors';
 
 const responseSchema = z.object({
-  result: z.literal(AuthorizeResult.ALLOW).or(z.literal(AuthorizeResult.DENY)),
+  items: z.array(
+    z.object({
+      id: z.string(),
+      result: z
+        .literal(AuthorizeResult.ALLOW)
+        .or(z.literal(AuthorizeResult.DENY)),
+    }),
+  ),
 });
 
-export class PermissionIntegrationClient {
-  private readonly discovery: PluginEndpointDiscovery;
+export type ResourcePolicyDecision = ConditionalPolicyDecision & {
+  resourceRef: string;
+};
 
-  constructor(options: { discovery: PluginEndpointDiscovery }) {
+export class PermissionIntegrationClient {
+  private readonly discovery: DiscoveryService;
+  private readonly auth: AuthService;
+
+  constructor(options: { discovery: DiscoveryService; auth: AuthService }) {
     this.discovery = options.discovery;
+    this.auth = options.auth;
   }
 
   async applyConditions(
-    {
-      pluginId,
-      resourceRef,
-      resourceType,
-      conditions,
-    }: {
-      resourceRef: string;
-      pluginId: string;
-      resourceType: string;
-      conditions: PermissionCriteria<PermissionCondition>;
-    },
-    authHeader?: string,
-  ): Promise<ApplyConditionsResponse> {
-    const endpoint = `${await this.discovery.getBaseUrl(
-      pluginId,
-    )}/.well-known/backstage/permissions/apply-conditions`;
+    pluginId: string,
+    credentials: BackstageCredentials,
+    decisions: readonly ApplyConditionsRequestEntry[],
+  ): Promise<ApplyConditionsResponseEntry[]> {
+    const baseUrl = await this.discovery.getBaseUrl(pluginId);
+    const endpoint = `${baseUrl}/.well-known/backstage/permissions/apply-conditions`;
 
-    const request: ApplyConditionsRequest = {
-      resourceRef,
-      resourceType,
-      conditions,
-    };
+    const token = this.auth.isPrincipal(credentials, 'none')
+      ? undefined
+      : await this.auth
+          .getPluginRequestToken({
+            onBehalfOf: credentials,
+            targetPluginId: pluginId,
+          })
+          .then(t => t.token);
 
     const response = await fetch(endpoint, {
       method: 'POST',
-      body: JSON.stringify(request),
+      body: JSON.stringify({
+        items: decisions.map(
+          ({ id, resourceRef, resourceType, conditions }) => ({
+            id,
+            resourceRef,
+            resourceType,
+            conditions,
+          }),
+        ),
+      }),
       headers: {
-        ...(authHeader ? { authorization: authHeader } : {}),
+        ...(token ? { authorization: `Bearer ${token}` } : {}),
         'content-type': 'application/json',
       },
     });
 
     if (!response.ok) {
-      throw new Error(
-        `Unexpected response from plugin upstream when applying conditions. Expected 200 but got ${response.status} - ${response.statusText}`,
-      );
+      throw await ResponseError.fromResponse(response);
     }
 
-    return responseSchema.parse(await response.json());
+    const result = responseSchema.parse(await response.json());
+
+    return result.items;
   }
 }

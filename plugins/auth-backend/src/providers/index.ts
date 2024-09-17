@@ -14,41 +14,45 @@
  * limitations under the License.
  */
 
-export * from './github';
-export * from './gitlab';
-export * from './google';
-export * from './microsoft';
-export * from './oauth2';
-export * from './oidc';
-export * from './okta';
-export * from './bitbucket';
-export * from './atlassian';
-export * from './aws-alb';
-export * from './saml';
-
-export { factories as defaultAuthProviderFactories } from './factories';
-
-// Export the minimal interface required for implementing a
-// custom Authorization Handler
+export type { AwsAlbResult } from './aws-alb';
+export type { EasyAuthResult } from './azure-easyauth';
 export type {
+  BitbucketOAuthResult,
+  BitbucketPassportProfile,
+} from './bitbucket';
+export type { BitbucketServerOAuthResult } from './bitbucketServer';
+export type {
+  CloudflareAccessClaims,
+  CloudflareAccessGroup,
+  CloudflareAccessResult,
+  CloudflareAccessIdentityProfile,
+} from './cloudflare-access';
+export type { GithubOAuthResult } from './github';
+export type { OAuth2ProxyResult } from './oauth2-proxy';
+export type { OidcAuthResult } from './oidc';
+export type { SamlAuthResult } from './saml';
+export type { GcpIapResult, GcpIapTokenInfo } from './gcp-iap';
+
+export { providers, defaultAuthProviderFactories } from './providers';
+export { createOriginFilter, type ProviderFactories } from './router';
+
+export { createAuthProviderIntegration } from './createAuthProviderIntegration';
+
+export type {
+  AuthProviderConfig,
   AuthProviderRouteHandlers,
-  AuthProviderFactoryOptions,
   AuthProviderFactory,
   AuthHandler,
+  AuthResolverCatalogUserQuery,
+  AuthResolverContext,
   AuthHandlerResult,
   SignInResolver,
   SignInInfo,
-} from './types';
-
-// These types are needed for a postMessage from the login pop-up
-// to the frontend
-export type {
+  CookieConfigurer,
+  StateEncoder,
   AuthResponse,
-  BackstageIdentity,
-  BackstageUserIdentity,
-  BackstageIdentityResponse,
-  BackstageSignInResult,
   ProfileInfo,
+  OAuthStartResponse,
 } from './types';
 
 export { prepareBackstageIdentityResponse } from './prepareBackstageIdentityResponse';

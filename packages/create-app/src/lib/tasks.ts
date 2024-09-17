@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-import { BACKSTAGE_JSON } from '@backstage/cli-common';
 import chalk from 'chalk';
 import fs from 'fs-extra';
 import handlebars from 'handlebars';
@@ -23,16 +22,22 @@ import recursive from 'recursive-readdir';
 import {
   basename,
   dirname,
-  join,
   resolve as resolvePath,
   relative as relativePath,
 } from 'path';
+import fetch from 'node-fetch';
 import { exec as execCb } from 'child_process';
 import { packageVersions } from './versions';
 import { promisify } from 'util';
+import os from 'os';
 
 const TASK_NAME_MAX_LENGTH = 14;
+const TEN_MINUTES_MS = 1000 * 60 * 10;
 const exec = promisify(execCb);
+
+export type GitConfig = {
+  defaultBranch?: string;
+};
 
 export class Task {
   static log(name: string = '') {
@@ -86,7 +91,6 @@ export async function templatingTask(
   templateDir: string,
   destinationDir: string,
   context: any,
-  version: string,
 ) {
   const files = await recursive(templateDir).catch(error => {
     throw new Error(`Failed to read template directory: ${error.message}`);
@@ -136,12 +140,6 @@ export async function templatingTask(
       });
     }
   }
-  await Task.forItem('creating', BACKSTAGE_JSON, () =>
-    fs.writeFile(
-      join(destinationDir, BACKSTAGE_JSON),
-      `{\n  "version": ${JSON.stringify(version)}\n}\n`,
-    ),
-  );
 }
 
 /**
@@ -167,8 +165,8 @@ export async function checkAppExistsTask(rootDir: string, name: string) {
 /**
  * Verify that application `path` exists, otherwise create the directory
  *
- * @param {string} path - target to create directory
- * @throws {Error} if `path` is a file, or `fs.mkdir` fails
+ * @param path - target to create directory
+ * @throws if `path` is a file, or `fs.mkdir` fails
  */
 export async function checkPathExistsTask(path: string) {
   await Task.forItem('checking', path, async () => {
@@ -182,30 +180,15 @@ export async function checkPathExistsTask(path: string) {
 }
 
 /**
- * Create a folder to store templated files
- *
- * @param {string} tempDir - target temporary directory
- * @throws {Error} if `fs.mkdir` fails
- */
-export async function createTemporaryAppFolderTask(tempDir: string) {
-  await Task.forItem('creating', 'temporary directory', async () => {
-    try {
-      await fs.mkdir(tempDir);
-    } catch (error) {
-      throw new Error(`Failed to create temporary app directory, ${error}`);
-    }
-  });
-}
-
-/**
  * Run `yarn install` and `run tsc` in application directory
  *
- * @param {string} appDir - location of application to build
+ * @param appDir - location of application to build
  */
 export async function buildAppTask(appDir: string) {
+  process.chdir(appDir);
+
   const runCmd = async (cmd: string) => {
     await Task.forItem('executing', cmd, async () => {
-      process.chdir(appDir);
       await exec(cmd).catch(error => {
         process.stdout.write(error.stderr);
         process.stdout.write(error.stdout);
@@ -214,17 +197,23 @@ export async function buildAppTask(appDir: string) {
     });
   };
 
-  await runCmd('yarn install');
+  const installTimeout = setTimeout(() => {
+    Task.error(
+      "\n⏱️  It's taking a long time to install dependencies, you may want to exit (Ctrl-C) and run 'yarn install' and 'yarn tsc' manually",
+    );
+  }, TEN_MINUTES_MS);
+
+  await runCmd('yarn install').finally(() => clearTimeout(installTimeout));
   await runCmd('yarn tsc');
 }
 
 /**
  * Move temporary directory to destination application folder
  *
- * @param {string} tempDir source path to copy files from
- * @param {string} destination target path to copy files
- * @param {string} id
- * @throws {Error} if `fs.move` fails
+ * @param tempDir - source path to copy files from
+ * @param destination - target path to copy files
+ * @param id - item ID
+ * @throws if `fs.move` fails
  */
 export async function moveAppTask(
   tempDir: string,
@@ -244,4 +233,108 @@ export async function moveAppTask(
         fs.removeSync(tempDir);
       });
   });
+}
+
+/**
+ * Read git configs by creating a temp folder and initializing a repo
+ *
+ * @throws if `exec` fails
+ */
+export async function readGitConfig(): Promise<GitConfig | undefined> {
+  const tempDir = await fs.mkdtemp(resolvePath(os.tmpdir(), 'git-temp-dir-'));
+
+  try {
+    await exec('git init', { cwd: tempDir });
+    await exec('git commit --allow-empty -m "Initial commit"', {
+      cwd: tempDir,
+    });
+
+    const getDefaultBranch = await exec(
+      'git branch --format="%(refname:short)"',
+      { cwd: tempDir },
+    );
+
+    return {
+      defaultBranch: getDefaultBranch.stdout?.trim() || undefined,
+    };
+  } catch (error) {
+    return undefined;
+  } finally {
+    await fs.rm(tempDir, { recursive: true });
+  }
+}
+
+/**
+ * Initializes a git repository in the destination folder if possible
+ *
+ * @param dir - source path to initialize git repository in
+ * @returns true if git repository was initialized
+ */
+export async function tryInitGitRepository(dir: string) {
+  try {
+    // Check if we're already in a git repo
+    await exec('git rev-parse --is-inside-work-tree', { cwd: dir });
+    return false;
+  } catch {
+    /* ignored */
+  }
+
+  try {
+    await exec('git init', { cwd: dir });
+    await exec('git add .', { cwd: dir });
+    await exec('git commit -m "Initial commit"', { cwd: dir });
+    return true;
+  } catch (error) {
+    try {
+      await fs.rm(resolvePath(dir, '.git'), { recursive: true, force: true });
+    } catch {
+      throw new Error('Failed to remove .git folder');
+    }
+
+    return false;
+  }
+}
+
+/**
+ * This fetches the yarn.lock seed file at https://github.com/backstage/backstage/blob/master/packages/create-app/seed-yarn.lock
+ * Its purpose is to lock individual dependencies with broken releases to known working versions.
+ * This flow is decoupled from the release of the create-app package in order to avoid
+ * the need to re-publish the create-app package whenever we want to update the seed file.
+ *
+ * @returns true if the yarn.lock seed file was fetched successfully
+ */
+export async function fetchYarnLockSeedTask(dir: string) {
+  try {
+    await Task.forItem('fetching', 'yarn.lock seed', async () => {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 3000);
+      const res = await fetch(
+        'https://raw.githubusercontent.com/backstage/backstage/master/packages/create-app/seed-yarn.lock',
+        {
+          signal: controller.signal,
+        },
+      );
+      clearTimeout(timeout);
+
+      if (!res.ok) {
+        throw new Error(
+          `Request failed with status ${res.status} ${res.statusText}`,
+        );
+      }
+
+      const initialYarnLockContent = await res.text();
+
+      await fs.writeFile(
+        resolvePath(dir, 'yarn.lock'),
+        initialYarnLockContent
+          .split('\n')
+          .filter(l => !l.startsWith('//'))
+          .join('\n'),
+        'utf8',
+      );
+    });
+    return true;
+  } catch {
+    return false;
+  }
 }

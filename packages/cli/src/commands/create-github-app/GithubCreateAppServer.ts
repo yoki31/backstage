@@ -19,18 +19,6 @@ import openBrowser from 'react-dev-utils/openBrowser';
 import { request } from '@octokit/request';
 import express, { Express, Request, Response } from 'express';
 
-const MANIFEST_DATA = {
-  default_events: ['create', 'delete', 'push', 'repository'],
-  default_permissions: {
-    contents: 'read',
-    metadata: 'read',
-  },
-  name: 'Backstage-<changeme>',
-  url: 'https://backstage.io',
-  description: 'GitHub App for Backstage',
-  public: false,
-};
-
 const FORM_PAGE = `
 <html>
   <body>
@@ -60,14 +48,20 @@ export class GithubCreateAppServer {
   private baseUrl?: string;
   private webhookUrl?: string;
 
-  static async run({ org }: { org: string }): Promise<GithubAppConfig> {
-    const encodedOrg = encodeURIComponent(org);
+  static async run(options: {
+    org: string;
+    permissions: string[];
+  }): Promise<GithubAppConfig> {
+    const encodedOrg = encodeURIComponent(options.org);
     const actionUrl = `https://github.com/organizations/${encodedOrg}/settings/apps/new`;
-    const server = new GithubCreateAppServer(actionUrl);
+    const server = new GithubCreateAppServer(actionUrl, options.permissions);
     return server.start();
   }
 
-  constructor(private readonly actionUrl: string) {
+  private constructor(
+    private readonly actionUrl: string,
+    private readonly permissions: string[],
+  ) {
     const webhookId = crypto
       .randomBytes(15)
       .toString('base64')
@@ -115,14 +109,35 @@ export class GithubCreateAppServer {
     if (!baseUrl) {
       throw new Error('baseUrl is not set');
     }
+
     const manifest = {
-      ...MANIFEST_DATA,
+      default_events: ['create', 'delete', 'push', 'repository'],
+      default_permissions: {
+        metadata: 'read',
+        ...(this.permissions.includes('members') && {
+          members: 'read',
+        }),
+        ...(this.permissions.includes('read') && {
+          contents: 'read',
+          checks: 'read',
+        }),
+        ...(this.permissions.includes('write') && {
+          contents: 'write',
+          checks: 'read',
+          actions: 'write',
+        }),
+      },
+      name: 'Backstage-<changeme>',
+      url: 'https://backstage.io',
+      description: 'GitHub App for Backstage',
+      public: false,
       redirect_url: `${baseUrl}/callback`,
       hook_attributes: {
         url: this.webhookUrl,
         active: false,
       },
     };
+
     const manifestJson = JSON.stringify(manifest).replace(/\"/g, '&quot;');
 
     let body = FORM_PAGE;

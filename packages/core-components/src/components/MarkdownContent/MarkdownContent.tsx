@@ -18,12 +18,12 @@ import { makeStyles } from '@material-ui/core/styles';
 import ReactMarkdown, { Options } from 'react-markdown';
 import gfm from 'remark-gfm';
 import React from 'react';
-import { BackstageTheme } from '@backstage/theme';
 import { CodeSnippet } from '../CodeSnippet';
+import { HeadingProps } from 'react-markdown/lib/ast-to-react';
 
 export type MarkdownContentClassKey = 'markdown';
 
-const useStyles = makeStyles<BackstageTheme>(
+const useStyles = makeStyles(
   theme => ({
     markdown: {
       '& table': {
@@ -67,6 +67,25 @@ const useStyles = makeStyles<BackstageTheme>(
 type Props = {
   content: string;
   dialect?: 'gfm' | 'common-mark';
+  linkTarget?: Options['linkTarget'];
+  transformLinkUri?: (href: string) => string;
+  transformImageUri?: (href: string) => string;
+  className?: string;
+};
+
+const flatten = (text: string, child: any): string => {
+  if (!child) return text;
+
+  return typeof child === 'string'
+    ? text + child
+    : React.Children.toArray(child.props.children).reduce(flatten, text);
+};
+
+const headingRenderer = ({ level, children }: HeadingProps) => {
+  const childrenArray = React.Children.toArray(children);
+  const text = childrenArray.reduce(flatten, '');
+  const slug = text.toLocaleLowerCase('en-US').replace(/\W/g, '-');
+  return React.createElement(`h${level}`, { id: slug }, children);
 };
 
 const components: Options['components'] = {
@@ -81,23 +100,39 @@ const components: Options['components'] = {
       </code>
     );
   },
+  h1: headingRenderer,
+  h2: headingRenderer,
+  h3: headingRenderer,
+  h4: headingRenderer,
+  h5: headingRenderer,
+  h6: headingRenderer,
 };
 
 /**
- * MarkdownContent
- * --
- * Renders markdown with the default dialect [gfm - GitHub flavored Markdown](https://github.github.com/gfm/) to backstage theme styled HTML.
- * If you just want to render to plain [CommonMark](https://commonmark.org/), set the dialect to `'common-mark'`
+ * Renders markdown with the default dialect {@link https://github.github.com/gfm/ | gfm - GitHub flavored Markdown} to backstage theme styled HTML.
+ *
+ * @remarks
+ * If you just want to render to plain {@link https://commonmark.org/ | CommonMark}, set the dialect to `'common-mark'`
  */
 export function MarkdownContent(props: Props) {
-  const { content, dialect = 'gfm' } = props;
+  const {
+    content,
+    dialect = 'gfm',
+    linkTarget,
+    transformLinkUri,
+    transformImageUri,
+    className,
+  } = props;
   const classes = useStyles();
   return (
     <ReactMarkdown
       remarkPlugins={dialect === 'gfm' ? [gfm] : []}
-      className={classes.markdown}
+      className={`${classes.markdown} ${className ?? ''}`.trim()}
       children={content}
       components={components}
+      linkTarget={linkTarget}
+      transformLinkUri={transformLinkUri}
+      transformImageUri={transformImageUri}
     />
   );
 }

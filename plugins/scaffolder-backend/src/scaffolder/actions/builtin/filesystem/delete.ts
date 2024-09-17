@@ -13,15 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { createTemplateAction } from '../../createTemplateAction';
-import { InputError } from '@backstage/errors';
-import { resolveSafeChildPath } from '@backstage/backend-common';
-import fs from 'fs-extra';
 
+import { createTemplateAction } from '@backstage/plugin-scaffolder-node';
+import { InputError } from '@backstage/errors';
+import { resolveSafeChildPath } from '@backstage/backend-plugin-api';
+import fs from 'fs-extra';
+import { examples } from './delete.examples';
+
+/**
+ * Creates new action that enables deletion of files and directories in the workspace.
+ * @public
+ */
 export const createFilesystemDeleteAction = () => {
   return createTemplateAction<{ files: string[] }>({
     id: 'fs:delete',
     description: 'Deletes files and directories from the workspace',
+    examples,
     schema: {
       input: {
         required: ['files'],
@@ -38,6 +45,7 @@ export const createFilesystemDeleteAction = () => {
         },
       },
     },
+    supportsDryRun: true,
     async handler(ctx) {
       if (!Array.isArray(ctx.input?.files)) {
         throw new InputError('files must be an Array');

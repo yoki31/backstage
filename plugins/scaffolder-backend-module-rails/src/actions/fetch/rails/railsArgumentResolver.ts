@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Spotify AB
+ * Copyright 2021 The Backstage Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 import { sep as separatorPath } from 'path';
 
 enum Webpacker {
@@ -43,14 +44,22 @@ enum RailsVersion {
 }
 
 export type RailsRunOptions = {
-  minimal?: boolean;
   api?: boolean;
+  database?: Database;
+  force?: boolean;
+  minimal?: boolean;
+  railsVersion?: RailsVersion;
+  skipActionCable?: boolean;
+  skipActionMailbox?: boolean;
+  skipActionMailer?: boolean;
+  skipActionText?: boolean;
+  skipActiveStorage?: boolean;
+  skipBundle?: boolean;
+  skipTest?: boolean;
+  skipWebpackInstall?: boolean;
+  skipActiveRecord?: boolean;
   template?: string;
   webpacker?: Webpacker;
-  database?: Database;
-  railsVersion?: RailsVersion;
-  skipBundle?: boolean;
-  skipWebpackInstall?: boolean;
 };
 
 export const railsArgumentResolver = (
@@ -74,6 +83,38 @@ export const railsArgumentResolver = (
 
   if (options?.skipWebpackInstall) {
     argumentsToRun.push('--skip-webpack-install');
+  }
+
+  if (options?.skipActiveRecord) {
+    argumentsToRun.push('--skip-active-record');
+  }
+
+  if (options?.skipTest) {
+    argumentsToRun.push('--skip-test');
+  }
+
+  if (options?.skipActionCable) {
+    argumentsToRun.push('--skip-action-cable');
+  }
+
+  if (options?.skipActionMailer) {
+    argumentsToRun.push('--skip-action-mailer');
+  }
+
+  if (options?.skipActionMailbox) {
+    argumentsToRun.push('--skip-action-mailbox');
+  }
+
+  if (options?.skipActiveStorage) {
+    argumentsToRun.push('--skip-active-storage');
+  }
+
+  if (options?.skipActionText) {
+    argumentsToRun.push('--skip-action-text');
+  }
+
+  if (options?.force) {
+    argumentsToRun.push('--force');
   }
 
   if (

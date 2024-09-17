@@ -105,14 +105,15 @@ describe('ScmAuth', () => {
         additionalScope: { repoWrite: true },
       }),
     ).resolves.toMatchObject({
-      token: 'read_user read_api read_repository write_repository api',
+      token: 'read_user read_api read_repository write_repository',
     });
 
     const azureAuth = ScmAuth.forAzure(mockAuthApi);
     await expect(
       azureAuth.getCredentials({ url: 'http://example.com' }),
     ).resolves.toMatchObject({
-      token: 'vso.build vso.code vso.graph vso.project vso.profile',
+      token:
+        '499b84ac-1321-427f-aa17-267ca6975798/vso.build 499b84ac-1321-427f-aa17-267ca6975798/vso.code 499b84ac-1321-427f-aa17-267ca6975798/vso.graph 499b84ac-1321-427f-aa17-267ca6975798/vso.project 499b84ac-1321-427f-aa17-267ca6975798/vso.profile',
     });
     await expect(
       azureAuth.getCredentials({
@@ -121,7 +122,7 @@ describe('ScmAuth', () => {
       }),
     ).resolves.toMatchObject({
       token:
-        'vso.build vso.code vso.graph vso.project vso.profile vso.code_manage',
+        '499b84ac-1321-427f-aa17-267ca6975798/vso.build 499b84ac-1321-427f-aa17-267ca6975798/vso.code 499b84ac-1321-427f-aa17-267ca6975798/vso.graph 499b84ac-1321-427f-aa17-267ca6975798/vso.project 499b84ac-1321-427f-aa17-267ca6975798/vso.profile 499b84ac-1321-427f-aa17-267ca6975798/vso.code_manage',
     });
 
     const bitbucketAuth = ScmAuth.forBitbucket(mockAuthApi);
@@ -138,6 +139,63 @@ describe('ScmAuth', () => {
     ).resolves.toMatchObject({
       token:
         'account team pullrequest snippet issue pullrequest:write snippet:write issue:write',
+    });
+  });
+
+  it('should support additional provided scopes from the caller', async () => {
+    const mockAuthApi = {
+      getAccessToken: async (scopes: string[]) => {
+        return scopes.join(' ');
+      },
+    };
+
+    const githubAuth = ScmAuth.forGithub(mockAuthApi);
+    await expect(
+      githubAuth.getCredentials({
+        url: 'http://example.com',
+        additionalScope: {
+          customScopes: { github: ['org:read', 'workflow'] },
+        },
+      }),
+    ).resolves.toMatchObject({
+      token: 'repo read:org read:user org:read workflow',
+    });
+
+    const gitlabAuth = ScmAuth.forGitlab(mockAuthApi);
+    await expect(
+      gitlabAuth.getCredentials({
+        url: 'http://example.com',
+        additionalScope: { customScopes: { gitlab: ['write_repository'] } },
+      }),
+    ).resolves.toMatchObject({
+      token: 'read_user read_api read_repository write_repository',
+    });
+
+    const azureAuth = ScmAuth.forAzure(mockAuthApi);
+    await expect(
+      azureAuth.getCredentials({
+        url: 'http://example.com',
+        additionalScope: {
+          customScopes: {
+            azure: ['499b84ac-1321-427f-aa17-267ca6975798/vso.org'],
+          },
+        },
+      }),
+    ).resolves.toMatchObject({
+      token:
+        '499b84ac-1321-427f-aa17-267ca6975798/vso.build 499b84ac-1321-427f-aa17-267ca6975798/vso.code 499b84ac-1321-427f-aa17-267ca6975798/vso.graph 499b84ac-1321-427f-aa17-267ca6975798/vso.project 499b84ac-1321-427f-aa17-267ca6975798/vso.profile 499b84ac-1321-427f-aa17-267ca6975798/vso.org',
+    });
+
+    const bitbucketAuth = ScmAuth.forBitbucket(mockAuthApi);
+    await expect(
+      bitbucketAuth.getCredentials({
+        url: 'http://example.com',
+        additionalScope: {
+          customScopes: { bitbucket: ['snippet:write', 'issue:write'] },
+        },
+      }),
+    ).resolves.toMatchObject({
+      token: 'account team pullrequest snippet issue snippet:write issue:write',
     });
   });
 
@@ -186,7 +244,7 @@ describe('ScmAuth', () => {
     await expect(
       emptyMux.getCredentials({ url: 'http://example.com' }),
     ).rejects.toThrow(
-      "No authentication provider available for access to 'http://example.com'",
+      "No auth provider available for 'http://example.com', see https://backstage.io/link?scm-auth",
     );
 
     const scmAuth = ScmAuth.merge(
@@ -204,12 +262,12 @@ describe('ScmAuth', () => {
     await expect(
       scmAuth.getCredentials({ url: 'http://not.example.com' }),
     ).rejects.toThrow(
-      "No authentication provider available for access to 'http://not.example.com'",
+      "No auth provider available for 'http://not.example.com', see https://backstage.io/link?scm-auth",
     );
     await expect(
       scmAuth.getCredentials({ url: 'http://example.com:8080' }),
     ).rejects.toThrow(
-      "No authentication provider available for access to 'http://example.com:8080'",
+      "No auth provider available for 'http://example.com:8080', see https://backstage.io/link?scm-auth",
     );
   });
 });
